@@ -159,39 +159,40 @@ export default class Server extends MessengerClass {
 
                         this.processor(result, params).then(
                             (_result) => {
-                                let resp = "";
-                                switch (_result.Params.Transport) {
-                                    case "style":
-                                        resp = `.${_result.Params.Callback} {content:"${_result.Data}";}`;
-                                        headers["Content-Type"] = "text/css; charset=utf-8";
-                                        break;
-                                    case "image":
-                                        let size = Math.ceil(Math.sqrt(_result.Data.length) * 2);
-                                        let rgb_data = new Buffer(size * size);
-                                        for (let i = 0; i < rgb_data.length; i++) {
-                                            rgb_data[i] = 0;
-                                        }
-                                        for (let y = 0; y < size; y++) {
-                                            for (let x = 0; x < size; x++) {
-                                                let idx = (size * y + x) << 2;
-                                                rgb_data[idx + 3] = _result.Data.charCodeAt(Math.floor(idx / 4));
+                                if (_result.Params.Action === "Respond") {
+                                    let resp = "";
+                                    switch (_result.Params.Transport) {
+                                        case "style":
+                                            resp = `.${_result.Params.Callback} {content:"${_result.Data}";}`;
+                                            headers["Content-Type"] = "text/css; charset=utf-8";
+                                            break;
+                                        case "image":
+                                            let size = Math.ceil(Math.sqrt(_result.Data.length) * 2);
+                                            let rgb_data = new Buffer(size * size);
+                                            for (let i = 0; i < rgb_data.length; i++) {
+                                                rgb_data[i] = 0;
                                             }
-                                        }
-                                        let png = new PNG({
-                                            width: size,
-                                            height: size,
-                                            filterType: 4,
-                                        });
-                                        png.data = rgb_data;
-                                        resp = PNG.sync.write(png);
-                                        headers["Content-Type"] = "image/png";
-                                        break;
-                                    case "script":
-                                        resp = 'window["' + _result.Params.Callback + '"]("' + _result.Data + '")';
-                                        headers["Content-Type"] = "text/javascript; charset=utf-8";
-                                        break;
-                                    case "iframe":
-                                        resp = `<!DOCTYPE html>
+                                            for (let y = 0; y < size; y++) {
+                                                for (let x = 0; x < size; x++) {
+                                                    let idx = (size * y + x) << 2;
+                                                    rgb_data[idx + 3] = _result.Data.charCodeAt(Math.floor(idx / 4));
+                                                }
+                                            }
+                                            let png = new PNG({
+                                                width: size,
+                                                height: size,
+                                                filterType: 4,
+                                            });
+                                            png.data = rgb_data;
+                                            resp = PNG.sync.write(png);
+                                            headers["Content-Type"] = "image/png";
+                                            break;
+                                        case "script":
+                                            resp = 'window["' + _result.Params.Callback + '"]("' + _result.Data + '")';
+                                            headers["Content-Type"] = "text/javascript; charset=utf-8";
+                                            break;
+                                        case "iframe":
+                                            resp = `<!DOCTYPE html>
                                                     <html lang="en">
                                                     <head>
                                                         <meta charset="UTF-8">
@@ -213,15 +214,23 @@ export default class Server extends MessengerClass {
                                                         </script>
                                                     </body>
                                                     </html>`;
-                                        headers["Content-Type"] = "text/html; charset=utf-8";
-                                        break;
-                                    default:
-                                        resp = _result.Data;
-                                        headers["Content-Type"] = "text/plain; charset=utf-8";
+                                            headers["Content-Type"] = "text/html; charset=utf-8";
+                                            break;
+                                        default:
+                                            resp = _result.Data;
+                                            headers["Content-Type"] = "text/plain; charset=utf-8";
+                                    }
+                                    headers["Content-Length"] = resp.length;
+                                    response.writeHead(this.Settings.SuccessResponseCode, headers);
+                                    response.end(resp);
+                                } else if (_result.Params.Action === "Redirect") {
+                                    headers["Location"] = _result.Data.link;
+                                    response.writeHead(this.Settings.RedirectResponseCode, headers);
+                                    response.end();
+                                } else {
+                                    response.writeHead(this.Settings.ErrorResponseCode, headers);
+                                    response.end();
                                 }
-                                headers["Content-Length"] = resp.length;
-                                response.writeHead(this.Settings.SuccessResponseCode, headers);
-                                response.end(resp);
                             }
                         ).catch(
                             () => {
@@ -243,30 +252,56 @@ export default class Server extends MessengerClass {
             this.decode(data, this.Settings.Password).then(
                 (_data) => {
                     if (
-                        this.listners[_data.event]
+                        _data &&
+                        _data.data &&
+                        _data.data.Action
                     ) {
-                        params.Transport = _data.data.Transport;
-                        params.Callback = _data.data.Callback;
+                        if (_data.data.Transport) {
+                            params.Transport = _data.data.Transport;
+                            delete _data.data.Transport;
+                        }
 
-                        delete _data.data.Transport;
-                        delete _data.data.Callback;
+                        if (_data.data.Callback) {
+                            params.Callback = _data.data.Callback;
+                            delete _data.data.Callback;
+                        }
 
-                        new Promise(
-                            (_resolve, _reject) => {
-                                _resolve(this.listners[_data.event](_data.data, params));
-                            }
-                        ).then(
-                            (result) => {
-                                this.encode(result, this.Settings.Password).then(
-                                    (_data) => {
-                                        resolve({
-                                            Params: params,
-                                            Data: _data,
-                                        });
+                        if (_data.data.Action) {
+                            params.Action = _data.data.Action;
+                            delete _data.data.Action;
+                        }
+
+                        if (params.Action === "Respond") {
+                            if (
+                                this.listners[_data.event]
+                            ) {
+                                new Promise(
+                                    (_resolve, _reject) => {
+                                        _resolve(this.listners[_data.event](_data.data, params));
+                                    }
+                                ).then(
+                                    (result) => {
+                                        this.encode(result, this.Settings.Password).then(
+                                            (_data) => {
+                                                resolve({
+                                                    Params: params,
+                                                    Data: _data,
+                                                });
+                                            }
+                                        ).catch(reject);
                                     }
                                 ).catch(reject);
+                            } else {
+                                reject();
                             }
-                        ).catch(reject);
+                        } else if (params.Action === "Redirect") {
+                            resolve({
+                                Params: params,
+                                Data: _data,
+                            });
+                        } else {
+                            reject();
+                        }
                     } else {
                         reject();
                     }

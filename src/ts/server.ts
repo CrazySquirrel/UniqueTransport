@@ -7,11 +7,10 @@ const Server = new ServerClass({
     ConnectionTimeout: 1000,
     Password: "xmas",
     SuccessResponseCode: 200,
-    ErrorResponseCode: 404,
+    RedirectResponseCode: 302,
+    ErrorResponseCode: 404
 });
 
 Server.on("connect", (data, params) => {
-    console.log(data);
-    console.log(params);
     return "OK";
 });

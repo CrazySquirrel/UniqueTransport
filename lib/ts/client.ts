@@ -24,6 +24,41 @@ export default class Client extends MessengerClass {
         }
     }
 
+    public getEncodedLink(params: any = {}) {
+        params.Url = params.Url || this.Settings.ServerAddress;
+        params.Data = params.Data || {};
+
+        return new Promise((resolve, reject) => {
+            if (
+                params &&
+                params.Link &&
+                params.Data &&
+                params.Url
+            ) {
+                params.Data.Action = "Redirect";
+                this.encode({
+                    link: params.Link,
+                    data: params.Data,
+                }, this.Settings.Password).then(
+                    (_data) => {
+                        /**
+                         * Get subtransports
+                         */
+                        let transport = this.getTransport(["path", "name", "params"]);
+                        /**
+                         * Get url and data for subtransports
+                         */
+                        let dataUrl = this.getDataAndUrl(_data, params.Url, transport);
+
+                        resolve(dataUrl.url);
+                    }
+                ).catch(reject);
+            } else {
+                reject();
+            }
+        });
+    }
+
     public emit(params: any = {}) {
         params.Event = params.Event || "";
         params.Data = params.Data || {};
@@ -46,6 +81,7 @@ export default class Client extends MessengerClass {
                     let transport = this.transports[Math.floor(Math.random() * transportLength)];
                     params.Data.Transport = transport;
                     params.Data.Callback = this.getRandomWord();
+                    params.Data.Action = "Respond";
 
                     this.encode({
                         event: params.Event,

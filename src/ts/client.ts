@@ -74,6 +74,15 @@ Client.emit({
     Url: "http://127.0.0.1:8888/test/",
 }).then(
     (result) => {
-        console.log(result);
+
+    }
+);
+
+Client.getEncodedLink({
+    Url: "http://127.0.0.1:8888/test/",
+    Link: "http://ad.yandex.com/"
+}).then(
+    (url) => {
+        console.log(url);
     }
 );
