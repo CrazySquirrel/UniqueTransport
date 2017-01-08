@@ -16,6 +16,8 @@ export default class Client extends MessengerClass {
 
         for (let transport of _transports) {
             if (
+                this.Settings &&
+                this.Settings.Transports &&
                 this.Settings.Transports[transport] &&
                 typeof this[transport] === "function"
             ) {
