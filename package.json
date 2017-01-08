@@ -1,5 +1,5 @@
 {
-  "name": "unique-transport",
+  "name": "UniqueTransport",
   "version": "1.0.3",
   "description": "This plugin is designed to deliver a message from Alice to Bob at any cost.",
   "keywords": [
