@@ -271,6 +271,11 @@ export default class Server extends MessengerClass {
                             delete _data.data.Action;
                         }
 
+                        if (_data.data.Url) {
+                            params.Url = _data.data.Url;
+                            delete _data.data.Url;
+                        }
+
                         if (params.Action === "Respond") {
                             if (
                                 this.listners[_data.event]

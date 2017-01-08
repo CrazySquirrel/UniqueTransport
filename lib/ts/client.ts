@@ -46,7 +46,7 @@ export default class Client extends MessengerClass {
                         /**
                          * Get subtransports
                          */
-                        let transport = this.getTransport(["path", "name", "params"]);
+                        let transport = this.getTransport(["path", "name", "params"], "base");
                         /**
                          * Get url and data for subtransports
                          */
@@ -84,6 +84,7 @@ export default class Client extends MessengerClass {
                     params.Data.Transport = transport;
                     params.Data.Callback = this.getRandomWord();
                     params.Data.Action = "Respond";
+                    params.Data.Url = params.Url;
 
                     this.encode({
                         event: params.Event,
@@ -116,7 +117,7 @@ export default class Client extends MessengerClass {
             /**
              * Get subtransports
              */
-            let transport = this.getTransport(["path", "name", "params"]);
+            let transport = this.getTransport(["path", "name", "params"], "style");
             /**
              * Get url and data for subtransports
              */
@@ -174,7 +175,7 @@ export default class Client extends MessengerClass {
             /**
              * Get subtransports
              */
-            let transport = this.getTransport(["path", "name", "params"]);
+            let transport = this.getTransport(["path", "name", "params"], "image");
             /**
              * Get url and data for subtransports
              */
@@ -229,7 +230,7 @@ export default class Client extends MessengerClass {
             /**
              * Get subtransports
              */
-            let transport = this.getTransport(["path", "name", "params"]);
+            let transport = this.getTransport(["path", "name", "params"], "script");
             /**
              * Get url and data for subtransports
              */
@@ -284,7 +285,7 @@ export default class Client extends MessengerClass {
             /**
              * Get subtransports
              */
-            let transport = this.getTransport(["path", "name", "params"]);
+            let transport = this.getTransport(["path", "name", "params"], "iframe");
             /**
              * Get url and data for subtransports
              */
@@ -360,7 +361,12 @@ export default class Client extends MessengerClass {
                 /**
                  * Get subtransports
                  */
-                let transport = this.getTransport(["path", "name", "params"]);
+                let transport;
+                if (httpMethod === "POST") {
+                    transport = this.getTransport(["path", "name", "params", "header", "body"], "fetch");
+                } else {
+                    transport = this.getTransport(["path", "name", "params", "header"], "fetch");
+                }
                 /**
                  * Get url and data for subtransports
                  */
@@ -441,7 +447,12 @@ export default class Client extends MessengerClass {
                 /**
                  * Get subtransports
                  */
-                let transport = this.getTransport(["path", "name", "params"]);
+                let transport;
+                if (httpMethod === "POST") {
+                    transport = this.getTransport(["path", "name", "params", "header", "body"], "xhr");
+                } else {
+                    transport = this.getTransport(["path", "name", "params", "header"], "xhr");
+                }
                 /**
                  * Get url and data for subtransports
                  */
@@ -524,13 +535,22 @@ export default class Client extends MessengerClass {
         };
     }
 
-    private getTransport(_transports) {
+    private getTransport(_transports, type) {
         /**
          * Filter sub transports by settings
          */
         let transports = [];
         for (let method of _transports) {
-            if (this.Settings.Transports.image.SubTransports[method]) {
+            if (
+                type === "base" ||
+                (
+                    this.Settings &&
+                    this.Settings.Transports &&
+                    this.Settings.Transports[type] &&
+                    this.Settings.Transports[type].SubTransports &&
+                    this.Settings.Transports[type].SubTransports[method]
+                )
+            ) {
                 transports.push(method);
             }
         }
