@@ -52,6 +52,8 @@ export default class Server extends MessengerClass {
     private listenr(request, response) {
         let headers = Object.assign({}, baseHeaders);
 
+        let host;
+
         headers["Access-Control-Allow-Origin"] = false;
 
         if (
@@ -63,6 +65,7 @@ export default class Server extends MessengerClass {
                 origin &&
                 origin.hostname
             ) {
+                host = origin.hostname;
                 headers["Access-Control-Allow-Origin"] = origin.protocol + "//" + origin.hostname + ":" + origin.port;
             }
         }
@@ -76,12 +79,20 @@ export default class Server extends MessengerClass {
                 origin &&
                 origin.hostname
             ) {
+                host = origin.hostname;
                 headers["Access-Control-Allow-Origin"] = origin.protocol + "//" + origin.hostname + ":" + origin.port;
             }
         }
 
         if (
-            headers["Access-Control-Allow-Origin"]
+            !headers["Access-Control-Allow-Origin"]
+        ) {
+            headers["Access-Control-Allow-Origin"] = "*";
+            host = "*";
+        }
+
+        if (
+            host
         ) {
             if (
                 request.method === "OPTIONS"
@@ -98,7 +109,29 @@ export default class Server extends MessengerClass {
             } else {
                 this.preprocessor(request).then(
                     (result) => {
-                        this.processor(result).then(
+
+                        let IP = request.headers["x-real-ip"];
+                        if (!IP) {
+                            let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
+                            let resIP = (regIP).exec(request.connection.remoteAddress);
+                            if (resIP) {
+                                IP = resIP[0];
+                            }
+                        }
+                        if (
+                            !IP ||
+                            IP === "127.0.0.1"
+                        ) {
+                            IP = "95.165.148.52";
+                        }
+
+                        let params = {
+                            IP: IP,
+                            Headers: request.headers,
+                            Host: host,
+                        };
+
+                        this.processor(result, params).then(
                             (_result) => {
                                 let resp = "";
                                 switch (_result.Params.Transport) {
@@ -179,24 +212,22 @@ export default class Server extends MessengerClass {
         }
     }
 
-    private processor(data) {
+    private processor(data, params) {
         return new Promise((resolve, reject) => {
             this.decode(data, this.Settings.Password).then(
                 (_data) => {
                     if (
                         this.listners[_data.event]
                     ) {
-                        let params = {
-                            Transport: _data.data.Transport,
-                            Callback: _data.data.Callback
-                        };
+                        params.Transport = _data.data.Transport;
+                        params.Callback = _data.data.Callback;
 
                         delete _data.data.Transport;
                         delete _data.data.Callback;
 
                         new Promise(
                             (_resolve, _reject) => {
-                                _resolve(this.listners[_data.event](_data.data));
+                                _resolve(this.listners[_data.event](_data.data, params));
                             }
                         ).then(
                             (result) => {

@@ -10,6 +10,8 @@ const Server = new ServerClass({
     ErrorResponseCode: 404,
 });
 
-Server.on("connect", (data) => {
+Server.on("connect", (data, params) => {
+    console.log(data);
+    console.log(params);
     return "OK";
 });
