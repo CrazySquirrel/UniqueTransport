@@ -1,0 +1,10 @@
+.idea
+doc
+dist
+node_modules
+*.log
+*.xml
+*.DS_Store
+*.map
+*.log
+*.tmp
