@@ -66,7 +66,20 @@ export default class Server extends MessengerClass {
                 origin.hostname
             ) {
                 host = origin.hostname;
-                headers["Access-Control-Allow-Origin"] = origin.protocol + "//" + origin.hostname + ":" + origin.port;
+
+                headers["Access-Control-Allow-Origin"] = "";
+
+                if (origin.protocol) {
+                    headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+                }
+
+                if (origin.hostname) {
+                    headers["Access-Control-Allow-Origin"] += origin.hostname;
+                }
+
+                if (origin.port) {
+                    headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+                }
             }
         }
 
@@ -80,7 +93,20 @@ export default class Server extends MessengerClass {
                 origin.hostname
             ) {
                 host = origin.hostname;
-                headers["Access-Control-Allow-Origin"] = origin.protocol + "//" + origin.hostname + ":" + origin.port;
+
+                headers["Access-Control-Allow-Origin"] = "";
+
+                if (origin.protocol) {
+                    headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+                }
+
+                if (origin.hostname) {
+                    headers["Access-Control-Allow-Origin"] += origin.hostname;
+                }
+
+                if (origin.port) {
+                    headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+                }
             }
         }
 
