@@ -247,6 +247,14 @@ export default class Server extends MessengerClass {
             response.writeHead(this.Settings.ErrorResponseCode, headers);
             response.end();
         }
+
+        setTimeout(
+            () => {
+                response.writeHead(this.Settings.ErrorResponseCode, headers);
+                response.end();
+            },
+            this.Settings.ConnectionTimeout
+        );
     }
 
     private processor(data, params) {
