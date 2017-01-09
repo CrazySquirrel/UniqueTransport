@@ -59,6 +59,14 @@ export default class Server extends MessengerClass {
     private listenr(request, response) {
         let headers = Object.assign({}, baseHeaders);
 
+        setTimeout(
+            () => {
+                response.writeHead(this.Settings.ErrorResponseCode, headers);
+                response.end();
+            },
+            this.Settings.ConnectionTimeout
+        );
+
         try {
             if (this.Settings.WriteRequestLog) {
                 this.RequestLogStream.write(JSON.stringify({
@@ -264,14 +272,6 @@ export default class Server extends MessengerClass {
             response.writeHead(this.Settings.ErrorResponseCode, headers);
             response.end();
         }
-
-        setTimeout(
-            () => {
-                response.writeHead(this.Settings.ErrorResponseCode, headers);
-                response.end();
-            },
-            this.Settings.ConnectionTimeout
-        );
     }
 
     private processor(data, params) {
