@@ -85,7 +85,7 @@ export default class Server extends MessengerClass {
             ) {
                 let origin;
 
-                if (request.headers.host.indexOf("http") === -1) {
+                if (request.headers.origin.indexOf("http") === -1) {
                     origin = URL.parse("https://" + request.headers.origin);
                 } else {
                     origin = URL.parse(request.headers.origin);
@@ -119,7 +119,7 @@ export default class Server extends MessengerClass {
             ) {
                 let origin;
 
-                if (request.headers.host.indexOf("http") === -1) {
+                if (request.headers.referer.indexOf("http") === -1) {
                     origin = URL.parse("https://" + request.headers.referer);
                 } else {
                     origin = URL.parse(request.headers.referer);
