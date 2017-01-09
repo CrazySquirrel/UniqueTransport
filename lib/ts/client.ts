@@ -190,31 +190,38 @@ export default class Client extends MessengerClass {
             image.crossOrigin = "Anonymous";
 
             image.onload = (result) => {
-                let img = result.path[0];
+                if (
+                    result &&
+                    result.path
+                ) {
+                    let img = result.path[0];
 
-                let canvas = document.createElement("canvas");
-                canvas.width = img.width;
-                canvas.height = img.height;
+                    let canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
 
-                let ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0);
+                    let ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
 
-                let dataURL = ctx.getImageData(0, 0, img.width, img.height).data;
-                let text = "";
-                for (let i = 0; i < dataURL.length; i++) {
-                    if ((i + 1) % 4 === 0) {
-                        if (dataURL[i] === 0) {
-                            break;
+                    let dataURL = ctx.getImageData(0, 0, img.width, img.height).data;
+                    let text = "";
+                    for (let i = 0; i < dataURL.length; i++) {
+                        if ((i + 1) % 4 === 0) {
+                            if (dataURL[i] === 0) {
+                                break;
+                            }
+                            text += String.fromCharCode(dataURL[i]);
                         }
-                        text += String.fromCharCode(dataURL[i]);
                     }
-                }
 
-                this.decode(text, this.Settings.Password).then((_data) => {
-                    resolve(_data);
-                }).catch(() => {
+                    this.decode(text, this.Settings.Password).then((_data) => {
+                        resolve(_data);
+                    }).catch(() => {
+                        reject();
+                    });
+                } else {
                     reject();
-                });
+                }
             };
 
             image.onerror = () => {
