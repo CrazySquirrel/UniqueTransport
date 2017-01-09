@@ -83,7 +83,14 @@ export default class Server extends MessengerClass {
                 !headers["Access-Control-Allow-Origin"] &&
                 request.headers.origin
             ) {
-                let origin = URL.parse(request.headers.origin);
+                let origin;
+
+                if (request.headers.host.indexOf("http") === -1) {
+                    origin = URL.parse("https://" + request.headers.origin);
+                } else {
+                    origin = URL.parse(request.headers.origin);
+                }
+
                 if (
                     origin &&
                     origin.hostname
@@ -110,7 +117,48 @@ export default class Server extends MessengerClass {
                 !headers["Access-Control-Allow-Origin"] &&
                 request.headers.referer
             ) {
-                let origin = URL.parse(request.headers.referer);
+                let origin;
+
+                if (request.headers.host.indexOf("http") === -1) {
+                    origin = URL.parse("https://" + request.headers.referer);
+                } else {
+                    origin = URL.parse(request.headers.referer);
+                }
+
+                if (
+                    origin &&
+                    origin.hostname
+                ) {
+                    host = origin.hostname;
+
+                    headers["Access-Control-Allow-Origin"] = "";
+
+                    if (origin.protocol) {
+                        headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+                    }
+
+                    if (origin.hostname) {
+                        headers["Access-Control-Allow-Origin"] += origin.hostname;
+                    }
+
+                    if (origin.port) {
+                        headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+                    }
+                }
+            }
+
+            if (
+                !headers["Access-Control-Allow-Origin"] &&
+                request.headers.host
+            ) {
+                let origin;
+
+                if (request.headers.host.indexOf("http") === -1) {
+                    origin = URL.parse("https://" + request.headers.host);
+                } else {
+                    origin = URL.parse(request.headers.host);
+                }
+
                 if (
                     origin &&
                     origin.hostname
