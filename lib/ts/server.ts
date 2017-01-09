@@ -20,6 +20,7 @@ import MessengerClass from "./Modules/Messanger";
 export default class Server extends MessengerClass {
 
     private listners: any;
+    private RequestLogStream: any;
     private NormalRequestHeaders: any;
 
     public constructor(settings: any) {
@@ -44,6 +45,10 @@ export default class Server extends MessengerClass {
             "upgrade-insecure-requests",
         ].concat(this.Settings.NormalRequestHeaders || []);
 
+        if (this.Settings.WriteRequestLog) {
+            this.RequestLogStream = FS.createWriteStream("RequestLog.tmp", {"flags": "a"});
+        }
+
         HTTP.createServer(this.listenr.bind(this)).listen(this.Settings.ServerPort);
     }
 
@@ -52,6 +57,13 @@ export default class Server extends MessengerClass {
     }
 
     private listenr(request, response) {
+        if (this.Settings.WriteRequestLog) {
+            this.RequestLogStream.write(JSON.stringify({
+                    url: request.url,
+                    headers: request.headers,
+                }) + "\r\n");
+        }
+
         let headers = Object.assign({}, baseHeaders);
 
         let host;
