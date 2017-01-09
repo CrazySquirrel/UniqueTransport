@@ -12,6 +12,13 @@ const Server = new ServerClass({
     NormalRequestHeaders: [
 
     ],
+    SubTransports: {
+        path: true,
+        name: true,
+        params: true,
+        header: true,
+        body: true,
+    }
 });
 
 Server.on("connect", (data, params) => {

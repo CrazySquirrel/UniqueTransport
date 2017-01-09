@@ -342,34 +342,54 @@ export default class Server extends MessengerClass {
 
     private preprocessor(request) {
         return new Promise((resolve, reject) => {
-            let data = [
-                this.getDataFromPath(request),
-                this.getDataFromName(request),
-                this.getDataFromParameters(request),
-                this.getDataFromHeader(request),
-            ];
-            /**
-             * Get data from body
-             */
-            let buffer = [];
+            let data = [];
 
-            request.on("data", (data) => {
-                buffer.push(data.toString())
-            });
+            if (this.Settings.SubTransports.path) {
+                data.push(this.getDataFromPath(request));
+            }
 
-            request.on("end", () => {
-                data.push(buffer.join(""));
+            if (this.Settings.SubTransports.name) {
+                data.push(this.getDataFromName(request));
+            }
 
+            if (this.Settings.SubTransports.params) {
+                data.push(this.getDataFromParameters(request));
+            }
+
+            if (this.Settings.SubTransports.header) {
+                data.push(this.getDataFromHeader(request));
+            }
+
+            if (this.Settings.SubTransports.body) {
+                /**
+                 * Get data from body
+                 */
+                let buffer = [];
+
+                request.on("data", (data) => {
+                    buffer.push(data.toString())
+                });
+
+                request.on("end", () => {
+                    data.push(buffer.join(""));
+
+                    data = data.filter((item) => {
+                        return item.length > 0
+                    });
+
+                    resolve(data.join(""));
+                });
+
+                request.on("error", () => {
+                    reject();
+                });
+            } else {
                 data = data.filter((item) => {
                     return item.length > 0
                 });
 
                 resolve(data.join(""));
-            });
-
-            request.on("error", () => {
-                reject();
-            });
+            }
         });
     }
 
