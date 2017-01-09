@@ -8,7 +8,10 @@ const Server = new ServerClass({
     Password: "xmas",
     SuccessResponseCode: 200,
     RedirectResponseCode: 302,
-    ErrorResponseCode: 404
+    ErrorResponseCode: 404,
+    NormalRequestHeaders: [
+
+    ],
 });
 
 Server.on("connect", (data, params) => {

@@ -39,8 +39,10 @@ export default class Server extends MessengerClass {
             "accept",
             "referer",
             "accept-encoding",
-            "accept-language"
-        ];
+            "accept-language",
+            "cookie",
+            "upgrade-insecure-requests",
+        ].concat(this.Settings.NormalRequestHeaders || []);
 
         HTTP.createServer(this.listenr.bind(this)).listen(this.Settings.ServerPort);
     }
