@@ -59,163 +59,151 @@ export default class Server extends MessengerClass {
     private listenr(request, response) {
         let headers = Object.assign({}, baseHeaders);
 
-        setTimeout(
-            () => {
-                response.writeHead(this.Settings.ErrorResponseCode, headers);
+        if (this.Settings.WriteRequestLog) {
+            this.RequestLogStream.write(request.url + "\r\n");
+        }
+
+        let host;
+
+        headers["Access-Control-Allow-Origin"] = false;
+
+        if (
+            !headers["Access-Control-Allow-Origin"] &&
+            request.headers.origin
+        ) {
+            let origin = URL.parse(request.headers.origin);
+            if (
+                origin &&
+                origin.hostname
+            ) {
+                host = origin.hostname;
+
+                headers["Access-Control-Allow-Origin"] = "";
+
+                if (origin.protocol) {
+                    headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+                }
+
+                if (origin.hostname) {
+                    headers["Access-Control-Allow-Origin"] += origin.hostname;
+                }
+
+                if (origin.port) {
+                    headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+                }
+            }
+        }
+
+        if (
+            !headers["Access-Control-Allow-Origin"] &&
+            request.headers.referer
+        ) {
+            let origin = URL.parse(request.headers.referer);
+            if (
+                origin &&
+                origin.hostname
+            ) {
+                host = origin.hostname;
+
+                headers["Access-Control-Allow-Origin"] = "";
+
+                if (origin.protocol) {
+                    headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+                }
+
+                if (origin.hostname) {
+                    headers["Access-Control-Allow-Origin"] += origin.hostname;
+                }
+
+                if (origin.port) {
+                    headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+                }
+            }
+        }
+
+        if (
+            !headers["Access-Control-Allow-Origin"]
+        ) {
+            headers["Access-Control-Allow-Origin"] = "*";
+            host = "*";
+        }
+
+        if (
+            host
+        ) {
+            if (
+                request.method === "OPTIONS"
+            ) {
+                if (request.headers['access-control-request-headers']) {
+                    if (headers["Access-Control-Allow-Headers"]) {
+                        headers["Access-Control-Allow-Headers"] = headers["Access-Control-Allow-Headers"].split(", ").concat(request.headers['access-control-request-headers'].split(", ")).join(", ");
+                    } else {
+                        headers["Access-Control-Allow-Headers"] = request.headers['access-control-request-headers'];
+                    }
+                }
+                response.writeHead(this.Settings.SuccessResponseCode, headers);
                 response.end();
-            },
-            this.Settings.ConnectionTimeout
-        );
+            } else {
+                this.preprocessor(request).then(
+                    (result) => {
 
-        try {
-            if (this.Settings.WriteRequestLog) {
-                this.RequestLogStream.write(JSON.stringify({
-                        url: request.url,
-                        headers: request.headers,
-                    }) + "\r\n");
-            }
-
-            let host;
-
-            headers["Access-Control-Allow-Origin"] = false;
-
-            if (
-                !headers["Access-Control-Allow-Origin"] &&
-                request.headers.origin
-            ) {
-                let origin = URL.parse(request.headers.origin);
-                if (
-                    origin &&
-                    origin.hostname
-                ) {
-                    host = origin.hostname;
-
-                    headers["Access-Control-Allow-Origin"] = "";
-
-                    if (origin.protocol) {
-                        headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-                    }
-
-                    if (origin.hostname) {
-                        headers["Access-Control-Allow-Origin"] += origin.hostname;
-                    }
-
-                    if (origin.port) {
-                        headers["Access-Control-Allow-Origin"] += ":" + origin.port;
-                    }
-                }
-            }
-
-            if (
-                !headers["Access-Control-Allow-Origin"] &&
-                request.headers.referer
-            ) {
-                let origin = URL.parse(request.headers.referer);
-                if (
-                    origin &&
-                    origin.hostname
-                ) {
-                    host = origin.hostname;
-
-                    headers["Access-Control-Allow-Origin"] = "";
-
-                    if (origin.protocol) {
-                        headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-                    }
-
-                    if (origin.hostname) {
-                        headers["Access-Control-Allow-Origin"] += origin.hostname;
-                    }
-
-                    if (origin.port) {
-                        headers["Access-Control-Allow-Origin"] += ":" + origin.port;
-                    }
-                }
-            }
-
-            if (
-                !headers["Access-Control-Allow-Origin"]
-            ) {
-                headers["Access-Control-Allow-Origin"] = "*";
-                host = "*";
-            }
-
-            if (
-                host
-            ) {
-                if (
-                    request.method === "OPTIONS"
-                ) {
-                    if (request.headers['access-control-request-headers']) {
-                        if (headers["Access-Control-Allow-Headers"]) {
-                            headers["Access-Control-Allow-Headers"] = headers["Access-Control-Allow-Headers"].split(", ").concat(request.headers['access-control-request-headers'].split(", ")).join(", ");
-                        } else {
-                            headers["Access-Control-Allow-Headers"] = request.headers['access-control-request-headers'];
+                        let IP = request.headers["x-real-ip"];
+                        if (!IP) {
+                            let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
+                            let resIP = (regIP).exec(request.connection.remoteAddress);
+                            if (resIP) {
+                                IP = resIP[0];
+                            }
                         }
-                    }
-                    response.writeHead(this.Settings.SuccessResponseCode, headers);
-                    response.end();
-                } else {
-                    this.preprocessor(request).then(
-                        (result) => {
+                        if (
+                            !IP ||
+                            IP === "127.0.0.1"
+                        ) {
+                            IP = "95.165.148.52";
+                        }
 
-                            let IP = request.headers["x-real-ip"];
-                            if (!IP) {
-                                let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
-                                let resIP = (regIP).exec(request.connection.remoteAddress);
-                                if (resIP) {
-                                    IP = resIP[0];
-                                }
-                            }
-                            if (
-                                !IP ||
-                                IP === "127.0.0.1"
-                            ) {
-                                IP = "95.165.148.52";
-                            }
+                        let params = {
+                            IP: IP,
+                            Headers: request.headers,
+                            Host: host,
+                        };
 
-                            let params = {
-                                IP: IP,
-                                Headers: request.headers,
-                                Host: host,
-                            };
-
-                            this.processor(result, params).then(
-                                (_result) => {
-                                    if (_result.Params.Action === "Respond") {
-                                        let resp = "";
-                                        switch (_result.Params.Transport) {
-                                            case "style":
-                                                resp = `.${_result.Params.Callback} {content:"${_result.Data}";}`;
-                                                headers["Content-Type"] = "text/css; charset=utf-8";
-                                                break;
-                                            case "image":
-                                                let size = Math.ceil(Math.sqrt(_result.Data.length) * 2);
-                                                let rgb_data = new Buffer(size * size);
-                                                for (let i = 0; i < rgb_data.length; i++) {
-                                                    rgb_data[i] = 0;
+                        this.processor(result, params).then(
+                            (_result) => {
+                                if (_result.Params.Action === "Respond") {
+                                    let resp = "";
+                                    switch (_result.Params.Transport) {
+                                        case "style":
+                                            resp = `.${_result.Params.Callback} {content:"${_result.Data}";}`;
+                                            headers["Content-Type"] = "text/css; charset=utf-8";
+                                            break;
+                                        case "image":
+                                            let size = Math.ceil(Math.sqrt(_result.Data.length) * 2);
+                                            let rgb_data = new Buffer(size * size);
+                                            for (let i = 0; i < rgb_data.length; i++) {
+                                                rgb_data[i] = 0;
+                                            }
+                                            for (let y = 0; y < size; y++) {
+                                                for (let x = 0; x < size; x++) {
+                                                    let idx = (size * y + x) << 2;
+                                                    rgb_data[idx + 3] = _result.Data.charCodeAt(Math.floor(idx / 4));
                                                 }
-                                                for (let y = 0; y < size; y++) {
-                                                    for (let x = 0; x < size; x++) {
-                                                        let idx = (size * y + x) << 2;
-                                                        rgb_data[idx + 3] = _result.Data.charCodeAt(Math.floor(idx / 4));
-                                                    }
-                                                }
-                                                let png = new PNG({
-                                                    width: size,
-                                                    height: size,
-                                                    filterType: 4,
-                                                });
-                                                png.data = rgb_data;
-                                                resp = PNG.sync.write(png);
-                                                headers["Content-Type"] = "image/png";
-                                                break;
-                                            case "script":
-                                                resp = 'window["' + _result.Params.Callback + '"]("' + _result.Data + '")';
-                                                headers["Content-Type"] = "text/javascript; charset=utf-8";
-                                                break;
-                                            case "iframe":
-                                                resp = `<!DOCTYPE html>
+                                            }
+                                            let png = new PNG({
+                                                width: size,
+                                                height: size,
+                                                filterType: 4,
+                                            });
+                                            png.data = rgb_data;
+                                            resp = PNG.sync.write(png);
+                                            headers["Content-Type"] = "image/png";
+                                            break;
+                                        case "script":
+                                            resp = 'window["' + _result.Params.Callback + '"]("' + _result.Data + '")';
+                                            headers["Content-Type"] = "text/javascript; charset=utf-8";
+                                            break;
+                                        case "iframe":
+                                            resp = `<!DOCTYPE html>
                                                     <html lang="en">
                                                     <head>
                                                         <meta charset="UTF-8">
@@ -237,41 +225,45 @@ export default class Server extends MessengerClass {
                                                         </script>
                                                     </body>
                                                     </html>`;
-                                                headers["Content-Type"] = "text/html; charset=utf-8";
-                                                break;
-                                            default:
-                                                resp = _result.Data;
-                                                headers["Content-Type"] = "text/plain; charset=utf-8";
-                                        }
-                                        headers["Content-Length"] = resp.length;
-                                        response.writeHead(this.Settings.SuccessResponseCode, headers);
-                                        response.end(resp);
-                                    } else if (_result.Params.Action === "Redirect") {
-                                        headers["Location"] = _result.Data.link;
-                                        response.writeHead(this.Settings.RedirectResponseCode, headers);
-                                        response.end();
-                                    } else {
-                                        response.writeHead(this.Settings.ErrorResponseCode, headers);
-                                        response.end();
+                                            headers["Content-Type"] = "text/html; charset=utf-8";
+                                            break;
+                                        default:
+                                            resp = _result.Data;
+                                            headers["Content-Type"] = "text/plain; charset=utf-8";
                                     }
-                                }
-                            ).catch(
-                                () => {
+                                    headers["Content-Length"] = resp.length;
+                                    response.writeHead(this.Settings.SuccessResponseCode, headers);
+                                    response.end(resp);
+                                } else if (_result.Params.Action === "Redirect") {
+                                    headers["Location"] = _result.Data.link;
+                                    response.writeHead(this.Settings.RedirectResponseCode, headers);
+                                    response.end();
+                                } else {
                                     response.writeHead(this.Settings.ErrorResponseCode, headers);
                                     response.end();
                                 }
-                            );
-                        }
-                    );
-                }
-            } else {
-                response.writeHead(this.Settings.ErrorResponseCode, headers);
-                response.end();
+                            }
+                        ).catch(
+                            () => {
+                                response.writeHead(this.Settings.ErrorResponseCode, headers);
+                                response.end();
+                            }
+                        );
+                    }
+                );
             }
-        } catch (e) {
+        } else {
             response.writeHead(this.Settings.ErrorResponseCode, headers);
             response.end();
         }
+
+        setTimeout(
+            () => {
+                response.writeHead(this.Settings.ErrorResponseCode, headers);
+                response.end();
+            },
+            this.Settings.ConnectionTimeout
+        );
     }
 
     private processor(data, params) {
