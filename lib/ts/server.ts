@@ -134,13 +134,6 @@ export default class Server extends MessengerClass {
             }
 
             if (
-                !headers["Access-Control-Allow-Origin"]
-            ) {
-                headers["Access-Control-Allow-Origin"] = "*";
-                host = "*";
-            }
-
-            if (
                 host
             ) {
                 if (
@@ -261,6 +254,11 @@ export default class Server extends MessengerClass {
                                     response.end();
                                 }
                             );
+                        }
+                    ).catch(
+                        () => {
+                            response.writeHead(this.Settings.ErrorResponseCode, headers);
+                            response.end();
                         }
                     );
                 }
