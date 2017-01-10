@@ -6,7 +6,7 @@ const Client = new ClientClass({
     ServerAddress: "http://127.0.0.1:8888/",
     ConnectionTimeout: 1000,
     Password: "xmas",
-    Reconnections: 10,
+    Reconnections: 2,
     Transports: {
         xhr: {
             HttpMethods: {
@@ -66,7 +66,8 @@ const Client = new ClientClass({
                 params: true
             }
         }
-    }
+    },
+    MaxErrorCorrections: 3,
 });
 
 Client.emit({

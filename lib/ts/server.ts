@@ -199,7 +199,6 @@ export default class Server extends MessengerClass {
                 } else {
                     this.preprocessor(request).then(
                         (result) => {
-
                             let IP = request.headers["x-real-ip"];
                             if (!IP) {
                                 let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
@@ -390,22 +389,52 @@ export default class Server extends MessengerClass {
 
     private preprocessor(request) {
         return new Promise((resolve, reject) => {
-            let data = [];
+            let next = (_data) => {
+                for (let key in _data) {
+                    if (
+                        _data.hasOwnProperty(key)
+                    ) {
+                        if (
+                            !_data[key] ||
+                            _data[key].EncodedPath.length === 0
+                        ) {
+                            delete _data[key];
+                        } else {
+                            _data[key].RawPath = _data[key].RawPath.filter((item) => {
+                                return item.length > 0
+                            });
+                        }
+                    }
+                }
+
+                let paths = [];
+                for (let key in _data) {
+                    if (
+                        _data.hasOwnProperty(key)
+                    ) {
+                        paths = paths.concat(_data[key].RawPath);
+                    }
+                }
+
+                resolve(paths);
+            };
+
+            let data: any = {};
 
             if (this.Settings.SubTransports.path) {
-                data.push(this.getDataFromPath(request));
+                data.path = this.getDataFromPath(request);
             }
 
             if (this.Settings.SubTransports.name) {
-                data.push(this.getDataFromName(request));
+                data.name = this.getDataFromName(request);
             }
 
             if (this.Settings.SubTransports.params) {
-                data.push(this.getDataFromParameters(request));
+                data.params = this.getDataFromParameters(request);
             }
 
             if (this.Settings.SubTransports.header) {
-                data.push(this.getDataFromHeader(request));
+                data.header = this.getDataFromHeader(request);
             }
 
             if (this.Settings.SubTransports.body) {
@@ -414,57 +443,26 @@ export default class Server extends MessengerClass {
                  */
                 let buffer = [];
 
-                request.on("data", (data) => {
-                    buffer.push(data.toString())
+                request.on("data", (_data) => {
+                    buffer.push(_data.toString())
                 });
 
                 request.on("end", () => {
-                    data.push(buffer.join(""));
+                    data.body = {
+                        EncodedPath: buffer.join(""),
+                        RawPath: [buffer.join("")],
+                    };
 
-                    data = data.filter((item) => {
-                        return item.length > 0
-                    });
-
-                    resolve(data.join(""));
+                    next(data);
                 });
 
                 request.on("error", () => {
                     reject();
                 });
             } else {
-                data = data.filter((item) => {
-                    return item.length > 0
-                });
-
-                resolve(data.join(""));
+                next(data);
             }
         });
-    }
-
-    private getDataFromName(request) {
-        /**
-         * Get data from url
-         */
-        let params = URL.parse(request.url, true);
-        /**
-         * Get data from path
-         */
-        let path = PATH.parse(params.pathname);
-
-        if (
-            path
-        ) {
-            if (
-                params.pathname.lastIndexOf("/") === params.pathname.length - 1
-            ) {
-                path.dir = path.dir + "/" + path.name + "/";
-                path.name = "";
-            }
-
-            return decodeURIComponent(path.name);
-        } else {
-            return "";
-        }
     }
 
     private getDataFromPath(request) {
@@ -487,11 +485,43 @@ export default class Server extends MessengerClass {
                 path.name = "";
             }
 
-            return path.dir.split("/").map((item) => {
-                return decodeURIComponent(item);
-            }).join("");
+            return {
+                EncodedPath: path.dir.split("/").map((item) => {
+                    return decodeURIComponent(item);
+                }).join(""),
+                RawPath: path.dir.split("/"),
+            };
         } else {
-            return "";
+            return false;
+        }
+    }
+
+    private getDataFromName(request) {
+        /**
+         * Get data from url
+         */
+        let params = URL.parse(request.url, true);
+        /**
+         * Get data from path
+         */
+        let path = PATH.parse(params.pathname);
+
+        if (
+            path
+        ) {
+            if (
+                params.pathname.lastIndexOf("/") === params.pathname.length - 1
+            ) {
+                path.dir = path.dir + "/" + path.name + "/";
+                path.name = "";
+            }
+
+            return {
+                EncodedPath: decodeURIComponent(path.name),
+                RawPath: [decodeURIComponent(path.name)],
+            };
+        } else {
+            return false;
         }
     }
 
@@ -507,11 +537,16 @@ export default class Server extends MessengerClass {
             params &&
             Object.keys(params.query).length > 0
         ) {
-            return Object.keys(params.query).map((key) => {
+            let _data = Object.keys(params.query).map((key) => {
                 return params.query[key];
-            }).join("");
+            });
+
+            return {
+                EncodedPath: _data.join(""),
+                RawPath: _data,
+            };
         } else {
-            return "";
+            return false;
         }
     }
 
@@ -532,6 +567,10 @@ export default class Server extends MessengerClass {
         Object.keys(_headerBuffer).sort().map((key) => {
             headerBuffer.push(_headerBuffer[key);
         });
-        return headerBuffer.join("");
+
+        return {
+            EncodedPath: headerBuffer.join(""),
+            RawPath: headerBuffer,
+        };
     }
 }
