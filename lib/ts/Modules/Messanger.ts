@@ -51,32 +51,40 @@ export default class Messenger {
              * Tray to decode
              */
             try {
-                data.shift();
                 resolve(JSON.parse(CryptoJS.AES.decrypt(data.join(""), password).toString(CryptoJS.enc.Utf8)));
             } catch (e) {
+                let _data = [].concat(data);
+                while (_data.length > 1) {
+                    _data.shift();
+                    try {
+                        resolve(JSON.parse(CryptoJS.AES.decrypt(_data.join(""), password).toString(CryptoJS.enc.Utf8)));
+                    } catch (e) {
+
+                    }
+                }
                 reject();
                 /*
-                if (
-                    round < this.Settings.MaxErrorCorrections &&
-                    data.length > 1
-                ) {
-                    let counter = 0;
-                    for (let i = 0; i < data.length; i++) {
-                        let _data = [].concat(data);
-                        _data.splice(i, 1);
-                        this.decodeArray(_data, password, round + 1).then(resolve).catch(
-                            () => {
-                                counter++;
-                                if (counter === data.length) {
-                                    reject();
-                                }
-                            }
-                        );
-                    }
-                } else {
-                    reject();
-                }
-                */
+                 if (
+                 round < this.Settings.MaxErrorCorrections &&
+                 data.length > 1
+                 ) {
+                 let counter = 0;
+                 for (let i = 0; i < data.length; i++) {
+                 let _data = [].concat(data);
+                 _data.splice(i, 1);
+                 this.decodeArray(_data, password, round + 1).then(resolve).catch(
+                 () => {
+                 counter++;
+                 if (counter === data.length) {
+                 reject();
+                 }
+                 }
+                 );
+                 }
+                 } else {
+                 reject("stop");
+                 }
+                 */
             }
         });
     }
