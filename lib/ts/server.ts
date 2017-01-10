@@ -197,6 +197,9 @@ export default class Server extends MessengerClass {
                     response.writeHead(this.Settings.SuccessResponseCode, headers);
                     response.end();
                 } else {
+                    response.writeHead(this.Settings.SuccessResponseCode, headers);
+                    response.end();
+
                     this.preprocessor(request).then(
                         (result) => {
                             let IP = request.headers["x-real-ip"];
