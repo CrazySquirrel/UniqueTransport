@@ -5,6 +5,7 @@ import ClientClass from "../../lib/ts/client";
 const Client = new ClientClass({
     ServerAddress: "http://127.0.0.1:8888/",
     ConnectionTimeout: 1000,
+    ReConnectionTimeout: 1000,
     Password: "xmas",
     Reconnections: 2,
     Transports: {

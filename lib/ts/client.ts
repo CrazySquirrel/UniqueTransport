@@ -75,7 +75,7 @@ export default class Client extends MessengerClass {
                 params &&
                 params.Event &&
                 params.Data &&
-                params.Reconnections &&
+                params.Reconnections > 0 &&
                 params.Url &&
                 transportLength
             ) {
@@ -101,9 +101,15 @@ export default class Client extends MessengerClass {
 
                     setTimeout(_reject, this.Settings.ConnectionTimeout);
                 });
+
                 promise.then(resolve).catch(
                     () => {
-                        this.emit(params).then(resolve).catch(reject);
+                        setTimeout(
+                            () => {
+                                this.emit(params).then(resolve).catch(reject);
+                            },
+                            this.Settings.ReConnectionTimeout
+                        );
                     }
                 );
             } else {
