@@ -62,7 +62,7 @@ export default class Server extends MessengerClass {
         setTimeout(
             () => {
                 response.writeHead(this.Settings.ErrorResponseCode, headers);
-                response.end();
+                response.end("");
             },
             this.Settings.ConnectionTimeout
         );
@@ -195,11 +195,8 @@ export default class Server extends MessengerClass {
                         }
                     }
                     response.writeHead(this.Settings.SuccessResponseCode, headers);
-                    response.end();
+                    response.end("");
                 } else {
-                    response.writeHead(this.Settings.SuccessResponseCode, headers);
-                    response.end();
-
                     this.preprocessor(request).then(
                         (result) => {
                             let IP = request.headers["x-real-ip"];
@@ -292,33 +289,33 @@ export default class Server extends MessengerClass {
                                     } else if (_result.Params.Action === "Redirect") {
                                         headers["Location"] = _result.Data.link;
                                         response.writeHead(this.Settings.RedirectResponseCode, headers);
-                                        response.end();
+                                        response.end("");
                                     } else {
                                         response.writeHead(this.Settings.ErrorResponseCode, headers);
-                                        response.end();
+                                        response.end("");
                                     }
                                 }
                             ).catch(
                                 () => {
                                     response.writeHead(this.Settings.ErrorResponseCode, headers);
-                                    response.end();
+                                    response.end("");
                                 }
                             );
                         }
                     ).catch(
                         () => {
                             response.writeHead(this.Settings.ErrorResponseCode, headers);
-                            response.end();
+                            response.end("");
                         }
                     );
                 }
             } else {
                 response.writeHead(this.Settings.ErrorResponseCode, headers);
-                response.end();
+                response.end("");
             }
         } catch (e) {
             response.writeHead(this.Settings.ErrorResponseCode, headers);
-            response.end();
+            response.end("");
         }
     }
 
