@@ -51,8 +51,11 @@ export default class Messenger {
              * Tray to decode
              */
             try {
+                data.shift();
                 resolve(JSON.parse(CryptoJS.AES.decrypt(data.join(""), password).toString(CryptoJS.enc.Utf8)));
             } catch (e) {
+                reject();
+                /*
                 if (
                     round < this.Settings.MaxErrorCorrections &&
                     data.length > 1
@@ -71,8 +74,9 @@ export default class Messenger {
                         );
                     }
                 } else {
-                    reject("stop");
+                    reject();
                 }
+                */
             }
         });
     }
