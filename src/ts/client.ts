@@ -3,8 +3,8 @@
 import ClientClass from "../../lib/ts/client";
 
 const Client = new ClientClass({
-    ServerAddress: "http://127.0.0.1:8888/",
-    ConnectionTimeout: 1000,
+    ServerAddress: location.protocol + "//" + location.host + "/",
+    ConnectionTimeout: 10000,
     ReConnectionTimeout: 1000,
     Password: "xmas",
     Reconnections: 2,
@@ -67,8 +67,7 @@ const Client = new ClientClass({
                 params: true
             }
         }
-    },
-    MaxErrorCorrections: 3,
+    }
 });
 
 Client.emit({
@@ -76,9 +75,13 @@ Client.emit({
     Url: "http://127.0.0.1:8888/test/",
 }).then(
     (result) => {
+        console.log(result);
+    }
+).catch(
+    (e) => {
 
     }
-);
+)
 
 Client.getEncodedLink({
     Url: "http://127.0.0.1:8888/test/",

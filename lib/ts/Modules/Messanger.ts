@@ -25,10 +25,14 @@ export default class Messenger {
 
     public decode(data, password) {
         return new Promise((resolve, reject) => {
+            let DecodedData;
             if (typeof data === "object" && Array.isArray(data)) {
-                this.decodeArray(data, password).then(resolve).catch(reject);
+                DecodedData = this.decodeArray(data, password);
             } else if (typeof data === "string") {
-                this.decodeString(data, password).then(resolve).catch(reject);
+                DecodedData = this.decodeString(data, password);
+            }
+            if (DecodedData) {
+                resolve(DecodedData);
             } else {
                 reject();
             }
@@ -36,57 +40,44 @@ export default class Messenger {
     }
 
     private decodeString(data, password) {
-        return new Promise((resolve, reject) => {
-            try {
-                resolve(JSON.parse(CryptoJS.AES.decrypt(data, password).toString(CryptoJS.enc.Utf8)));
-            } catch (e) {
-                reject();
+        try {
+            data = CryptoJS.AES.decrypt(data, password).toString(CryptoJS.enc.Utf8);
+            if (data) {
+                data = JSON.parse(data);
+                if (data) {
+                    return data;
+                }
             }
-        });
+            return false;
+        } catch (e) {
+            return false;
+        }
     }
 
-    private decodeArray(data, password, round = 0) {
-        return new Promise((resolve, reject) => {
-            /**
-             * Tray to decode
-             */
-            try {
-                resolve(JSON.parse(CryptoJS.AES.decrypt(data.join(""), password).toString(CryptoJS.enc.Utf8)));
-            } catch (e) {
-                let _data = [].concat(data);
-                while (_data.length > 1) {
-                    _data.shift();
-                    try {
-                        resolve(JSON.parse(CryptoJS.AES.decrypt(_data.join(""), password).toString(CryptoJS.enc.Utf8)));
-                    } catch (e) {
-
-                    }
-                }
-                reject();
-                /*
-                 if (
-                 round < this.Settings.MaxErrorCorrections &&
-                 data.length > 1
-                 ) {
-                 let counter = 0;
-                 for (let i = 0; i < data.length; i++) {
-                 let _data = [].concat(data);
-                 _data.splice(i, 1);
-                 this.decodeArray(_data, password, round + 1).then(resolve).catch(
-                 () => {
-                 counter++;
-                 if (counter === data.length) {
-                 reject();
-                 }
-                 }
-                 );
-                 }
-                 } else {
-                 reject("stop");
-                 }
-                 */
+    private decodeArray(data, password) {
+        let DecodedData;
+        /**
+         * Decode data in normal statement
+         */
+        DecodedData = this.decodeString(data.join(""), password);
+        if (DecodedData) {
+            return DecodedData;
+        }
+        /**
+         * Tray to fix one error
+         */
+        for (let i = 0; i < data.length; i++) {
+            DecodedData = [].concat(data);
+            DecodedData.splice(i, 1);
+            DecodedData = this.decodeString(DecodedData.join(""), password);
+            if (DecodedData) {
+                return DecodedData;
             }
-        });
+        }
+        /**
+         * Return false;
+         */
+        return false;
     }
 
     public encode(data, password) {

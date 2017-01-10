@@ -542,6 +542,7 @@ export default class Client extends MessengerClass {
         if (transport.indexOf("params") !== -1) {
             url = this.paramsSubTransport(url, data.shift());
         }
+
         return {
             data,
             url,
@@ -585,7 +586,7 @@ export default class Client extends MessengerClass {
         /**
          * Split data a parts
          */
-        let dataParts = data.match(new RegExp(".{1," + Math.ceil(Math.random() * data.length * 0.5) + "}", "g"));
+        let dataParts = data.match(new RegExp(".{1," + Math.max(Math.ceil(Math.random() * data.length * 0.5), 8) + "}", "g"));
         /**
          * Encode data parts
          */
@@ -617,7 +618,7 @@ export default class Client extends MessengerClass {
         /**
          * Split data a parts
          */
-        let dataParts = data.match(new RegExp(".{1," + Math.ceil(Math.random() * data.length * 0.5) + "}", "g"));
+        let dataParts = data.match(new RegExp(".{1," + Math.max(Math.ceil(Math.random() * data.length * 0.5), 8) + "}", "g"));
         /**
          * Encode data parts
          */
@@ -658,7 +659,7 @@ export default class Client extends MessengerClass {
         /**
          * Split data a parts
          */
-        let dataParts = data.match(new RegExp(".{1," + Math.ceil(Math.random() * data.length * 0.5) + "}", "g"));
+        let dataParts = data.match(new RegExp(".{1," + Math.max(Math.ceil(Math.random() * data.length * 0.5), 8) + "}", "g"));
         /**
          * Encode data parts
          */

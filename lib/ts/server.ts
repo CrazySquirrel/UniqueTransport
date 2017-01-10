@@ -296,14 +296,14 @@ export default class Server extends MessengerClass {
                                     }
                                 }
                             ).catch(
-                                () => {
+                                (e) => {
                                     response.writeHead(this.Settings.ErrorResponseCode, headers);
                                     response.end("");
                                 }
                             );
                         }
                     ).catch(
-                        () => {
+                        (e) => {
                             response.writeHead(this.Settings.ErrorResponseCode, headers);
                             response.end("");
                         }
@@ -485,11 +485,13 @@ export default class Server extends MessengerClass {
                 path.name = "";
             }
 
+            let fullpath = path.dir.split("/").map((item) => {
+                return decodeURIComponent(item);
+            });
+
             return {
-                EncodedPath: path.dir.split("/").map((item) => {
-                    return decodeURIComponent(item);
-                }).join(""),
-                RawPath: path.dir.split("/"),
+                EncodedPath: fullpath.join(""),
+                RawPath: fullpath,
             };
         } else {
             return false;
@@ -565,7 +567,7 @@ export default class Server extends MessengerClass {
         }
         let headerBuffer = [];
         Object.keys(_headerBuffer).sort().map((key) => {
-            headerBuffer.push(_headerBuffer[key);
+            headerBuffer.push(decodeURIComponent(_headerBuffer[key]));
         });
 
         return {

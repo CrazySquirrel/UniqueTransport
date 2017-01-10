@@ -9,15 +9,17 @@ const Server = new ServerClass({
     SuccessResponseCode: 200,
     RedirectResponseCode: 302,
     ErrorResponseCode: 404,
-    NormalRequestHeaders: [],
+    NormalRequestHeaders: [
+        "x-real-ip"
+    ],
+    WriteRequestLog: false,
     SubTransports: {
         path: true,
         name: true,
         params: true,
         header: true,
         body: true,
-    },
-    MaxErrorCorrections: 3,
+    }
 });
 
 Server.on("connect", (data, params) => {
