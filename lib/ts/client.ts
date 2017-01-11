@@ -120,6 +120,7 @@ export default class Client extends MessengerClass {
         return new Promise((resolve, reject) => {
             let onerror = () => {
                 try {
+                    link.href = "";
                     link.parentNode.removeChild(link);
                 } catch (e) {
 
@@ -191,6 +192,7 @@ export default class Client extends MessengerClass {
         return new Promise((resolve, reject) => {
             let onerror = () => {
                 try {
+                    image.src = "";
                     image.parentNode.removeChild(image);
                 } catch (e) {
 
@@ -276,6 +278,8 @@ export default class Client extends MessengerClass {
         return new Promise((resolve, reject) => {
             let onerror = () => {
                 try {
+                    script.src = "";
+
                     script.parentNode.removeChild(script);
 
                     window[params.RawData.Callback] = undefined;
@@ -342,6 +346,8 @@ export default class Client extends MessengerClass {
         return new Promise((resolve, reject) => {
             let onerror = () => {
                 try {
+                    iframe.src = "";
+
                     iframe.parentNode.removeChild(iframe);
 
                     window.removeEventListener("message", listner);
