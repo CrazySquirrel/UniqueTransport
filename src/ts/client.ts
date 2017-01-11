@@ -4,10 +4,10 @@ import ClientClass from "../../lib/ts/client";
 
 const Client = new ClientClass({
     ServerAddress: location.protocol + "//" + location.host + "/",
-    ConnectionTimeout: 10000,
-    ReConnectionTimeout: 1000,
+    ConnectionTimeout: 1000,
+    ReConnectionTimeout: 100,
     Password: "xmas",
-    Reconnections: 2,
+    Reconnections: 100,
     Transports: {
         xhr: {
             HttpMethods: {
@@ -81,7 +81,8 @@ Client.emit({
     (e) => {
 
     }
-)
+);
+
 
 Client.getEncodedLink({
     Url: "http://127.0.0.1:8888/test/",

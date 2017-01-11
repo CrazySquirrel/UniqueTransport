@@ -23,5 +23,12 @@ const Server = new ServerClass({
 });
 
 Server.on("connect", (data, params) => {
-    return "OK";
+    return new Promise((resolve, reject) => {
+        setTimeout(
+            () => {
+                resolve("OK");
+            },
+            10000
+        );
+    });
 });

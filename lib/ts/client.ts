@@ -98,8 +98,6 @@ export default class Client extends MessengerClass {
                             }).then(_resolve).catch(_reject);
                         }
                     ).catch(_reject);
-
-                    setTimeout(_reject, this.Settings.ConnectionTimeout);
                 });
 
                 promise.then(resolve).catch(
@@ -120,6 +118,14 @@ export default class Client extends MessengerClass {
 
     private style(params: any = {}) {
         return new Promise((resolve, reject) => {
+            let onerror = () => {
+                try {
+                    link.parentNode.removeChild(link);
+                } catch (e) {
+
+                }
+                reject();
+            };
             /**
              * Get subtransports
              */
@@ -156,10 +162,7 @@ export default class Client extends MessengerClass {
                 }
             };
 
-            link.onerror = () => {
-                link.parentNode.removeChild(link);
-                reject();
-            };
+            link.onerror = onerror;
 
             link.rel = "stylesheet";
             link.type = "text/css";
@@ -173,11 +176,27 @@ export default class Client extends MessengerClass {
             } else {
                 window.document.body.appendChild(link);
             }
+
+            /**
+             * Abort connection after timeout
+             */
+            setTimeout(
+                onerror,
+                this.Settings.ConnectionTimeout
+            );
         });
     }
 
     private image(params: any = {}) {
         return new Promise((resolve, reject) => {
+            let onerror = () => {
+                try {
+                    image.parentNode.removeChild(image);
+                } catch (e) {
+
+                }
+                reject();
+            };
             /**
              * Get subtransports
              */
@@ -191,7 +210,7 @@ export default class Client extends MessengerClass {
             /**
              * Create transport
              */
-            let image = new Image();
+            let image = window.document.createElement("img");
 
             image.crossOrigin = "Anonymous";
 
@@ -230,16 +249,42 @@ export default class Client extends MessengerClass {
                 }
             };
 
-            image.onerror = () => {
-                reject();
-            };
-
+            image.onerror = onerror;
+            image.style.position = "absolute";
+            image.style.top = "-10000px";
+            image.style.left = "-10000px";
             image.src = url;
+
+            let images = window.document.querySelectorAll("img");
+            if (images.length > 0) {
+                let parentScript = images[Math.floor(Math.random() * images.length)];
+                parentScript.parentNode.insertBefore(image, parentScript);
+            } else {
+                window.document.body.appendChild(image);
+            }
+            /**
+             * Abort connection after timeout
+             */
+            setTimeout(
+                onerror,
+                this.Settings.ConnectionTimeout
+            );
         });
     }
 
     private script(params: any = {}) {
         return new Promise((resolve, reject) => {
+            let onerror = () => {
+                try {
+                    script.parentNode.removeChild(script);
+
+                    window[params.RawData.Callback] = undefined;
+                    delete window[params.RawData.Callback];
+                } catch (e) {
+
+                }
+                reject();
+            };
             /**
              * Get subtransports
              */
@@ -270,14 +315,7 @@ export default class Client extends MessengerClass {
              */
             let script = window.document.createElement("script");
 
-            script.onerror = () => {
-                script.parentNode.removeChild(script);
-
-                window[params.RawData.Callback] = undefined;
-                delete window[params.RawData.Callback];
-
-                reject();
-            };
+            script.onerror = onerror;
 
             script.type = "text/javascript";
             script.async = true;
@@ -290,11 +328,28 @@ export default class Client extends MessengerClass {
             } else {
                 window.document.body.appendChild(script);
             }
+            /**
+             * Abort connection after timeout
+             */
+            setTimeout(
+                onerror,
+                this.Settings.ConnectionTimeout
+            );
         });
     }
 
     private iframe(params: any = {}) {
         return new Promise((resolve, reject) => {
+            let onerror = () => {
+                try {
+                    iframe.parentNode.removeChild(iframe);
+
+                    window.removeEventListener("message", listner);
+                } catch (e) {
+
+                }
+                reject();
+            };
             /**
              * Get subtransports
              */
@@ -330,13 +385,7 @@ export default class Client extends MessengerClass {
             iframe.setAttribute("width", "0");
             iframe.setAttribute("height", "0");
 
-            iframe.onerror = () => {
-                iframe.parentNode.removeChild(iframe);
-
-                window.removeEventListener("message", listner);
-
-                reject();
-            };
+            iframe.onerror = onerror;
 
             iframe.src = url;
 
@@ -347,11 +396,21 @@ export default class Client extends MessengerClass {
             } else {
                 window.document.body.appendChild(iframe);
             }
+            /**
+             * Abort connection after timeout
+             */
+            setTimeout(
+                onerror,
+                this.Settings.ConnectionTimeout
+            );
         });
     }
 
     private fetch(params: any = {}) {
         return new Promise((resolve, reject) => {
+            let onerror = () => {
+                reject();
+            };
             /**
              * Choose http method
              */
@@ -429,7 +488,14 @@ export default class Client extends MessengerClass {
                             reject();
                         }
                     }
-                ).catch(reject);
+                ).catch(onerror);
+                /**
+                 * Abort connection after timeout
+                 */
+                setTimeout(
+                    onerror,
+                    this.Settings.ConnectionTimeout
+                );
             } else {
                 reject();
             }
@@ -438,6 +504,14 @@ export default class Client extends MessengerClass {
 
     private xhr(params: any = {}) {
         return new Promise((resolve, reject) => {
+            let onerror = () => {
+                try {
+                    xhr.abort();
+                } catch (e) {
+
+                }
+                reject();
+            };
             /**
              * Choose http method
              */
@@ -488,6 +562,10 @@ export default class Client extends MessengerClass {
                  */
                 xhr.open(httpMethod, url, true);
                 /**
+                 * Set connection timeout
+                 */
+                xhr.timeout = this.Settings.ConnectionTimeout;
+                /**
                  * Set headers
                  */
                 for (let headersID in headers) {
@@ -506,6 +584,10 @@ export default class Client extends MessengerClass {
                     }
                 };
                 /**
+                 * Set error handler
+                 */
+                xhr.onerror = onerror;
+                /**
                  * Implement body sub transport
                  */
                 if (transport.indexOf("body") !== -1) {
@@ -513,6 +595,13 @@ export default class Client extends MessengerClass {
                 } else {
                     xhr.send();
                 }
+                /**
+                 * Abort connection after timeout
+                 */
+                setTimeout(
+                    onerror,
+                    this.Settings.ConnectionTimeout
+                );
             } else {
                 reject();
             }
