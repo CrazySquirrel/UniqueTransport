@@ -377,7 +377,7 @@ export default class Server extends MessengerClass {
                             ) {
                                 new Promise(
                                     (_resolve, _reject) => {
-                                        _resolve(this.listners["redirect"](_data.data, params));
+                                        _resolve(this.listners["redirect"](_data, params));
                                     }
                                 ).then(
                                     () => {
