@@ -372,10 +372,27 @@ export default class Server extends MessengerClass {
                                 reject();
                             }
                         } else if (params.Action === "Redirect") {
-                            resolve({
-                                Params: params,
-                                Data: _data,
-                            });
+                            if (
+                                this.listners["redirect"]
+                            ) {
+                                new Promise(
+                                    (_resolve, _reject) => {
+                                        _resolve(this.listners["redirect"](_data.data, params));
+                                    }
+                                ).then(
+                                    () => {
+                                        resolve({
+                                            Params: params,
+                                            Data: _data,
+                                        });
+                                    }
+                                ).catch(reject);
+                            } else {
+                                resolve({
+                                    Params: params,
+                                    Data: _data,
+                                });
+                            }
                         } else {
                             reject();
                         }
