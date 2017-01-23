@@ -140,7 +140,7 @@ export default class Client extends MessengerClass {
             /**
              * Create transport
              */
-            let link = window.document.createElement("link");
+            let link: any = window.document.createElement("link");
 
             link.onload = () => {
                 if (link.sheet) {
@@ -216,7 +216,7 @@ export default class Client extends MessengerClass {
 
             image.crossOrigin = "Anonymous";
 
-            image.onload = (result) => {
+            image.onload = (result: any) => {
                 if (
                     result &&
                     result.path
@@ -510,6 +510,8 @@ export default class Client extends MessengerClass {
 
     private xhr(params: any = {}) {
         return new Promise((resolve, reject) => {
+            let xhr;
+
             let onerror = () => {
                 try {
                     xhr.abort();
@@ -562,7 +564,7 @@ export default class Client extends MessengerClass {
                 /**
                  * Create transport
                  */
-                let xhr = new XMLHttpRequest();
+                xhr = new XMLHttpRequest();
                 /**
                  * Open transport connection
                  */

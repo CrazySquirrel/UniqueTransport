@@ -1,6 +1,7 @@
 "use strict";
 
 declare let require: any;
+declare let Buffer: any;
 
 const HTTP = require("http");
 const URL = require("url");
@@ -77,7 +78,7 @@ export default class Server extends MessengerClass {
 
             let host;
 
-            headers["Access-Control-Allow-Origin"] = false;
+            headers["Access-Control-Allow-Origin"] = "";
 
             if (
                 !headers["Access-Control-Allow-Origin"] &&
@@ -221,7 +222,7 @@ export default class Server extends MessengerClass {
                             };
 
                             this.processor(result, params).then(
-                                (_result) => {
+                                (_result: any) => {
                                     if (_result.Params.Action === "Respond") {
                                         let resp = "";
                                         switch (_result.Params.Transport) {
@@ -322,7 +323,7 @@ export default class Server extends MessengerClass {
     private processor(data, params) {
         return new Promise((resolve, reject) => {
             this.decode(data, this.Settings.Password).then(
-                (_data) => {
+                (_data: any) => {
                     if (
                         _data &&
                         _data.data &&
