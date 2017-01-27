@@ -1,7 +1,8 @@
 # Unique Transport
 [![npm version](https://badge.fury.io/js/UniqueTransport.svg)](https://github.com/CrazySquirrel/UniqueTransport)
-[![license](https://img.shields.io/github/license/CrazySquirrel/UniqueTransport.svg)](https://github.com/CrazySquirrel/UniqueTransport)
 [![Github All Releases](https://img.shields.io/github/downloads/CrazySquirrel/UniqueTransport/total.svg)](https://github.com/CrazySquirrel/UniqueTransport)
+[![Travis branch](https://img.shields.io/travis/CrazySquirrel/UniqueTransport/master.svg)](https://github.com/CrazySquirrel/UniqueTransport)
+[![license](https://img.shields.io/github/license/CrazySquirrel/UniqueTransport.svg)](https://github.com/CrazySquirrel/UniqueTransport)
 [![npm version](https://img.shields.io/badge/donate-%E2%99%A5-red.svg)](http://crazysquirrel.ru/support/)
 
 This plugin is designed to deliver a message from Alice to Bob at any cost.
