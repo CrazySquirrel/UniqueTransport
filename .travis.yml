@@ -1,7 +1,9 @@
 language: node_js
 node_js: '6'
 install: npm install
-script: npm run production
+script:
+  - npm run production:client
+  - npm run production:server
 deploy:
   provider: npm
   email: 'info@crazysquirrel.ru'
