@@ -200,6 +200,23 @@ export default class Server extends MessengerClass {
                 } else {
                     this.preprocessor(request).then(
                         (result) => {
+                            /**
+                             * SSP-892 ->
+                             */
+                            if (result.indexOf("debug") !== -1) {
+                                let debug = {
+                                    rawurl: request.url,
+                                    url: URL.parse(request.url, true),
+                                    headers: request.headers,
+                                    result: result,
+                                };
+                                response.writeHead(this.Settings.SuccessResponseCode, headers);
+                                response.end(JSON.stringify(debug));
+                                return false;
+                            }
+                            /**
+                             * <-- SSP-892
+                             */
                             let IP = request.headers["x-real-ip"];
                             if (!IP) {
                                 let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;

@@ -28,7 +28,7 @@ Server.on("connect", (data, params) => {
             () => {
                 resolve("OK");
             },
-            10000
+            100
         );
     });
 });

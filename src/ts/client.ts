@@ -83,7 +83,6 @@ Client.emit({
     }
 );
 
-
 Client.getEncodedLink({
     Url: "http://127.0.0.1:8888/test/",
     Link: "http://ad.yandex.com/"
