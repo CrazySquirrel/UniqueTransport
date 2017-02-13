@@ -75,6 +75,22 @@ export default class Messenger {
             }
         }
         /**
+         * Tray to fix two error
+         */
+        for (let x = 0; x < data.length; x++) {
+            let _data = [].concat(data);
+            _data.splice(x, 1);
+
+            for (let y = 0; y < _data.length; y++) {
+                DecodedData = [].concat(_data);
+                DecodedData.splice(y, 1);
+                DecodedData = this.decodeString(DecodedData.join(""), password);
+                if (DecodedData) {
+                    return DecodedData;
+                }
+            }
+        }
+        /**
          * Return false;
          */
         return false;
