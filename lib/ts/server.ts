@@ -199,7 +199,7 @@ export default class Server extends MessengerClass {
                     response.end("");
                 } else {
                     this.preprocessor(request).then(
-                        (result) => {
+                        (result: any) => {
                             /**
                              * SSP-892 ->
                              */
