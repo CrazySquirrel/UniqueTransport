@@ -1,46 +1,101 @@
 "use strict";
 
+/**
+ * TODO: Fix some request does not work
+ * TODO: Choice variants base on their differences
+ * TODO: Save and load choices locally
+ * TODO: Save, load and merge choices on server
+ * TODO: Keep Choice stat
+ */
+
 declare let fetch: any;
 
 import MessengerClass from "./Modules/Messanger";
 
 export default class Client extends MessengerClass {
 
-    private transports: string[];
+    private choices: any;
 
-    public constructor(settings: any) {
-        super(settings);
+    private rate: number;
 
-        let _transports = ["xhr", "fetch", "iframe", "script", "image", "style"];
-        this.transports = [];
-
-        for (let transport of _transports) {
-            if (
-                this.Settings &&
-                this.Settings.Transports &&
-                this.Settings.Transports[transport] &&
-                typeof this[transport] === "function"
-            ) {
-                this.transports.push(transport);
+    private generateSubtransportChoices(obj, subtransports) {
+        let l = subtransports.length;
+        if (l) {
+            for (let x = 0; x < l; x++) {
+                if (
+                    obj.HttpMethod === "POST" ||
+                    subtransports[x] !== "body"
+                ) {
+                    let _obj = JSON.parse(JSON.stringify(obj));
+                    _obj.SubTransports.push(subtransports[x]);
+                    this.choices.normal.push(_obj);
+                    this.generateSubtransportChoices(_obj, subtransports.slice(x + 1));
+                }
             }
         }
     }
 
-    public getEncodedLink(params: any = {}) {
-        params.Url = params.Url || this.Settings.ServerAddress;
-        params.Data = params.Data || {};
+    public constructor(settings: any) {
+        super(settings);
 
+        this.rate = 0;
+
+        this.choices = {
+            good: [],
+            normal: [],
+            bad: [],
+        };
+
+        this.Settings.ReConnectionTimeout = 100;
+        this.Settings.ConnectionTimeout = 1000;
+
+        for (let Url of this.Settings.Urls) {
+            for (let Transport of Object.keys(this.Settings.Transports)) {
+                if (typeof this[Transport] === "function") {
+                    let SubTransportsKeys = Object.keys(this.Settings.Transports[Transport].SubTransports);
+                    if (this.Settings.Transports[Transport].HttpMethods) {
+                        let HttpMethodsKeys = Object.keys(this.Settings.Transports[Transport].HttpMethods);
+                        for (let HttpMethod of HttpMethodsKeys) {
+                            if (
+                                ["GET", "POST", "PUT", "PATCH"].indexOf(HttpMethod) !== -1
+                            ) {
+                                this.generateSubtransportChoices(
+                                    {
+                                        Url,
+                                        Transport,
+                                        HttpMethod,
+                                        SubTransports: [],
+                                    },
+                                    SubTransportsKeys
+                                );
+                            }
+                        }
+                    } else {
+                        this.generateSubtransportChoices(
+                            {
+                                Url,
+                                Transport,
+                                HttpMethod: "GET",
+                                SubTransports: [],
+                            },
+                            SubTransportsKeys
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    public getEncodedLink(link) {
         return new Promise((resolve, reject) => {
             if (
-                params &&
-                params.Link &&
-                params.Data &&
-                params.Url
+                link
             ) {
-                params.Data.Action = "Redirect";
                 this.encode({
-                    link: params.Link,
-                    data: params.Data,
+                    link: link,
+                    data: {
+                        Action: "Redirect",
+                    },
                 }, this.Settings.Password).then(
                     (_data) => {
                         /**
@@ -50,7 +105,7 @@ export default class Client extends MessengerClass {
                         /**
                          * Get url and data for subtransports
                          */
-                        let dataUrl = this.getDataAndUrl(_data, params.Url, transport);
+                        let dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
 
                         resolve(dataUrl.url);
                     }
@@ -64,27 +119,45 @@ export default class Client extends MessengerClass {
     public emit(params: any = {}) {
         params.Event = params.Event || "";
         params.Data = params.Data || {};
-        params.Reconnections = params.Reconnections || this.Settings.Reconnections;
-        params.Url = params.Url || this.Settings.ServerAddress;
-
-        params.Reconnections--;
 
         return new Promise((resolve, reject) => {
-            let transportLength = this.transports.length;
-            if (
-                params &&
-                params.Event &&
-                params.Data &&
-                params.Reconnections > 0 &&
-                params.Url &&
-                transportLength
-            ) {
+            let choiceType;
+            if (this.rate === 0) {
+                if (this.choices.normal.length > 0) {
+                    choiceType = "normal";
+                } else if (this.choices.bad.length > 0) {
+                    choiceType = "bad";
+                } else {
+                    choiceType = "good";
+                }
+            } else if (this.rate > 0) {
+                if (this.choices.bad.length > 0) {
+                    choiceType = "bad";
+                } else if (this.choices.normal.length > 0) {
+                    choiceType = "normal";
+                } else {
+                    choiceType = "good";
+                }
+            } else if (this.rate < 0) {
+                if (this.choices.good.length > 0) {
+                    choiceType = "good";
+                } else if (this.choices.normal.length > 0) {
+                    choiceType = "normal";
+                } else {
+                    choiceType = "bad";
+                }
+            }
+            let choices = this.choices[choiceType];
+            if (choices.length > 0) {
+                let choiceID = Math.floor(Math.random() * choices.length);
+                let choice = choices[choiceID];
+
                 let promise = new Promise((_resolve, _reject) => {
-                    let transport = this.transports[Math.floor(Math.random() * transportLength)];
+                    let transport = choice.Transport;
                     params.Data.Transport = transport;
                     params.Data.Callback = this.getRandomWord();
                     params.Data.Action = "Respond";
-                    params.Data.Url = params.Url;
+                    params.Data.Url = choice.Url;
 
                     this.encode({
                         event: params.Event,
@@ -94,24 +167,50 @@ export default class Client extends MessengerClass {
                             this[transport]({
                                 EncodedData: _data,
                                 RawData: params.Data,
-                                Url: params.Url,
+                                Choice: choice,
                             }).then(_resolve).catch(_reject);
                         }
                     ).catch(_reject);
                 });
 
-                promise.then(resolve).catch(
-                    () => {
-                        setTimeout(
-                            () => {
-                                this.emit(params).then(resolve).catch(reject);
-                            },
-                            this.Settings.ReConnectionTimeout
-                        );
+                promise.then((result) => {
+                    this.rate++;
+                    this.rate = Math.min(this.rate, 1);
+
+                    if (choiceType === "normal") {
+                        if (this.choices.normal[choiceID]) {
+                            this.choices.good.push(this.choices.normal.splice(choiceID, 1)[0]);
+                        }
+                    } else if (choiceType === "bad") {
+                        if (this.choices.bad[choiceID]) {
+                            this.choices.normal.push(this.choices.bad.splice(choiceID, 1)[0]);
+                        }
                     }
-                );
+
+                    resolve(result);
+                }).catch(() => {
+                    this.rate--;
+                    this.rate = Math.max(this.rate, -1);
+
+                    if (choiceType === "normal") {
+                        if (this.choices.normal[choiceID]) {
+                            this.choices.bad.push(this.choices.normal.splice(choiceID, 1)[0]);
+                        }
+                    } else if (choiceType === "good") {
+                        if (this.choices.good[choiceID]) {
+                            this.choices.bad.push(this.choices.good.splice(choiceID, 1)[0]);
+                        }
+                    }
+
+                    setTimeout(
+                        () => {
+                            this.emit(params).then(resolve).catch(reject);
+                        },
+                        this.Settings.ReConnectionTimeout
+                    );
+                });
             } else {
-                reject();
+                console.error(":(");
             }
         });
     }
@@ -130,11 +229,11 @@ export default class Client extends MessengerClass {
             /**
              * Get subtransports
              */
-            let transport = this.getTransport(["path", "name", "params"], "style");
+            let transport = params.Choice.SubTransports;
             /**
              * Get url and data for subtransports
              */
-            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Url, transport);
+            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
             let url = dataUrl.url;
             let data = dataUrl.data;
             /**
@@ -202,11 +301,11 @@ export default class Client extends MessengerClass {
             /**
              * Get subtransports
              */
-            let transport = this.getTransport(["path", "name", "params"], "image");
+            let transport = params.Choice.SubTransports;
             /**
              * Get url and data for subtransports
              */
-            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Url, transport);
+            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
             let url = dataUrl.url;
             let data = dataUrl.data;
             /**
@@ -292,11 +391,11 @@ export default class Client extends MessengerClass {
             /**
              * Get subtransports
              */
-            let transport = this.getTransport(["path", "name", "params"], "script");
+            let transport = params.Choice.SubTransports;
             /**
              * Get url and data for subtransports
              */
-            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Url, transport);
+            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
             let url = dataUrl.url;
             let data = dataUrl.data;
             /**
@@ -359,11 +458,11 @@ export default class Client extends MessengerClass {
             /**
              * Get subtransports
              */
-            let transport = this.getTransport(["path", "name", "params"], "iframe");
+            let transport = params.Choice.SubTransports;
             /**
              * Get url and data for subtransports
              */
-            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Url, transport);
+            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
             let url = dataUrl.url;
             let data = dataUrl.data;
             /**
@@ -439,16 +538,11 @@ export default class Client extends MessengerClass {
                 /**
                  * Get subtransports
                  */
-                let transport;
-                if (httpMethod === "POST") {
-                    transport = this.getTransport(["path", "name", "params", "header", "body"], "fetch");
-                } else {
-                    transport = this.getTransport(["path", "name", "params", "header"], "fetch");
-                }
+                let transport = params.Choice.SubTransports;
                 /**
                  * Get url and data for subtransports
                  */
-                let dataUrl = this.getDataAndUrl(params.EncodedData, params.Url, transport);
+                let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
                 let url = dataUrl.url;
                 let data = dataUrl.data;
                 /**
@@ -542,16 +636,11 @@ export default class Client extends MessengerClass {
                 /**
                  * Get subtransports
                  */
-                let transport;
-                if (httpMethod === "POST") {
-                    transport = this.getTransport(["path", "name", "params", "header", "body"], "xhr");
-                } else {
-                    transport = this.getTransport(["path", "name", "params", "header"], "xhr");
-                }
+                let transport = params.Choice.SubTransports;
                 /**
                  * Get url and data for subtransports
                  */
-                let dataUrl = this.getDataAndUrl(params.EncodedData, params.Url, transport);
+                let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
                 let url = dataUrl.url;
                 let data = dataUrl.data;
                 /**

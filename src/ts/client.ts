@@ -3,11 +3,10 @@
 import ClientClass from "../../lib/ts/client";
 
 const Client = new ClientClass({
-    ServerAddress: location.protocol + "//" + location.host + "/",
-    ConnectionTimeout: 1000,
-    ReConnectionTimeout: 100,
+    Urls: [
+        "http://localhost:8888/test/"
+    ],
     Password: "xmas",
-    Reconnections: 100,
     Transports: {
         xhr: {
             HttpMethods: {
@@ -70,12 +69,28 @@ const Client = new ClientClass({
     }
 });
 
+setInterval(
+    () => {
+        Client.emit({
+            Event: "connect",
+        }).then(
+            (result) => {
+                //console.log(result);
+            }
+        ).catch(
+            (e) => {
+
+            }
+        );
+    },
+    100
+);
+
 Client.emit({
     Event: "connect",
-    Url: "http://127.0.0.1:8888/test/",
 }).then(
     (result) => {
-        console.log(result);
+        //console.log(result);
     }
 ).catch(
     (e) => {
@@ -83,11 +98,8 @@ Client.emit({
     }
 );
 
-Client.getEncodedLink({
-    Url: "http://127.0.0.1:8888/test/",
-    Link: "http://ad.yandex.com/"
-}).then(
+Client.getEncodedLink("http://ad.yandex.com/").then(
     (url) => {
-        console.log(url);
+        //console.log(url);
     }
 );
