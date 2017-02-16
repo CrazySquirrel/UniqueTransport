@@ -68,7 +68,7 @@ const Client = new ClientClass({
         }
     }
 });
-/*
+
 setInterval(
     () => {
         Client.emit({
@@ -85,7 +85,7 @@ setInterval(
     },
     100
 );
-*/
+
 Client.emit({
     Event: "connect",
 }).then(

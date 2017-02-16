@@ -1,7 +1,6 @@
 "use strict";
 
 /**
- * TODO: Fix some request does not work
  * TODO: Choice variants base on their differences
  * TODO: Save and load choices locally
  * TODO: Save, load and merge choices on server
@@ -244,7 +243,9 @@ export default class Client extends MessengerClass {
                     );
                 });
             } else {
-                console.error(":(");
+                /**
+                 * TODO: Something wrong
+                 */
             }
         });
     }
@@ -575,93 +576,71 @@ export default class Client extends MessengerClass {
                 reject();
             };
             /**
-             * Choose http method
+             * Get subtransports
              */
-            let _httpMethods = ["GET", "POST", "PUT", "PATCH"];
+            let transport = params.Choice.SubTransports;
             /**
-             * Filter http methods by settings
+             * Get url and data for subtransports
              */
-            let httpMethods = [];
-            for (let method of _httpMethods) {
-                if (this.Settings.Transports.fetch.HttpMethods[method]) {
-                    httpMethods.push(method);
-                }
+            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
+            let url = dataUrl.url;
+            let data = dataUrl.data;
+            /**
+             * Implement header sub transport
+             */
+            let headers = {};
+            if (transport.indexOf("header") !== -1) {
+                headers = this.headerSubTransport(data.shift());
             }
             /**
-             * Check existing methods
+             * Set settings base on the transports
              */
-            let httpMethodLength = httpMethods.length;
-            if (httpMethodLength) {
-                let httpMethod = httpMethods[Math.floor(Math.random() * httpMethodLength)];
-                /**
-                 * Get subtransports
-                 */
-                let transport = params.Choice.SubTransports;
-                /**
-                 * Get url and data for subtransports
-                 */
-                let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
-                let url = dataUrl.url;
-                let data = dataUrl.data;
-                /**
-                 * Implement header sub transport
-                 */
-                let headers = {};
-                if (transport.indexOf("header") !== -1) {
-                    headers = this.headerSubTransport(data.shift());
-                }
-                /**
-                 * Set settings base on the transports
-                 */
-                let settings: any = {
-                    method: httpMethod,
-                };
-                /**
-                 * Implement header sub transport
-                 */
-                if (transport.indexOf("header") !== -1) {
-                    settings.headers = headers;
-                }
-                /**
-                 * Implement body sub transport
-                 */
-                if (transport.indexOf("body") !== -1) {
-                    settings.body = data.shift();
-                }
-                /**
-                 * Create request
-                 */
-                fetch(
-                    url,
-                    settings
-                ).then(
-                    (result) => {
-                        if (result.status === 200) {
-                            result.text().then(
-                                (text) => {
-                                    let _data = this.decodeSync(text, this.Settings.Password);
-                                    if (_data) {
-                                        resolve(_data);
-                                    } else {
-                                        reject();
-                                    }
+            let settings: any = {
+                method: params.Choice.HttpMethod,
+            };
+            /**
+             * Implement header sub transport
+             */
+            if (transport.indexOf("header") !== -1) {
+                settings.headers = headers;
+            }
+            /**
+             * Implement body sub transport
+             */
+            if (transport.indexOf("body") !== -1) {
+                settings.body = data.shift();
+            }
+            /**
+             * Create request
+             */
+            fetch(
+                url,
+                settings
+            ).then(
+                (result) => {
+                    if (result.status === 200) {
+                        result.text().then(
+                            (text) => {
+                                let _data = this.decodeSync(text, this.Settings.Password);
+                                if (_data) {
+                                    resolve(_data);
+                                } else {
+                                    reject();
                                 }
-                            ).catch(reject);
-                        } else {
-                            reject();
-                        }
+                            }
+                        ).catch(reject);
+                    } else {
+                        reject();
                     }
-                ).catch(onerror);
-                /**
-                 * Abort connection after timeout
-                 */
-                setTimeout(
-                    onerror,
-                    this.Settings.ConnectionTimeout
-                );
-            } else {
-                reject();
-            }
+                }
+            ).catch(onerror);
+            /**
+             * Abort connection after timeout
+             */
+            setTimeout(
+                onerror,
+                this.Settings.ConnectionTimeout
+            );
         });
     }
 
@@ -681,99 +660,78 @@ export default class Client extends MessengerClass {
                 }
                 reject();
             };
+
             /**
-             * Choose http method
+             * Get subtransports
              */
-            let _httpMethods = ["GET", "POST", "PUT", "PATCH"];
+            let transport = params.Choice.SubTransports;
             /**
-             * Filter http methods by settings
+             * Get url and data for subtransports
              */
-            let httpMethods = [];
-            for (let method of _httpMethods) {
-                if (this.Settings.Transports.xhr.HttpMethods[method]) {
-                    httpMethods.push(method);
-                }
+            let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
+            let url = dataUrl.url;
+            let data = dataUrl.data;
+            /**
+             * Implement header sub transport
+             */
+            let headers = {};
+            if (transport.indexOf("header") !== -1) {
+                headers = this.headerSubTransport(data.shift());
             }
             /**
-             * Check existing methods
+             * Create transport
              */
-            let httpMethodLength = httpMethods.length;
-            if (httpMethodLength) {
-                let httpMethod = httpMethods[Math.floor(Math.random() * httpMethodLength)];
-                /**
-                 * Get subtransports
-                 */
-                let transport = params.Choice.SubTransports;
-                /**
-                 * Get url and data for subtransports
-                 */
-                let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
-                let url = dataUrl.url;
-                let data = dataUrl.data;
-                /**
-                 * Implement header sub transport
-                 */
-                let headers = {};
-                if (transport.indexOf("header") !== -1) {
-                    headers = this.headerSubTransport(data.shift());
-                }
-                /**
-                 * Create transport
-                 */
-                xhr = new XMLHttpRequest();
-                /**
-                 * Open transport connection
-                 */
-                xhr.open(httpMethod, url, true);
-                /**
-                 * Set connection timeout
-                 */
-                xhr.timeout = this.Settings.ConnectionTimeout;
-                /**
-                 * Set headers
-                 */
-                for (let headersID in headers) {
-                    xhr.setRequestHeader(headersID, decodeURIComponent(headers[headersID]));
-                }
-                /**
-                 * Handling status changing
-                 */
-                xhr.onreadystatechange = () => {
-                    if (xhr.readyState === XMLHttpRequest.DONE) {
-                        if (xhr.status === 200) {
-                            let _data = this.decodeSync(xhr.responseText, this.Settings.Password);
-                            if (_data) {
-                                resolve(_data);
-                            } else {
-                                reject();
-                            }
+            xhr = new XMLHttpRequest();
+            /**
+             * Open transport connection
+             */
+            xhr.open(params.Choice.HttpMethod, url, true);
+            /**
+             * Set connection timeout
+             */
+            xhr.timeout = this.Settings.ConnectionTimeout;
+            /**
+             * Set headers
+             */
+            for (let headersID in headers) {
+                xhr.setRequestHeader(headersID, decodeURIComponent(headers[headersID]));
+            }
+            /**
+             * Handling status changing
+             */
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        let _data = this.decodeSync(xhr.responseText, this.Settings.Password);
+                        if (_data) {
+                            resolve(_data);
                         } else {
                             reject();
                         }
+                    } else {
+                        reject();
                     }
-                };
-                /**
-                 * Set error handler
-                 */
-                xhr.onerror = onerror;
-                /**
-                 * Implement body sub transport
-                 */
-                if (transport.indexOf("body") !== -1) {
-                    xhr.send(data.shift());
-                } else {
-                    xhr.send();
                 }
-                /**
-                 * Abort connection after timeout
-                 */
-                setTimeout(
-                    onerror,
-                    this.Settings.ConnectionTimeout
-                );
+            };
+            /**
+             * Set error handler
+             */
+            xhr.onerror = onerror;
+            /**
+             * Implement body sub transport
+             */
+            if (transport.indexOf("body") !== -1) {
+                xhr.send(data.shift());
             } else {
-                reject();
+                xhr.send();
             }
+            /**
+             * Abort connection after timeout
+             */
+            setTimeout(
+                onerror,
+                this.Settings.ConnectionTimeout
+            );
         });
     }
 
