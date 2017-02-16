@@ -8,4 +8,5 @@ node_modules
 *.map
 *.log
 *.tmp
+*.js
 yarn.lock

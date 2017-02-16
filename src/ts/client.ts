@@ -68,7 +68,7 @@ const Client = new ClientClass({
         }
     }
 });
-
+/*
 setInterval(
     () => {
         Client.emit({
@@ -85,12 +85,12 @@ setInterval(
     },
     100
 );
-
+*/
 Client.emit({
     Event: "connect",
 }).then(
     (result) => {
-        //console.log(result);
+        console.log(result);
     }
 ).catch(
     (e) => {
@@ -100,6 +100,6 @@ Client.emit({
 
 Client.getEncodedLink("http://ad.yandex.com/").then(
     (url) => {
-        //console.log(url);
+        console.log(url);
     }
 );

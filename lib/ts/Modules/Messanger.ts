@@ -8,11 +8,19 @@ export default class Messenger {
 
     public Settings: any;
 
+    /**
+     * Create Messanger Super Object
+     * @param settings
+     */
     public constructor(settings: any) {
         this.Settings = settings;
     }
 
-    public getRandomWord() {
+    /**
+     * Get random word
+     * @return string
+     */
+    public getRandomWord(): string {
         let word = CryptoJS.MD5((new Date()).getTime().toString(36) + "-" + Math.round(Math.random() * 1e16).toString(36)).toString().split("");
         for (let i = 0; i < word.length; i++) {
             if (isFinite(parseInt(word[i], 10))) {
@@ -23,23 +31,48 @@ export default class Messenger {
         return word.join("");
     }
 
-    public decode(data, password) {
+    /**
+     * Decode data synchronously
+     * @param data
+     * @param password
+     */
+    public decodeSync(data: any, password: string) {
+        let DecodedData;
+        if (typeof data === "object" && Array.isArray(data)) {
+            DecodedData = this.decodeArray(data, password);
+        } else if (typeof data === "string") {
+            DecodedData = this.decodeString(data, password);
+        }
+        if (DecodedData) {
+            return DecodedData;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Decode data asynchronously
+     * @param data
+     * @param password
+     */
+    public decode(data: any, password: string) {
         return new Promise((resolve, reject) => {
-            let DecodedData;
-            if (typeof data === "object" && Array.isArray(data)) {
-                DecodedData = this.decodeArray(data, password);
-            } else if (typeof data === "string") {
-                DecodedData = this.decodeString(data, password);
-            }
-            if (DecodedData) {
-                resolve(DecodedData);
+            let _data = this.decodeSync(data, password);
+            if (_data) {
+                resolve(_data);
             } else {
                 reject();
             }
         });
     }
 
-    private decodeString(data, password) {
+    /**
+     * Decode data string
+     * @param data
+     * @param password
+     * @return string | boolean
+     */
+    private decodeString(data: string, password: string): string | boolean {
         try {
             data = CryptoJS.AES.decrypt(data, password).toString(CryptoJS.enc.Utf8);
             if (data) {
@@ -54,7 +87,13 @@ export default class Messenger {
         }
     }
 
-    private decodeArray(data, password) {
+    /**
+     * Decode data as array
+     * @param data
+     * @param password
+     * @return string | boolean
+     */
+    private decodeArray(data: string[], password: string): string | boolean {
         let DecodedData;
         /**
          * Decode data in normal statement
@@ -96,13 +135,32 @@ export default class Messenger {
         return false;
     }
 
-    public encode(data, password) {
+    /**
+     * Encode data object synchronously
+     * @param data
+     * @param password
+     */
+    public encodeSync(data: any, password: string) {
+        try {
+            data = JSON.stringify(data);
+            data = CryptoJS.AES.encrypt(data, password).toString();
+            return data;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Encode data object asynchronously
+     * @param data
+     * @param password
+     */
+    public encode(data: any, password: string) {
         return new Promise((resolve, reject) => {
-            try {
-                data = JSON.stringify(data);
-                data = CryptoJS.AES.encrypt(data, password).toString();
-                resolve(data);
-            } catch (e) {
+            let _data = this.encodeSync(data, password);
+            if (_data) {
+                resolve(_data);
+            } else {
                 reject();
             }
         });

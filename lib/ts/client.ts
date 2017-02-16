@@ -18,7 +18,12 @@ export default class Client extends MessengerClass {
 
     private rate: number;
 
-    private generateSubtransportChoices(obj, subtransports) {
+    /**
+     * Generate settings rates
+     * @param obj
+     * @param subtransports
+     */
+    private generateSubtransportChoices(obj: any, subtransports: any): void {
         let l = subtransports.length;
         if (l) {
             for (let x = 0; x < l; x++) {
@@ -35,6 +40,10 @@ export default class Client extends MessengerClass {
         }
     }
 
+    /**
+     * Create Client Object
+     * @param settings
+     */
     public constructor(settings: any) {
         super(settings);
 
@@ -86,36 +95,59 @@ export default class Client extends MessengerClass {
         }
     }
 
-    public getEncodedLink(link) {
-        return new Promise((resolve, reject) => {
-            if (
-                link
-            ) {
-                this.encode({
-                    link: link,
-                    data: {
-                        Action: "Redirect",
-                    },
-                }, this.Settings.Password).then(
-                    (_data) => {
-                        /**
-                         * Get subtransports
-                         */
-                        let transport = this.getTransport(["path", "name", "params"], "base");
-                        /**
-                         * Get url and data for subtransports
-                         */
-                        let dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
+    /**
+     * Encode link synchronously
+     * @param link
+     */
+    public getEncodedLinkSync(link: string): string {
+        if (
+            link
+        ) {
+            let _data = this.encodeSync({
+                link: link,
+                data: {
+                    Action: "Redirect",
+                },
+            }, this.Settings.Password);
 
-                        resolve(dataUrl.url);
-                    }
-                ).catch(reject);
+            if (_data) {
+                /**
+                 * Get subtransports
+                 */
+                let transport = this.getTransport(["path", "name", "params"], "base");
+                /**
+                 * Get url and data for subtransports
+                 */
+                let dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
+
+                return dataUrl.url;
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Encode link asynchronously
+     * @param link
+     */
+    public getEncodedLink(link: string) {
+        return new Promise((resolve, reject) => {
+            let _link = this.getEncodedLinkSync(link);
+            if (_link) {
+                resolve(_link);
             } else {
                 reject();
             }
         });
     }
 
+    /**
+     * Send event and data to the server
+     * @param params
+     */
     public emit(params: any = {}) {
         params.Event = params.Event || "";
         params.Data = params.Data || {};
@@ -159,18 +191,20 @@ export default class Client extends MessengerClass {
                     params.Data.Action = "Respond";
                     params.Data.Url = choice.Url;
 
-                    this.encode({
+                    let _data = this.encodeSync({
                         event: params.Event,
                         data: params.Data,
-                    }, this.Settings.Password).then(
-                        (_data) => {
-                            this[transport]({
-                                EncodedData: _data,
-                                RawData: params.Data,
-                                Choice: choice,
-                            }).then(_resolve).catch(_reject);
-                        }
-                    ).catch(_reject);
+                    }, this.Settings.Password);
+
+                    if (_data) {
+                        this[transport]({
+                            EncodedData: _data,
+                            RawData: params.Data,
+                            Choice: choice,
+                        }).then(_resolve).catch(_reject);
+                    } else {
+                        _reject();
+                    }
                 });
 
                 promise.then((result) => {
@@ -215,6 +249,10 @@ export default class Client extends MessengerClass {
         });
     }
 
+    /**
+     * Style transport
+     * @param params
+     */
     private style(params: any = {}) {
         return new Promise((resolve, reject) => {
             let onerror = () => {
@@ -250,11 +288,12 @@ export default class Client extends MessengerClass {
                                 if (rules) {
                                     let rule = (/content:([^"]*)"([^"]*)"/i).exec(rules[2]);
 
-                                    this.decode(rule[2], this.Settings.Password).then((_data) => {
+                                    let _data = this.decodeSync(rule[2], this.Settings.Password);
+                                    if (_data) {
                                         resolve(_data);
-                                    }).catch(() => {
+                                    } else {
                                         reject();
-                                    });
+                                    }
                                 }
                             }
                         }
@@ -287,6 +326,10 @@ export default class Client extends MessengerClass {
         });
     }
 
+    /**
+     * Image transport
+     * @param params
+     */
     private image(params: any = {}) {
         return new Promise((resolve, reject) => {
             let onerror = () => {
@@ -340,11 +383,12 @@ export default class Client extends MessengerClass {
                         }
                     }
 
-                    this.decode(text, this.Settings.Password).then((_data) => {
+                    let _data = this.decodeSync(text, this.Settings.Password);
+                    if (_data) {
                         resolve(_data);
-                    }).catch(() => {
+                    } else {
                         reject();
-                    });
+                    }
                 } else {
                     reject();
                 }
@@ -373,6 +417,10 @@ export default class Client extends MessengerClass {
         });
     }
 
+    /**
+     * Script transport
+     * @param params
+     */
     private script(params: any = {}) {
         return new Promise((resolve, reject) => {
             let onerror = () => {
@@ -407,11 +455,12 @@ export default class Client extends MessengerClass {
                 window[params.RawData.Callback] = undefined;
                 delete window[params.RawData.Callback];
 
-                this.decode(result, this.Settings.Password).then((_data) => {
+                let _data = this.decodeSync(result, this.Settings.Password);
+                if (_data) {
                     resolve(_data);
-                }).catch(() => {
+                } else {
                     reject();
-                });
+                }
             };
             /**
              * Create transport
@@ -441,6 +490,10 @@ export default class Client extends MessengerClass {
         });
     }
 
+    /**
+     * Iframe transport
+     * @param params
+     */
     private iframe(params: any = {}) {
         return new Promise((resolve, reject) => {
             let onerror = () => {
@@ -473,11 +526,12 @@ export default class Client extends MessengerClass {
 
                 window.removeEventListener("message", listner);
 
-                this.decode(result.data, this.Settings.Password).then((_data) => {
+                let _data = this.decodeSync(result.data, this.Settings.Password);
+                if (_data) {
                     resolve(_data);
-                }).catch(() => {
+                } else {
                     reject();
-                });
+                }
             };
 
             window.addEventListener("message", listner, false);
@@ -511,6 +565,10 @@ export default class Client extends MessengerClass {
         });
     }
 
+    /**
+     * Fetch transport
+     * @param params
+     */
     private fetch(params: any = {}) {
         return new Promise((resolve, reject) => {
             let onerror = () => {
@@ -581,7 +639,12 @@ export default class Client extends MessengerClass {
                         if (result.status === 200) {
                             result.text().then(
                                 (text) => {
-                                    this.decode(text, this.Settings.Password).then(resolve).catch(reject);
+                                    let _data = this.decodeSync(text, this.Settings.Password);
+                                    if (_data) {
+                                        resolve(_data);
+                                    } else {
+                                        reject();
+                                    }
                                 }
                             ).catch(reject);
                         } else {
@@ -602,6 +665,10 @@ export default class Client extends MessengerClass {
         });
     }
 
+    /**
+     * XHR transport
+     * @param params
+     */
     private xhr(params: any = {}) {
         return new Promise((resolve, reject) => {
             let xhr;
@@ -674,7 +741,12 @@ export default class Client extends MessengerClass {
                 xhr.onreadystatechange = () => {
                     if (xhr.readyState === XMLHttpRequest.DONE) {
                         if (xhr.status === 200) {
-                            this.decode(xhr.responseText, this.Settings.Password).then(resolve).catch(reject);
+                            let _data = this.decodeSync(xhr.responseText, this.Settings.Password);
+                            if (_data) {
+                                resolve(_data);
+                            } else {
+                                reject();
+                            }
                         } else {
                             reject();
                         }
@@ -705,7 +777,14 @@ export default class Client extends MessengerClass {
         });
     }
 
-    private getDataAndUrl(data, url, transport) {
+    /**
+     * Insert data into url
+     * @param data
+     * @param url
+     * @param transport
+     * @return {{data: any, url: string}}
+     */
+    private getDataAndUrl(data: any, url: string, transport: string[]): any {
         /**
          * Split data a parts
          */
@@ -735,7 +814,13 @@ export default class Client extends MessengerClass {
         };
     }
 
-    private getTransport(_transports, type) {
+    /**
+     * Get random transport range
+     * @param _transports
+     * @param type
+     * @return {Array}
+     */
+    private getTransport(_transports: string[], type: string): string[] {
         /**
          * Filter sub transports by settings
          */
@@ -768,7 +853,12 @@ export default class Client extends MessengerClass {
         return transport;
     }
 
-    private headerSubTransport(data) {
+    /**
+     * Insert data into headers
+     * @param data
+     * @return {{}}
+     */
+    private headerSubTransport(data: any): any {
         /**
          * Split data a parts
          */
@@ -800,7 +890,13 @@ export default class Client extends MessengerClass {
         return params;
     }
 
-    private paramsSubTransport(url, data) {
+    /**
+     * Insert data into get params
+     * @param url
+     * @param data
+     * @return {string}
+     */
+    private paramsSubTransport(url: string, data: any): string {
         /**
          * Split data a parts
          */
@@ -834,14 +930,26 @@ export default class Client extends MessengerClass {
             }).join("&");
     }
 
-    private nameSubTransport(url, data) {
+    /**
+     * Insert data into name
+     * @param url
+     * @param data
+     * @return {string}
+     */
+    private nameSubTransport(url: string, data: any): string {
         /**
          * Implement name sub transport
          */
         return url + encodeURIComponent(data);
     }
 
-    private pathSubTransport(url, data) {
+    /**
+     * Insert data into url path
+     * @param url
+     * @param data
+     * @return {string}
+     */
+    private pathSubTransport(url: string, data: any): string {
         /**
          * Split data a parts
          */
