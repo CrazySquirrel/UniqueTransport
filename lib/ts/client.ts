@@ -1,7 +1,6 @@
 "use strict";
 
 /**
- * TODO: Choice variants base on their differences
  * TODO: Save and load choices locally
  * TODO: Save, load and merge choices on server
  * TODO: Keep Choice stat
@@ -144,6 +143,151 @@ export default class Client extends MessengerClass {
     }
 
     /**
+     * Calc choise range by difference
+     * @param choice
+     * @param against
+     * @param similar
+     * @return {number}
+     */
+    private getChoiceRange(choice: any, against: any, similar?: any) {
+        let range = 0;
+
+        if (against && against.length > 0) {
+            for (let _choice of against) {
+                if (choice.Url === _choice.Url) {
+                    range--;
+                } else {
+                    range++;
+                }
+
+                if (choice.Transport === _choice.Transport) {
+                    range--;
+                } else {
+                    range++;
+                }
+
+                if (choice.HttpMethod === _choice.HttpMethod) {
+                    range--;
+                } else {
+                    range++;
+                }
+
+                for (let subTransport of choice.SubTransports) {
+                    if (_choice.SubTransports.indexOf(subTransport) !== -1) {
+                        range--;
+                    } else {
+                        range++;
+                    }
+                }
+            }
+        }
+
+        if (similar && similar.length > 0) {
+            for (let _choice of similar) {
+                if (choice.Url === _choice.Url) {
+                    range++;
+                } else {
+                    range--;
+                }
+
+                if (choice.Transport === _choice.Transport) {
+                    range++;
+                } else {
+                    range--;
+                }
+
+                if (choice.HttpMethod === _choice.HttpMethod) {
+                    range++;
+                } else {
+                    range--;
+                }
+
+                for (let subTransport of choice.SubTransports) {
+                    if (_choice.SubTransports.indexOf(subTransport) !== -1) {
+                        range++;
+                    } else {
+                        range--;
+                    }
+                }
+            }
+        }
+
+        return range;
+    }
+
+    /**
+     * Range choises by differences
+     * @param choiceType
+     */
+    private rangeChoises(choiceType: string) {
+        let choices = {
+            good: {},
+            normal: {},
+            bad: {},
+        };
+
+        if (choiceType === "good" && this.choices.good.length > 0) {
+            for (let choice of this.choices.good) {
+                let range = this.getChoiceRange(choice, this.choices.bad);
+                choices.good[range] = choices.good[range] || [];
+                choices.good[range].push(choice);
+            }
+        }
+
+        if (choiceType === "normal" && this.choices.normal.length > 0) {
+            for (let choice of this.choices.normal) {
+                let range = this.getChoiceRange(choice, this.choices.bad, this.choices.good);
+                choices.normal[range] = choices.normal[range] || [];
+                choices.normal[range].push(choice);
+            }
+        }
+
+        if (choiceType === "bad" && this.choices.bad.length > 0) {
+            for (let choice of this.choices.bad) {
+                let range = this.getChoiceRange(choice, this.choices.bad, this.choices.good);
+                choices.bad[range] = choices.bad[range] || [];
+                choices.bad[range].push(choice);
+            }
+        }
+
+        let keys = Object.keys(choices[choiceType]).sort().reverse();
+
+        let _choices = choices[choiceType][keys[0]];
+
+        if (
+            _choices.length === 1 &&
+            keys[1] &&
+            choices[choiceType][keys[1]]
+        ) {
+            _choices = _choices.concat(choices[choiceType][keys[1]]);
+        }
+
+        if (
+            _choices.length === 1
+        ) {
+            return choices[choiceType];
+        } else {
+            return _choices;
+        }
+    }
+
+    /**
+     * Get choice ID
+     * @param choiceType
+     */
+    private getChoiceID(choiceType: string): number {
+        let choices = this.rangeChoises(choiceType);
+        let choice = choices[Math.floor(Math.random() * choices.length)];
+        let l = this.choices[choiceType].length;
+        for (let i = 0; i < l; i++) {
+            if (this.choices[choiceType][i] === choice) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    /**
      * Send event and data to the server
      * @param params
      */
@@ -178,10 +322,9 @@ export default class Client extends MessengerClass {
                     choiceType = "bad";
                 }
             }
-            let choices = this.choices[choiceType];
-            if (choices.length > 0) {
-                let choiceID = Math.floor(Math.random() * choices.length);
-                let choice = choices[choiceID];
+            let choiceID = this.getChoiceID(choiceType);
+            if (choiceID) {
+                let choice = this.choices[choiceType][choiceID];
 
                 let promise = new Promise((_resolve, _reject) => {
                     let transport = choice.Transport;
@@ -243,9 +386,13 @@ export default class Client extends MessengerClass {
                     );
                 });
             } else {
-                /**
-                 * TODO: Something wrong
-                 */
+                if (this.rate === 0) {
+                    this.rate = 1;
+                } else if (this.rate > 0) {
+                    this.rate = -1;
+                } else if (this.rate < 0) {
+                    this.rate = 0;
+                }
             }
         });
     }

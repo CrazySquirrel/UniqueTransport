@@ -24,11 +24,15 @@ const Server = new ServerClass({
 
 Server.on("connect", (data, params) => {
     return new Promise((resolve, reject) => {
-        setTimeout(
-            () => {
-                resolve("OK");
-            },
-            100
-        );
+        if (Math.random() > 0.5) {
+            reject();
+        } else {
+            setTimeout(
+                () => {
+                    resolve("OK");
+                },
+                100
+            );
+        }
     });
 });

@@ -83,7 +83,7 @@ setInterval(
             }
         );
     },
-    100
+    500
 );
 
 Client.emit({
