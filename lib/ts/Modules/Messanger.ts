@@ -1,6 +1,6 @@
 "use strick";
 
-declare var require: any;
+declare let require: any;
 
 const CryptoJS = require("crypto-js");
 

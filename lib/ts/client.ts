@@ -7,6 +7,9 @@
  */
 
 declare let fetch: any;
+declare let require: any;
+
+const CryptoJS = require("crypto-js");
 
 import MessengerClass from "./Modules/Messanger";
 
@@ -17,28 +20,6 @@ export default class Client extends MessengerClass {
     private rate: number;
 
     /**
-     * Generate settings rates
-     * @param obj
-     * @param subtransports
-     */
-    private generateSubtransportChoices(obj: any, subtransports: any): void {
-        let l = subtransports.length;
-        if (l) {
-            for (let x = 0; x < l; x++) {
-                if (
-                    obj.HttpMethod === "POST" ||
-                    subtransports[x] !== "body"
-                ) {
-                    let _obj = JSON.parse(JSON.stringify(obj));
-                    _obj.SubTransports.push(subtransports[x]);
-                    this.choices.normal.push(_obj);
-                    this.generateSubtransportChoices(_obj, subtransports.slice(x + 1));
-                }
-            }
-        }
-    }
-
-    /**
      * Create Client Object
      * @param settings
      */
@@ -47,50 +28,18 @@ export default class Client extends MessengerClass {
 
         this.rate = 0;
 
-        this.choices = {
-            good: [],
-            normal: [],
-            bad: [],
-        };
-
         this.Settings.ReConnectionTimeout = 100;
         this.Settings.ConnectionTimeout = 1000;
 
-        for (let Url of this.Settings.Urls) {
-            for (let Transport of Object.keys(this.Settings.Transports)) {
-                if (typeof this[Transport] === "function") {
-                    let SubTransportsKeys = Object.keys(this.Settings.Transports[Transport].SubTransports);
-                    if (this.Settings.Transports[Transport].HttpMethods) {
-                        let HttpMethodsKeys = Object.keys(this.Settings.Transports[Transport].HttpMethods);
-                        for (let HttpMethod of HttpMethodsKeys) {
-                            if (
-                                ["GET", "POST", "PUT", "PATCH"].indexOf(HttpMethod) !== -1
-                            ) {
-                                this.generateSubtransportChoices(
-                                    {
-                                        Url,
-                                        Transport,
-                                        HttpMethod,
-                                        SubTransports: [],
-                                    },
-                                    SubTransportsKeys
-                                );
-                            }
-                        }
-                    } else {
-                        this.generateSubtransportChoices(
-                            {
-                                Url,
-                                Transport,
-                                HttpMethod: "GET",
-                                SubTransports: [],
-                            },
-                            SubTransportsKeys
-                        );
-                    }
-                }
-            }
+        this.choices = this.loadChoises();
+
+        if (!this.choices) {
+            this.choices = this.generateChoises();
+        } else {
+            this.choices = this.filterChoises();
         }
+
+        console.log(this.choices);
     }
 
     /**
@@ -140,6 +89,266 @@ export default class Client extends MessengerClass {
                 reject();
             }
         });
+    }
+
+    /**
+     * Send event and data to the server
+     * @param params
+     */
+    public emit(params: any = {}) {
+        params.Event = params.Event || "";
+        params.Data = params.Data || {};
+
+        return new Promise((resolve, reject) => {
+            let choiceType;
+            if (this.rate === 0) {
+                if (this.choices.normal.length > 0) {
+                    choiceType = "normal";
+                } else if (this.choices.bad.length > 0) {
+                    choiceType = "bad";
+                } else {
+                    choiceType = "good";
+                }
+            } else if (this.rate > 0) {
+                if (this.choices.bad.length > 0) {
+                    choiceType = "bad";
+                } else if (this.choices.normal.length > 0) {
+                    choiceType = "normal";
+                } else {
+                    choiceType = "good";
+                }
+            } else if (this.rate < 0) {
+                if (this.choices.good.length > 0) {
+                    choiceType = "good";
+                } else if (this.choices.normal.length > 0) {
+                    choiceType = "normal";
+                } else {
+                    choiceType = "bad";
+                }
+            }
+            let choiceID = this.getChoiceID(choiceType);
+            if (choiceID) {
+                let choice = this.choices[choiceType][choiceID];
+
+                let promise = new Promise((_resolve, _reject) => {
+                    let transport = choice.Transport;
+                    params.Data.Transport = transport;
+                    params.Data.Callback = this.getRandomWord();
+                    params.Data.Action = "Respond";
+                    params.Data.Url = choice.Url;
+
+                    let _data = this.encodeSync({
+                        event: params.Event,
+                        data: params.Data,
+                    }, this.Settings.Password);
+
+                    if (_data) {
+                        this[transport]({
+                            EncodedData: _data,
+                            RawData: params.Data,
+                            Choice: choice,
+                        }).then(_resolve).catch(_reject);
+                    } else {
+                        _reject();
+                    }
+                });
+
+                promise.then((result) => {
+                    this.rate++;
+                    this.rate = Math.min(this.rate, 1);
+
+                    if (choiceType === "normal") {
+                        if (this.choices.normal[choiceID]) {
+                            this.choices.good.push(this.choices.normal.splice(choiceID, 1)[0]);
+                        }
+                    } else if (choiceType === "bad") {
+                        if (this.choices.bad[choiceID]) {
+                            this.choices.normal.push(this.choices.bad.splice(choiceID, 1)[0]);
+                        }
+                    }
+
+                    this.saveChoises();
+
+                    resolve(result);
+                }).catch(() => {
+                    this.rate--;
+                    this.rate = Math.max(this.rate, -1);
+
+                    if (choiceType === "normal") {
+                        if (this.choices.normal[choiceID]) {
+                            this.choices.bad.push(this.choices.normal.splice(choiceID, 1)[0]);
+                        }
+                    } else if (choiceType === "good") {
+                        if (this.choices.good[choiceID]) {
+                            this.choices.bad.push(this.choices.good.splice(choiceID, 1)[0]);
+                        }
+                    }
+
+                    this.saveChoises();
+
+                    setTimeout(
+                        () => {
+                            this.emit(params).then(resolve).catch(reject);
+                        },
+                        this.Settings.ReConnectionTimeout
+                    );
+                });
+            } else {
+                if (this.rate === 0) {
+                    this.rate = 1;
+                } else if (this.rate > 0) {
+                    this.rate = -1;
+                } else if (this.rate < 0) {
+                    this.rate = 0;
+                }
+            }
+        });
+    }
+
+    /**
+     * Generate settings rates
+     * @param choices
+     * @param obj
+     * @param subtransports
+     */
+    private generateSubtransportChoices(choices: any, obj: any, subtransports: any): void {
+        let l = subtransports.length;
+        if (l) {
+            for (let x = 0; x < l; x++) {
+                if (
+                    obj.HttpMethod === "POST" ||
+                    subtransports[x] !== "body"
+                ) {
+                    let _obj = JSON.parse(JSON.stringify(obj));
+                    _obj.SubTransports.push(subtransports[x]);
+                    choices.normal.push(_obj);
+                    this.generateSubtransportChoices(choices, _obj, subtransports.slice(x + 1));
+                }
+            }
+        }
+    }
+
+    private ifChoiseIn(choice, choices) {
+        for (let _choice of choices) {
+            if (
+                choice.Url === _choice.Url &&
+                choice.Transport === _choice.Transport &&
+                choice.HttpMethod === _choice.HttpMethod &&
+                choice.SubTransports.length === _choice.SubTransports.length
+            ) {
+                let isequal = choice.SubTransports.every((element) => {
+                    return _choice.SubTransports.indexOf(element) !== -1;
+                });
+                if (isequal) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private filterChoises() {
+        let _choices = this.generateChoises();
+
+        let choices = {
+            good: [],
+            normal: [],
+            bad: [],
+        };
+
+        let l = _choices.normal.length;
+
+        for (let i = 0; i < l; i++) {
+            let choice = _choices.normal[i];
+
+            if (this.ifChoiseIn(choice, this.choices.good)) {
+                choices.good.push(choice);
+            } else if (this.ifChoiseIn(choice, this.choices.bad)) {
+                choices.bad.push(choice);
+            } else {
+                choices.normal.push(choice);
+            }
+        }
+
+        return choices;
+    }
+
+    /**
+     * Generate choises
+     */
+    private generateChoises() {
+        let choices = {
+            good: [],
+            normal: [],
+            bad: [],
+        };
+
+        for (let Url of this.Settings.Urls) {
+            for (let Transport of Object.keys(this.Settings.Transports)) {
+                if (typeof this[Transport] === "function") {
+                    let SubTransportsKeys = Object.keys(this.Settings.Transports[Transport].SubTransports);
+                    if (this.Settings.Transports[Transport].HttpMethods) {
+                        let HttpMethodsKeys = Object.keys(this.Settings.Transports[Transport].HttpMethods);
+                        for (let HttpMethod of HttpMethodsKeys) {
+                            if (
+                                ["GET", "POST", "PUT", "PATCH"].indexOf(HttpMethod) !== -1
+                            ) {
+                                this.generateSubtransportChoices(
+                                    choices,
+                                    {
+                                        Url,
+                                        Transport,
+                                        HttpMethod,
+                                        SubTransports: [],
+                                    },
+                                    SubTransportsKeys
+                                );
+                            }
+                        }
+                    } else {
+                        this.generateSubtransportChoices(
+                            choices,
+                            {
+                                Url,
+                                Transport,
+                                HttpMethod: "GET",
+                                SubTransports: [],
+                            },
+                            SubTransportsKeys
+                        );
+                    }
+                }
+            }
+        }
+
+        return choices;
+    }
+
+    /**
+     * Save choises
+     */
+    private saveChoises() {
+        try {
+            let choises = this.encodeSync(this.choices, this.Settings.Password);
+            if (choises) {
+                window.localStorage.setItem(CryptoJS.MD5("choices").toString(), choises);
+            }
+        } catch (e) {
+
+        }
+    }
+
+    /**
+     * Load choises
+     */
+    private loadChoises() {
+        try {
+            return this.decodeSync(window.localStorage.getItem(CryptoJS.MD5("choices").toString()), this.Settings.Password);
+        } catch (e) {
+
+        }
+        return null;
     }
 
     /**
@@ -287,115 +496,6 @@ export default class Client extends MessengerClass {
         return 0;
     }
 
-    /**
-     * Send event and data to the server
-     * @param params
-     */
-    public emit(params: any = {}) {
-        params.Event = params.Event || "";
-        params.Data = params.Data || {};
-
-        return new Promise((resolve, reject) => {
-            let choiceType;
-            if (this.rate === 0) {
-                if (this.choices.normal.length > 0) {
-                    choiceType = "normal";
-                } else if (this.choices.bad.length > 0) {
-                    choiceType = "bad";
-                } else {
-                    choiceType = "good";
-                }
-            } else if (this.rate > 0) {
-                if (this.choices.bad.length > 0) {
-                    choiceType = "bad";
-                } else if (this.choices.normal.length > 0) {
-                    choiceType = "normal";
-                } else {
-                    choiceType = "good";
-                }
-            } else if (this.rate < 0) {
-                if (this.choices.good.length > 0) {
-                    choiceType = "good";
-                } else if (this.choices.normal.length > 0) {
-                    choiceType = "normal";
-                } else {
-                    choiceType = "bad";
-                }
-            }
-            let choiceID = this.getChoiceID(choiceType);
-            if (choiceID) {
-                let choice = this.choices[choiceType][choiceID];
-
-                let promise = new Promise((_resolve, _reject) => {
-                    let transport = choice.Transport;
-                    params.Data.Transport = transport;
-                    params.Data.Callback = this.getRandomWord();
-                    params.Data.Action = "Respond";
-                    params.Data.Url = choice.Url;
-
-                    let _data = this.encodeSync({
-                        event: params.Event,
-                        data: params.Data,
-                    }, this.Settings.Password);
-
-                    if (_data) {
-                        this[transport]({
-                            EncodedData: _data,
-                            RawData: params.Data,
-                            Choice: choice,
-                        }).then(_resolve).catch(_reject);
-                    } else {
-                        _reject();
-                    }
-                });
-
-                promise.then((result) => {
-                    this.rate++;
-                    this.rate = Math.min(this.rate, 1);
-
-                    if (choiceType === "normal") {
-                        if (this.choices.normal[choiceID]) {
-                            this.choices.good.push(this.choices.normal.splice(choiceID, 1)[0]);
-                        }
-                    } else if (choiceType === "bad") {
-                        if (this.choices.bad[choiceID]) {
-                            this.choices.normal.push(this.choices.bad.splice(choiceID, 1)[0]);
-                        }
-                    }
-
-                    resolve(result);
-                }).catch(() => {
-                    this.rate--;
-                    this.rate = Math.max(this.rate, -1);
-
-                    if (choiceType === "normal") {
-                        if (this.choices.normal[choiceID]) {
-                            this.choices.bad.push(this.choices.normal.splice(choiceID, 1)[0]);
-                        }
-                    } else if (choiceType === "good") {
-                        if (this.choices.good[choiceID]) {
-                            this.choices.bad.push(this.choices.good.splice(choiceID, 1)[0]);
-                        }
-                    }
-
-                    setTimeout(
-                        () => {
-                            this.emit(params).then(resolve).catch(reject);
-                        },
-                        this.Settings.ReConnectionTimeout
-                    );
-                });
-            } else {
-                if (this.rate === 0) {
-                    this.rate = 1;
-                } else if (this.rate > 0) {
-                    this.rate = -1;
-                } else if (this.rate < 0) {
-                    this.rate = 0;
-                }
-            }
-        });
-    }
 
     /**
      * Style transport
