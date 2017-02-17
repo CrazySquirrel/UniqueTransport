@@ -1,11 +1,5 @@
 "use strict";
 
-/**
- * TODO: Save and load choices locally
- * TODO: Save, load and merge choices on server
- * TODO: Keep Choice stat
- */
-
 declare let fetch: any;
 declare let require: any;
 
