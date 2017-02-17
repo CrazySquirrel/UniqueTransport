@@ -7,6 +7,8 @@ let karmaConfig = require('./karma.base.conf');
 
 karmaConfig.frameworks = ['jasmine', 'jasmine-matchers', 'source-map-support'];
 
+karmaConfig.coverageReporter.dir = "./doc/coverage/client";
+
 karmaConfig.webpack = {
   module: webpackConfig.module,
   resolve: webpackConfig.resolve
