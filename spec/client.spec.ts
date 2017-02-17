@@ -97,7 +97,7 @@ describe("UniqueTransport:Client", () => {
 
     let promises = [];
 
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 100; i++) {
       promises.push(Client.emit({
         Debug: true
       }));
