@@ -16,10 +16,6 @@ const baseHeaders = {
   "Access-Control-Allow-Credentials": true,
 };
 
-if (!Promise) {
-  Promise = require("promise-polyfill");
-}
-
 import MessengerClass from "./Modules/Messanger";
 
 export default class Server extends MessengerClass {

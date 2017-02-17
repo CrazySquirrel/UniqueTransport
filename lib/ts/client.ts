@@ -10,8 +10,8 @@ declare var window: IWindow;
 declare let fetch: any;
 declare let require: any;
 
-if (!Promise) {
-  Promise = require("promise-polyfill");
+if (!window.Promise) {
+  window.Promise = require("promise-polyfill");
 }
 
 const CryptoJS = require("crypto-js");
