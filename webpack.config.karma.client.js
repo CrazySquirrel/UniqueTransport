@@ -1,6 +1,6 @@
 "use strict";
 
-let webpack = require("./webpack.config.base");
+let webpack = require("./webpack.config.karma.base");
 
 webpack.entry = {
   "./lib/js/client": ["./lib/ts/client.ts"],

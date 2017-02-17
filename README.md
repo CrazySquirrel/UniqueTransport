@@ -1,15 +1,19 @@
+
 # Unique Transport
+
 [![npm version](https://badge.fury.io/js/UniqueTransport.svg)](https://github.com/CrazySquirrel/UniqueTransport)
-[![Github All Releases](https://img.shields.io/github/downloads/CrazySquirrel/UniqueTransport/total.svg)](https://github.com/CrazySquirrel/UniqueTransport)
-[![Travis branch](https://img.shields.io/travis/CrazySquirrel/UniqueTransport/master.svg)](https://github.com/CrazySquirrel/UniqueTransport)
-[![license](https://img.shields.io/github/license/CrazySquirrel/UniqueTransport.svg)](https://github.com/CrazySquirrel/UniqueTransport)
-[![npm version](https://img.shields.io/badge/donate-%E2%99%A5-red.svg)](http://crazysquirrel.ru/support/)
+[![Code Climate](https://codeclimate.com/github/CrazySquirrel/UniqueTransport/badges/gpa.svg)](https://codeclimate.com/github/CrazySquirrel/UniqueTransport)
+[![Test Coverage](https://codeclimate.com/github/CrazySquirrel/UniqueTransport/badges/coverage.svg)](https://codeclimate.com/github/CrazySquirrel/UniqueTransport/coverage)
+[![Issue Count](https://codeclimate.com/github/CrazySquirrel/UniqueTransport/badges/issue_count.svg)](https://codeclimate.com/github/CrazySquirrel/UniqueTransport)
+[![Donate](https://img.shields.io/badge/donate-%E2%99%A5-red.svg)](http://crazysquirrel.ru/support/)
 
 This plugin is designed to deliver a message from Alice to Bob at any cost.
 
 ## Description
 
-The basic idea of the script is that there are two devices (client Alice and the server Bob). Alice needs to send a message to Bob and get his data. While there is a third party that monitors the traffic between Alice and Bob and does some queries.
+The basic idea of the script is that there are two devices (client Alice and the server Bob).
+Alice needs to send a message to Bob and get his data. While there is a third party that
+monitors the traffic between Alice and Bob and does some queries.
 
 Thus to send the message using multiple channels:
 
@@ -23,7 +27,9 @@ Thus to send the message using multiple channels:
 Channel transmission method and transmission parts data are selected randomly. Data requests are performed until.
 
 ## Build
+
 The repository contains pre-compiled files, but if you want to add your files and compile, then run the following commands in the repository folder.
+
 * npm install
 * npm run production
 

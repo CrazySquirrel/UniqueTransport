@@ -1,6 +1,7 @@
 .idea
 doc
 dist
+lib/*.js
 node_modules
 *.log
 *.xml
@@ -8,5 +9,4 @@ node_modules
 *.map
 *.log
 *.tmp
-*.js
 yarn.lock
