@@ -2,12 +2,10 @@ language: node_js
 node_js: '6'
 install: npm install
 script:
-  - npm run development:client
-  - npm run development:server
-  - node ./dist/js/server.js &
-  - npm run karma:client
   - npm run production:client
   - npm run production:server
+  - node ./dist/js/server.js &
+  - npm run karma:client
 after_success:
   - npm install -g codeclimate-test-reporter
   - codeclimate-test-reporter < doc/coverage/client/report-lcov/lcov.info
