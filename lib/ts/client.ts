@@ -10,7 +10,6 @@ declare let window: IWindow;
 declare let global: any;
 declare let fetch: any;
 declare let require: any;
-declare let location: any;
 
 let root: any;
 
@@ -26,21 +25,6 @@ if (typeof window === "undefined") {
 
 if (!root.Promise) {
   root.Promise = require("promise-polyfill");
-}
-
-if (typeof location === "undefined") {
-  location = {
-    hash: "",
-    search: "",
-    pathname: "/",
-    port: "",
-    hostname: "adblock.ssp.rambler.ru",
-    host: "adblock.ssp.rambler.ru",
-    protocol: "http:",
-    origin: "http://adblock.ssp.rambler.ru",
-    href: "http://adblock.ssp.rambler.ru/",
-    ancestorOrigins: {}
-  };
 }
 
 const CryptoJS = require("crypto-js");
