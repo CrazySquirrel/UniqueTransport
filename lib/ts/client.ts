@@ -27,6 +27,10 @@ if (!root.Promise) {
   root.Promise = require("promise-polyfill");
 }
 
+if (typeof root.location === "undefined") {
+  root.location = {};
+}
+
 const CryptoJS = require("crypto-js");
 
 import MessengerClass from "./Modules/Messanger";
@@ -39,7 +43,7 @@ export default class Client extends MessengerClass {
 
   private defaultSettings: any = {
     Urls: [
-      location.origin + "/"
+      root.location.origin + "/"
     ],
     Password: "xmas",
     ReConnectionTimeout: 100,
