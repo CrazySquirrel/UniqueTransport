@@ -1,7 +1,22 @@
 "use strict";
 
+/**
+ * Import interfaces
+ */
+import IWindow from "../../interfaces/IWindow";
+/**
+ * Declare window interface
+ */
+declare let window: IWindow;
+declare let global: any;
 declare let require: any;
 declare let Buffer: any;
+
+window = window || global;
+
+if (!window.Promise) {
+  window.Promise = require("promise-polyfill");
+}
 
 const HTTP = require("http");
 const URL = require("url");

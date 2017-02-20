@@ -6,9 +6,12 @@ import IWindow from "../../interfaces/IWindow";
 /**
  * Declare window interface
  */
-declare var window: IWindow;
+declare let window: IWindow;
+declare let global: any;
 declare let fetch: any;
 declare let require: any;
+
+window = window || global;
 
 if (!window.Promise) {
   window.Promise = require("promise-polyfill");
