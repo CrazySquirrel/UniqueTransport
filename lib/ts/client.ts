@@ -249,6 +249,9 @@ export default class Client extends MessengerClass {
 
           this.saveChoises();
 
+          this.Settings.ConnectionTimeout = Client.defaultSettings.ConnectionTimeout;
+          this.Settings.ReConnectionTimeout = Client.defaultSettings.ReConnectionTimeout;
+
           resolve(result);
         }).catch(() => {
           this.rate--;
@@ -272,6 +275,9 @@ export default class Client extends MessengerClass {
               },
               this.Settings.ReConnectionTimeout
           );
+
+          this.Settings.ConnectionTimeout = this.Settings.ConnectionTimeout * 2;
+          this.Settings.ReConnectionTimeout = this.Settings.ReConnectionTimeout * 2;
         });
       } else {
         if (this.rate === 0) {
