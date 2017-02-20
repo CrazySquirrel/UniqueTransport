@@ -262,8 +262,8 @@ export default class Client extends MessengerClass {
 
           this.saveChoises();
 
-          this.Settings.ConnectionTimeout = Client.defaultSettings.ConnectionTimeout;
-          this.Settings.ReConnectionTimeout = Client.defaultSettings.ReConnectionTimeout;
+          this.Settings.ConnectionTimeout = this.defaultSettings.ConnectionTimeout;
+          this.Settings.ReConnectionTimeout = this.defaultSettings.ReConnectionTimeout;
 
           resolve(result);
         }).catch(() => {
