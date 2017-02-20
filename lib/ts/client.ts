@@ -11,10 +11,20 @@ declare let global: any;
 declare let fetch: any;
 declare let require: any;
 
-window = window || global;
+let root: any;
 
-if (!window.Promise) {
-  window.Promise = require("promise-polyfill");
+if (typeof window === "undefined") {
+  if (typeof global !== "undefined") {
+    root = global;
+  } else {
+    root = {};
+  }
+} else {
+  root = window;
+}
+
+if (!root.Promise) {
+  root.Promise = require("promise-polyfill");
 }
 
 const CryptoJS = require("crypto-js");
