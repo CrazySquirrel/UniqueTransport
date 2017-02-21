@@ -69,6 +69,8 @@ export default class Server extends MessengerClass {
       "accept-language",
       "cookie",
       "upgrade-insecure-requests",
+      "x-real-ip",
+      "x-real-host",
     ].concat(this.Settings.NormalRequestHeaders || []);
 
     if (this.Settings.WriteRequestLog) {
@@ -110,6 +112,40 @@ export default class Server extends MessengerClass {
       let host;
 
       headers["Access-Control-Allow-Origin"] = "";
+
+      if (
+          !headers["Access-Control-Allow-Origin"] &&
+          request.headers["x-real-host"]
+      ) {
+        let origin;
+
+        if (request.headers["x-real-host"].indexOf("http") === -1) {
+          origin = URL.parse("https://" + request.headers["x-real-host"]);
+        } else {
+          origin = URL.parse(request.headers["x-real-host"]);
+        }
+
+        if (
+            origin &&
+            origin.hostname
+        ) {
+          host = origin.hostname;
+
+          headers["Access-Control-Allow-Origin"] = "";
+
+          if (origin.protocol) {
+            headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+          }
+
+          if (origin.hostname) {
+            headers["Access-Control-Allow-Origin"] += origin.hostname;
+          }
+
+          if (origin.port) {
+            headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+          }
+        }
+      }
 
       if (
           !headers["Access-Control-Allow-Origin"] &&
