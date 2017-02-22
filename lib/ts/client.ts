@@ -196,32 +196,7 @@ export default class Client extends MessengerClass {
     }
 
     return new Promise((resolve, reject) => {
-      let choiceType;
-      if (this.rate === 0) {
-        if (this.choices.normal.length > 0) {
-          choiceType = "normal";
-        } else if (this.choices.bad.length > 0) {
-          choiceType = "bad";
-        } else {
-          choiceType = "good";
-        }
-      } else if (this.rate > 0) {
-        if (this.choices.bad.length > 0) {
-          choiceType = "bad";
-        } else if (this.choices.normal.length > 0) {
-          choiceType = "normal";
-        } else {
-          choiceType = "good";
-        }
-      } else if (this.rate < 0) {
-        if (this.choices.good.length > 0) {
-          choiceType = "good";
-        } else if (this.choices.normal.length > 0) {
-          choiceType = "normal";
-        } else {
-          choiceType = "bad";
-        }
-      }
+      let choiceType = this.getChoiseType(this.rate, this.choices);
       let choiceID = this.getChoiceID(choiceType);
       if (typeof choiceID === "number") {
         let choice = this.choices[choiceType][choiceID];

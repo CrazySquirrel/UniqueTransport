@@ -205,4 +205,37 @@ export default class Messenger {
       }
     });
   }
+
+  /**
+   * Get choise type based on the rate
+   */
+  public getChoiseType(rate: any, choices: any): string {
+    let choiceType;
+    if (rate === 0) {
+      if (choices.normal.length > 0) {
+        choiceType = "normal";
+      } else if (choices.bad.length > 0) {
+        choiceType = "bad";
+      } else {
+        choiceType = "good";
+      }
+    } else if (rate > 0) {
+      if (choices.bad.length > 0) {
+        choiceType = "bad";
+      } else if (choices.normal.length > 0) {
+        choiceType = "normal";
+      } else {
+        choiceType = "good";
+      }
+    } else if (rate < 0) {
+      if (choices.good.length > 0) {
+        choiceType = "good";
+      } else if (choices.normal.length > 0) {
+        choiceType = "normal";
+      } else {
+        choiceType = "bad";
+      }
+    }
+    return choiceType;
+  }
 }
