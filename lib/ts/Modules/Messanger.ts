@@ -70,7 +70,6 @@ export default class Messenger {
     return settings;
   }
 
-
   /**
    * Decode data synchronously
    * @param data
@@ -104,6 +103,227 @@ export default class Messenger {
         reject();
       }
     });
+  }
+
+  /**
+   * Encode data object synchronously
+   * @param data
+   * @param password
+   */
+  public encodeSync(data: any, password: string) {
+    try {
+      data = JSON.stringify(data);
+      data = CryptoJS.AES.encrypt(data, password).toString();
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Encode data object asynchronously
+   * @param data
+   * @param password
+   */
+  public encode(data: any, password: string) {
+    return new Promise((resolve, reject) => {
+      let _data = this.encodeSync(data, password);
+      if (_data) {
+        resolve(_data);
+      } else {
+        reject();
+      }
+    });
+  }
+
+  /**
+   * Get choise type based on the rate
+   */
+  public getChoiseType(rate: any, choices: any): string {
+    let choiceType;
+    if (rate === 0) {
+      if (choices.normal.length > 0) {
+        choiceType = "normal";
+      } else if (choices.bad.length > 0) {
+        choiceType = "bad";
+      } else {
+        choiceType = "good";
+      }
+    } else if (rate > 0) {
+      if (choices.bad.length > 0) {
+        choiceType = "bad";
+      } else if (choices.normal.length > 0) {
+        choiceType = "normal";
+      } else {
+        choiceType = "good";
+      }
+    } else if (rate < 0) {
+      if (choices.good.length > 0) {
+        choiceType = "good";
+      } else if (choices.normal.length > 0) {
+        choiceType = "normal";
+      } else {
+        choiceType = "bad";
+      }
+    }
+    return choiceType;
+  }
+
+  /**
+   * Calc choise range by difference
+   * @param choice
+   * @param against
+   * @param similar
+   * @return {number}
+   */
+  public getChoiceRange(choice: any, against: any, similar?: any) {
+    let range = 0;
+
+    if (against && against.length > 0) {
+      for (let _choice of against) {
+        for (let prop in choice) {
+          if (choice.hasOwnProperty(prop)) {
+            if (
+                typeof choice[prop] === "boolean" ||
+                typeof choice[prop] === "string" ||
+                typeof choice[prop] === "number" ||
+                typeof choice[prop] === "function"
+            ) {
+              if (choice.Url === _choice.Url) {
+                range--;
+              } else {
+                range++;
+              }
+            } else if (
+                typeof choice[prop] === "object" &&
+                Array.isArray(choice[prop])
+            ) {
+              for (let _v of choice[prop]) {
+                if (_choice[prop].indexOf(_v) !== -1) {
+                  range--;
+                } else {
+                  range++;
+                }
+              }
+            } else {
+              /**
+               * TODO: unimplemented type
+               */
+            }
+          }
+        }
+      }
+    }
+
+    if (similar && similar.length > 0) {
+      for (let _choice of similar) {
+        for (let prop in choice) {
+          if (choice.hasOwnProperty(prop)) {
+            if (
+                typeof choice[prop] === "boolean" ||
+                typeof choice[prop] === "string" ||
+                typeof choice[prop] === "number" ||
+                typeof choice[prop] === "function"
+            ) {
+              if (choice.Url === _choice.Url) {
+                range++;
+              } else {
+                range--;
+              }
+            } else if (
+                typeof choice[prop] === "object" &&
+                Array.isArray(choice[prop])
+            ) {
+              for (let _v of choice[prop]) {
+                if (_choice[prop].indexOf(_v) !== -1) {
+                  range++;
+                } else {
+                  range--;
+                }
+              }
+            } else {
+              /**
+               * TODO: unimplemented type
+               */
+            }
+          }
+        }
+      }
+    }
+
+    return range;
+  }
+
+  /**
+   * Range choises by differences
+   * @param choiceType
+   */
+  public rangeChoises(choiceType: string, sourceChoices: any) {
+    let choices = {
+      good: {},
+      normal: {},
+      bad: {},
+    };
+
+    if (choiceType === "good" && sourceChoices.good.length > 0) {
+      for (let choice of sourceChoices.good) {
+        let range = this.getChoiceRange(choice, sourceChoices.bad);
+        choices.good[range] = choices.good[range] || [];
+        choices.good[range].push(choice);
+      }
+    }
+
+    if (choiceType === "normal" && sourceChoices.normal.length > 0) {
+      for (let choice of sourceChoices.normal) {
+        let range = this.getChoiceRange(choice, sourceChoices.bad, sourceChoices.good);
+        choices.normal[range] = choices.normal[range] || [];
+        choices.normal[range].push(choice);
+      }
+    }
+
+    if (choiceType === "bad" && sourceChoices.bad.length > 0) {
+      for (let choice of sourceChoices.bad) {
+        let range = this.getChoiceRange(choice, sourceChoices.bad, sourceChoices.good);
+        choices.bad[range] = choices.bad[range] || [];
+        choices.bad[range].push(choice);
+      }
+    }
+
+    let keys = Object.keys(choices[choiceType]).sort().reverse();
+
+    let _choices = choices[choiceType][keys[0]];
+
+    if (
+        _choices.length === 1 &&
+        keys[1] &&
+        choices[choiceType][keys[1]]
+    ) {
+      _choices = _choices.concat(choices[choiceType][keys[1]]);
+    }
+
+    if (
+        _choices.length === 1
+    ) {
+      return choices[choiceType];
+    } else {
+      return _choices;
+    }
+  }
+
+  /**
+   * Get choice ID
+   * @param choiceType
+   */
+  public getChoiceID(choiceType: string, choices: any): number {
+    let rangedChoices = this.rangeChoises(choiceType, choices);
+    let choice = rangedChoices[Math.floor(Math.random() * rangedChoices.length)];
+    let l = choices[choiceType].length;
+    for (let i = 0; i < l; i++) {
+      if (choices[choiceType][i] === choice) {
+        return i;
+      }
+    }
+    return 0;
   }
 
   /**
@@ -173,69 +393,5 @@ export default class Messenger {
      * Return false;
      */
     return false;
-  }
-
-  /**
-   * Encode data object synchronously
-   * @param data
-   * @param password
-   */
-  public encodeSync(data: any, password: string) {
-    try {
-      data = JSON.stringify(data);
-      data = CryptoJS.AES.encrypt(data, password).toString();
-      return data;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /**
-   * Encode data object asynchronously
-   * @param data
-   * @param password
-   */
-  public encode(data: any, password: string) {
-    return new Promise((resolve, reject) => {
-      let _data = this.encodeSync(data, password);
-      if (_data) {
-        resolve(_data);
-      } else {
-        reject();
-      }
-    });
-  }
-
-  /**
-   * Get choise type based on the rate
-   */
-  public getChoiseType(rate: any, choices: any): string {
-    let choiceType;
-    if (rate === 0) {
-      if (choices.normal.length > 0) {
-        choiceType = "normal";
-      } else if (choices.bad.length > 0) {
-        choiceType = "bad";
-      } else {
-        choiceType = "good";
-      }
-    } else if (rate > 0) {
-      if (choices.bad.length > 0) {
-        choiceType = "bad";
-      } else if (choices.normal.length > 0) {
-        choiceType = "normal";
-      } else {
-        choiceType = "good";
-      }
-    } else if (rate < 0) {
-      if (choices.good.length > 0) {
-        choiceType = "good";
-      } else if (choices.normal.length > 0) {
-        choiceType = "normal";
-      } else {
-        choiceType = "bad";
-      }
-    }
-    return choiceType;
   }
 }
