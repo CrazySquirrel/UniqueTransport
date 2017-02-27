@@ -198,7 +198,7 @@ export default class Client extends MessengerClass {
     return new Promise((resolve, reject) => {
       let choiceType = this.getChoiseType(this.rate, this.choices);
       let choiceID = this.getChoiceID(choiceType, this.choices);
-      if (typeof choiceID === "number") {
+      if (choiceID) {
         let choice = this.choices[choiceType][choiceID];
 
         let promise = new Promise((_resolve, _reject) => {
@@ -231,11 +231,13 @@ export default class Client extends MessengerClass {
 
           if (choiceType === "normal") {
             if (this.choices.normal[choiceID]) {
-              this.choices.good.push(this.choices.normal.splice(choiceID, 1)[0]);
+              this.choices.good[choiceID] = this.choices.normal[choiceID];
+              delete this.choices.normal[choiceID];
             }
           } else if (choiceType === "bad") {
             if (this.choices.bad[choiceID]) {
-              this.choices.normal.push(this.choices.bad.splice(choiceID, 1)[0]);
+              this.choices.normal[choiceID] = this.choices.bad[choiceID];
+              delete this.choices.bad[choiceID];
             }
           }
 
@@ -251,11 +253,13 @@ export default class Client extends MessengerClass {
 
           if (choiceType === "normal") {
             if (this.choices.normal[choiceID]) {
-              this.choices.bad.push(this.choices.normal.splice(choiceID, 1)[0]);
+              this.choices.bad[choiceID] = this.choices.normal[choiceID];
+              delete this.choices.normal[choiceID];
             }
           } else if (choiceType === "good") {
             if (this.choices.good[choiceID]) {
-              this.choices.bad.push(this.choices.good.splice(choiceID, 1)[0]);
+              this.choices.bad[choiceID] = this.choices.good[choiceID];
+              delete this.choices.good[choiceID];
             }
           }
 
@@ -299,53 +303,31 @@ export default class Client extends MessengerClass {
         ) {
           let _obj = JSON.parse(JSON.stringify(obj));
           _obj.SubTransports.push(subtransports[x]);
-          choices.normal.push(_obj);
+          choices.normal[CryptoJS.MD5(JSON.stringify(_obj)).toString()] = _obj;
           this.generateSubtransportChoices(choices, _obj, subtransports.slice(x + 1));
         }
       }
     }
   }
 
-  private ifChoiseIn(choice, choices) {
-    for (let _choice of choices) {
-      if (
-          choice.Url === _choice.Url &&
-          choice.Transport === _choice.Transport &&
-          choice.HttpMethod === _choice.HttpMethod &&
-          choice.SubTransports.length === _choice.SubTransports.length
-      ) {
-        let isequal = choice.SubTransports.every((element) => {
-          return _choice.SubTransports.indexOf(element) !== -1;
-        });
-        if (isequal) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
   private filterChoises() {
     let _choices = this.generateChoises();
 
     let choices = {
-      good: [],
-      normal: [],
-      bad: [],
+      good: {},
+      normal: {},
+      bad: {},
     };
 
-    let l = _choices.normal.length;
-
-    for (let i = 0; i < l; i++) {
-      let choice = _choices.normal[i];
-
-      if (this.ifChoiseIn(choice, this.choices.good)) {
-        choices.good.push(choice);
-      } else if (this.ifChoiseIn(choice, this.choices.bad)) {
-        choices.bad.push(choice);
-      } else {
-        choices.normal.push(choice);
+    for (let choiceID in _choices.normal) {
+      if (_choices.normal.hasOwnProperty(choiceID)) {
+        if (this.choices.good[choiceID]) {
+          choices.good[choiceID] = _choices.normal[choiceID];
+        } else if (this.choices.bad[choiceID]) {
+          choices.bad[choiceID] = _choices.normal[choiceID];
+        } else {
+          choices.normal[choiceID] = _choices.normal[choiceID];
+        }
       }
     }
 
@@ -357,9 +339,9 @@ export default class Client extends MessengerClass {
    */
   private generateChoises() {
     let choices = {
-      good: [],
-      normal: [],
-      bad: [],
+      good: {},
+      normal: {},
+      bad: {},
     };
 
     for (let Url of this.Settings.Urls) {
@@ -410,7 +392,7 @@ export default class Client extends MessengerClass {
     try {
       let choises = this.encodeSync(this.choices, this.Settings.Password);
       if (choises) {
-        window.localStorage.setItem(CryptoJS.MD5("choices").toString(), choises);
+        window.localStorage.setItem(CryptoJS.MD5("#PACKAGE_NAME#-#PACKAGE_VERSION#").toString(), choises);
       }
     } catch (e) {
 
@@ -422,7 +404,7 @@ export default class Client extends MessengerClass {
    */
   private loadChoises() {
     try {
-      return this.decodeSync(window.localStorage.getItem(CryptoJS.MD5("choices").toString()), this.Settings.Password);
+      return this.decodeSync(window.localStorage.getItem(CryptoJS.MD5("#PACKAGE_NAME#-#PACKAGE_VERSION#").toString()), this.Settings.Password);
     } catch (e) {
 
     }

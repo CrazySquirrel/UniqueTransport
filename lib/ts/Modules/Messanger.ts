@@ -142,25 +142,25 @@ export default class Messenger {
   public getChoiseType(rate: any, choices: any): string {
     let choiceType;
     if (rate === 0) {
-      if (choices.normal.length > 0) {
+      if (Object.keys(choices.normal).length > 0) {
         choiceType = "normal";
-      } else if (choices.bad.length > 0) {
+      } else if (Object.keys(choices.bad).length > 0) {
         choiceType = "bad";
       } else {
         choiceType = "good";
       }
     } else if (rate > 0) {
-      if (choices.bad.length > 0) {
+      if (Object.keys(choices.bad).length > 0) {
         choiceType = "bad";
-      } else if (choices.normal.length > 0) {
+      } else if (Object.keys(choices.normal).length > 0) {
         choiceType = "normal";
       } else {
         choiceType = "good";
       }
     } else if (rate < 0) {
-      if (choices.good.length > 0) {
+      if (Object.keys(choices.good).length > 0) {
         choiceType = "good";
-      } else if (choices.normal.length > 0) {
+      } else if (Object.keys(choices.normal).length > 0) {
         choiceType = "normal";
       } else {
         choiceType = "bad";
@@ -179,72 +179,78 @@ export default class Messenger {
   public getChoiceRange(choice: any, against: any, similar?: any) {
     let range = 0;
 
-    if (against && against.length > 0) {
-      for (let _choice of against) {
-        for (let prop in choice) {
-          if (choice.hasOwnProperty(prop)) {
-            if (
-                typeof choice[prop] === "boolean" ||
-                typeof choice[prop] === "string" ||
-                typeof choice[prop] === "number" ||
-                typeof choice[prop] === "function"
-            ) {
-              if (choice.Url === _choice.Url) {
-                range--;
-              } else {
-                range++;
-              }
-            } else if (
-                typeof choice[prop] === "object" &&
-                Array.isArray(choice[prop])
-            ) {
-              for (let _v of choice[prop]) {
-                if (_choice[prop].indexOf(_v) !== -1) {
+    if (against && Object.keys(against).length > 0) {
+      for (let _choiceID in against) {
+        if (against.hasOwnProperty(_choiceID)) {
+          let _choice = against[_choiceID];
+          for (let prop in choice) {
+            if (choice.hasOwnProperty(prop)) {
+              if (
+                  typeof choice[prop] === "boolean" ||
+                  typeof choice[prop] === "string" ||
+                  typeof choice[prop] === "number" ||
+                  typeof choice[prop] === "function"
+              ) {
+                if (choice.Url === _choice.Url) {
                   range--;
                 } else {
                   range++;
                 }
+              } else if (
+                  typeof choice[prop] === "object" &&
+                  Array.isArray(choice[prop])
+              ) {
+                for (let _v of choice[prop]) {
+                  if (_choice[prop].indexOf(_v) !== -1) {
+                    range--;
+                  } else {
+                    range++;
+                  }
+                }
+              } else {
+                /**
+                 * TODO: unimplemented type
+                 */
               }
-            } else {
-              /**
-               * TODO: unimplemented type
-               */
             }
           }
         }
       }
     }
 
-    if (similar && similar.length > 0) {
-      for (let _choice of similar) {
-        for (let prop in choice) {
-          if (choice.hasOwnProperty(prop)) {
-            if (
-                typeof choice[prop] === "boolean" ||
-                typeof choice[prop] === "string" ||
-                typeof choice[prop] === "number" ||
-                typeof choice[prop] === "function"
-            ) {
-              if (choice.Url === _choice.Url) {
-                range++;
-              } else {
-                range--;
-              }
-            } else if (
-                typeof choice[prop] === "object" &&
-                Array.isArray(choice[prop])
-            ) {
-              for (let _v of choice[prop]) {
-                if (_choice[prop].indexOf(_v) !== -1) {
+    if (similar && Object.keys(similar).length > 0) {
+      for (let _choiceID in similar) {
+        if (similar.hasOwnProperty(_choiceID)) {
+          let _choice = similar[_choiceID];
+          for (let prop in choice) {
+            if (choice.hasOwnProperty(prop)) {
+              if (
+                  typeof choice[prop] === "boolean" ||
+                  typeof choice[prop] === "string" ||
+                  typeof choice[prop] === "number" ||
+                  typeof choice[prop] === "function"
+              ) {
+                if (choice.Url === _choice.Url) {
                   range++;
                 } else {
                   range--;
                 }
+              } else if (
+                  typeof choice[prop] === "object" &&
+                  Array.isArray(choice[prop])
+              ) {
+                for (let _v of choice[prop]) {
+                  if (_choice[prop].indexOf(_v) !== -1) {
+                    range++;
+                  } else {
+                    range--;
+                  }
+                }
+              } else {
+                /**
+                 * TODO: unimplemented type
+                 */
               }
-            } else {
-              /**
-               * TODO: unimplemented type
-               */
             }
           }
         }
@@ -265,27 +271,14 @@ export default class Messenger {
       bad: {},
     };
 
-    if (choiceType === "good" && sourceChoices.good.length > 0) {
-      for (let choice of sourceChoices.good) {
-        let range = this.getChoiceRange(choice, sourceChoices.bad);
-        choices.good[range] = choices.good[range] || [];
-        choices.good[range].push(choice);
-      }
-    }
-
-    if (choiceType === "normal" && sourceChoices.normal.length > 0) {
-      for (let choice of sourceChoices.normal) {
-        let range = this.getChoiceRange(choice, sourceChoices.bad, sourceChoices.good);
-        choices.normal[range] = choices.normal[range] || [];
-        choices.normal[range].push(choice);
-      }
-    }
-
-    if (choiceType === "bad" && sourceChoices.bad.length > 0) {
-      for (let choice of sourceChoices.bad) {
-        let range = this.getChoiceRange(choice, sourceChoices.bad, sourceChoices.good);
-        choices.bad[range] = choices.bad[range] || [];
-        choices.bad[range].push(choice);
+    if (Object.keys(sourceChoices[choiceType]).length > 0) {
+      for (let choiceID in sourceChoices[choiceType]) {
+        if (sourceChoices[choiceType].hasOwnProperty(choiceID)) {
+          let choice = sourceChoices[choiceType][choiceID];
+          let range = this.getChoiceRange(choice, sourceChoices.bad);
+          choices[choiceType][range] = choices[choiceType][range] || {};
+          choices[choiceType][range][choiceID] = choice;
+        }
       }
     }
 
@@ -294,17 +287,17 @@ export default class Messenger {
     let _choices = choices[choiceType][keys[0]];
 
     if (
-        _choices.length === 1 &&
+        Object.keys(_choices).length === 1 &&
         keys[1] &&
         choices[choiceType][keys[1]]
     ) {
-      _choices = _choices.concat(choices[choiceType][keys[1]]);
+      _choices = Object.assign({}, _choices, choices[choiceType][keys[1]]);
     }
 
     if (
-        _choices.length === 1
+        Object.keys(_choices).length === 1
     ) {
-      return choices[choiceType];
+      return sourceChoices[choiceType];
     } else {
       return _choices;
     }
@@ -314,16 +307,10 @@ export default class Messenger {
    * Get choice ID
    * @param choiceType
    */
-  public getChoiceID(choiceType: string, choices: any): number {
+  public getChoiceID(choiceType: string, choices: any): string {
     let rangedChoices = this.rangeChoises(choiceType, choices);
-    let choice = rangedChoices[Math.floor(Math.random() * rangedChoices.length)];
-    let l = choices[choiceType].length;
-    for (let i = 0; i < l; i++) {
-      if (choices[choiceType][i] === choice) {
-        return i;
-      }
-    }
-    return 0;
+    let rangedChoicesKeys = Object.keys(rangedChoices);
+    return rangedChoicesKeys[Math.floor(Math.random() * rangedChoicesKeys.length)];
   }
 
   /**
