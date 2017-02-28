@@ -4,7 +4,7 @@ import ServerClass from "../../lib/ts/server";
 
 const Server = new ServerClass({
   ServerPort: 8888,
-  ConnectionTimeout: 1000,
+  ConnectionTimeout: 10000,
   Password: "xmas",
   SuccessResponseCode: 200,
   RedirectResponseCode: 302,

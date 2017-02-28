@@ -46,8 +46,8 @@ export default class Client extends MessengerClass {
       root.location.origin + "/"
     ],
     Password: "xmas",
-    ReConnectionTimeout: 100,
-    ConnectionTimeout: 1000,
+    ReConnectionTimeout: 500,
+    ConnectionTimeout: 10000,
     Transports: {
       xhr: {
         HttpMethods: {
