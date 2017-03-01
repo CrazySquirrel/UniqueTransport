@@ -94,3 +94,12 @@ Client.getEncodedLink("https://www.rambler.ru/").then(
       console.log(url);
     }
 );
+
+Client.getEncodedProxy("http://avatars.mds.yandex.net/get-direct/42386/HzzAM6tDCyUsG0TrUVko9g/y450").then(
+    (url: any) => {
+      let img = window.document.createElement("img");
+      img.src = url;
+      window.document.body.appendChild(img);
+      console.log(url);
+    }
+);

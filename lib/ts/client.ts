@@ -180,6 +180,55 @@ export default class Client extends MessengerClass {
   }
 
   /**
+   * Encode proxy link synchronously
+   * @param link
+   */
+  public getEncodedProxySync(link: string): string {
+    if (
+        link
+    ) {
+      let _data = this.encodeSync({
+        link: link,
+        data: {
+          Action: "Proxy",
+        },
+      }, this.Settings.Password);
+
+      if (_data) {
+        /**
+         * Get subtransports
+         */
+        let transport = this.getTransport(["path", "name", "params"], "base");
+        /**
+         * Get url and data for subtransports
+         */
+        let dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
+
+        return dataUrl.url;
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Encode proxy link asynchronously
+   * @param link
+   */
+  public getEncodedProxy(link: string) {
+    return new Promise((resolve, reject) => {
+      let _link = this.getEncodedProxySync(link);
+      if (_link) {
+        resolve(_link);
+      } else {
+        reject();
+      }
+    });
+  }
+
+  /**
    * Send event and data to the server
    * @param params
    */

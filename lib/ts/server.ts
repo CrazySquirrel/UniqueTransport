@@ -29,6 +29,16 @@ if (!root.Promise) {
 }
 
 const HTTP = require("http");
+const Agent = require("agentkeepalive");
+const keepaliveAgent = new Agent({
+  keepAlive: true,
+  keepAliveMsecs: 1000,
+  freeSocketKeepAliveTimeout: 30000,
+  timeout: 60000,
+  maxSockets: 100,
+  maxFreeSockets: 10
+});
+
 const URL = require("url");
 const PNG = require("pngjs").PNG;
 const PATH = require("path");
@@ -375,6 +385,48 @@ export default class Server extends MessengerClass {
                         headers["Location"] = _result.Data.link;
                         response.writeHead(this.Settings.RedirectResponseCode, headers);
                         response.end("");
+                      } else if (_result.Params.Action === "Proxy") {
+                        let url = URL.parse(_result.Data.link);
+
+                        request.headers.host = url.host;
+
+                        let options = {
+                          port: "80",
+                          hostname: url.host,
+                          method: "GET",
+                          path: url.path,
+                          headers: request.headers,
+                          agent: keepaliveAgent
+                        };
+
+                        let _request = HTTP.get(options, (res) => {
+                          /**
+                           * If it another file type than just return it
+                           *
+                           * Watch for sub respond events
+                           */
+                          res.on("data", (chunk) => {
+                            /**
+                             * Throw sub respond data to respond
+                             */
+                            response.write(chunk, "binary");
+                          });
+                          /**
+                           * Watch for sub respond events
+                           */
+                          res.on("end", () => {
+                            /**
+                             * Close respond
+                             */
+                            response.end();
+                          });
+                          /**
+                           * Throw sub respond headers to respond
+                           */
+                          response.writeHead(res.statusCode, res.headers);
+                        });
+
+                        _request.shouldKeepAlive = true;
                       } else {
                         response.writeHead(this.Settings.ErrorResponseCode, headers);
                         response.end("");
@@ -463,6 +515,28 @@ export default class Server extends MessengerClass {
                   new Promise(
                       (_resolve, _reject) => {
                         _resolve(this.listners["redirect"](_data, params));
+                      }
+                  ).then(
+                      () => {
+                        resolve({
+                          Params: params,
+                          Data: _data,
+                        });
+                      }
+                  ).catch(reject);
+                } else {
+                  resolve({
+                    Params: params,
+                    Data: _data,
+                  });
+                }
+              } else if (params.Action === "Proxy") {
+                if (
+                    this.listners["proxy"]
+                ) {
+                  new Promise(
+                      (_resolve, _reject) => {
+                        _resolve(this.listners["proxy"](_data, params));
                       }
                   ).then(
                       () => {
