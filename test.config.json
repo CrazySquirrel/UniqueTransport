@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "name": "test",
+      "script": "./src/js/test.js",
+      "instances": "100",
+      "exec_mode": "cluster",
+      "watch": false,
+      "cwd": "."
+    }
+  ]
+}

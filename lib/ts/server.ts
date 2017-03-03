@@ -82,6 +82,7 @@ export default class Server extends MessengerClass {
       "upgrade-insecure-requests",
       "x-real-ip",
       "x-real-host",
+      "x-forwarded-for",
     ].concat(this.Settings.NormalRequestHeaders || []);
 
     if (this.Settings.WriteRequestLog) {
@@ -399,7 +400,7 @@ export default class Server extends MessengerClass {
                           headers: request.headers,
                           agent: keepaliveAgent
                         };
-                        
+
                         let _request = HTTP.get(options, (res) => {
                           res.pipe(response);
                         });
