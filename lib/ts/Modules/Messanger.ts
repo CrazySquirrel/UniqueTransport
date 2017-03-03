@@ -112,9 +112,7 @@ export default class Messenger {
    */
   public encodeSync(data: any, password: string) {
     try {
-      data = JSON.stringify(data);
-      data = CryptoJS.AES.encrypt(data, password).toString();
-      return data;
+      return CryptoJS.AES.encrypt(JSON.stringify(data), password).toString();
     } catch (e) {
       return null;
     }
@@ -308,8 +306,7 @@ export default class Messenger {
    * @param choiceType
    */
   public getChoiceID(choiceType: string, choices: any): string {
-    let rangedChoices = choices[choiceType];
-    let rangedChoicesKeys = Object.keys(rangedChoices);
+    let rangedChoicesKeys = Object.keys(choices[choiceType]);
     return rangedChoicesKeys[Math.floor(Math.random() * rangedChoicesKeys.length)];
   }
 
@@ -321,14 +318,7 @@ export default class Messenger {
    */
   private decodeString(data: string, password: string): string | boolean {
     try {
-      data = CryptoJS.AES.decrypt(data, password).toString(CryptoJS.enc.Utf8);
-      if (data) {
-        data = JSON.parse(data);
-        if (data) {
-          return data;
-        }
-      }
-      return false;
+      return JSON.parse(CryptoJS.AES.decrypt(data, password).toString(CryptoJS.enc.Utf8)) || false;
     } catch (e) {
       return false;
     }
