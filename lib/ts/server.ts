@@ -692,7 +692,7 @@ export default class Server extends MessengerClass {
      */
     if (
         params &&
-        this.isObjectNotEmpty(params.query)
+        Object.keys(params.query).length > 0
     ) {
       let _data = Object.keys(params.query).map((key) => {
         return params.query[key];
