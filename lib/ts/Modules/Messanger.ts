@@ -2,7 +2,6 @@
 
 declare let require: any;
 
-const MD5 = require("crypto-js/md5");
 const AES = require("crypto-js/aes");
 const UTF8 = require("crypto-js/enc-utf8");
 
@@ -23,14 +22,8 @@ export default class Messenger {
    * @return string
    */
   public getRandomWord(): string {
-    let word = MD5(Date.now().toString(36) + "-" + Math.round(Math.random() * 1e16).toString(36)).toString().split("");
-    for (let i = 0; i < word.length; i++) {
-      if (isFinite(parseInt(word[i], 10))) {
-        word[i] = String.fromCharCode(word[i].charCodeAt(0) + 50);
-      }
-    }
-    word = word.slice(0, 4 + Math.floor(Math.random() * word.length * 0.5));
-    return word.join("");
+    let word = Math.random().toString(36).replace(/[^a-z]+/g, "");
+    return word.substr(0, 4 + Math.floor(Math.random() * word.length * 0.5));
   }
 
   /**
@@ -79,7 +72,7 @@ export default class Messenger {
    */
   public decodeSync(data: any, password: string) {
     let DecodedData;
-    if (typeof data === "object" && Array.isArray(data)) {
+    if (Array.isArray(data)) {
       DecodedData = this.decodeArray(data, password);
     } else if (typeof data === "string") {
       DecodedData = this.decodeString(data, password);
@@ -142,31 +135,44 @@ export default class Messenger {
   public getChoiseType(rate: any, choices: any): string {
     let choiceType;
     if (rate === 0) {
-      if (Object.keys(choices.normal).length > 0) {
+      if (this.isObjectNotEmpty(choices.normal)) {
         choiceType = "normal";
-      } else if (Object.keys(choices.bad).length > 0) {
+      } else if (this.isObjectNotEmpty(choices.bad)) {
         choiceType = "bad";
       } else {
         choiceType = "good";
       }
     } else if (rate > 0) {
-      if (Object.keys(choices.bad).length > 0) {
+      if (this.isObjectNotEmpty(choices.bad)) {
         choiceType = "bad";
-      } else if (Object.keys(choices.normal).length > 0) {
+      } else if (this.isObjectNotEmpty(choices.normal)) {
         choiceType = "normal";
       } else {
         choiceType = "good";
       }
     } else if (rate < 0) {
-      if (Object.keys(choices.good).length > 0) {
+      if (this.isObjectNotEmpty(choices.good)) {
         choiceType = "good";
-      } else if (Object.keys(choices.normal).length > 0) {
+      } else if (this.isObjectNotEmpty(choices.normal)) {
         choiceType = "normal";
       } else {
         choiceType = "bad";
       }
     }
     return choiceType;
+  }
+
+  /**
+   * Check if object is empty
+   * @param obj
+   */
+  public isObjectNotEmpty(obj) {
+    for (let prop in obj) {
+      if (obj.hasOwnProperty(prop)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -179,7 +185,7 @@ export default class Messenger {
   public getChoiceRange(choice: any, against: any, similar?: any) {
     let range = 0;
 
-    if (against && Object.keys(against).length > 0) {
+    if (against && this.isObjectNotEmpty(against)) {
       for (let _choiceID in against) {
         if (against.hasOwnProperty(_choiceID)) {
           let _choice = against[_choiceID];
@@ -218,7 +224,7 @@ export default class Messenger {
       }
     }
 
-    if (similar && Object.keys(similar).length > 0) {
+    if (similar && this.isObjectNotEmpty(similar)) {
       for (let _choiceID in similar) {
         if (similar.hasOwnProperty(_choiceID)) {
           let _choice = similar[_choiceID];
@@ -271,7 +277,7 @@ export default class Messenger {
       bad: {},
     };
 
-    if (Object.keys(sourceChoices[choiceType]).length > 0) {
+    if (this.isObjectNotEmpty(sourceChoices[choiceType])) {
       for (let choiceID in sourceChoices[choiceType]) {
         if (sourceChoices[choiceType].hasOwnProperty(choiceID)) {
           let choice = sourceChoices[choiceType][choiceID];

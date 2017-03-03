@@ -599,7 +599,7 @@ export default class Server extends MessengerClass {
         let buffer = [];
 
         request.on("data", (_data) => {
-          buffer.push(_data.toString())
+          buffer.push(_data.toString());
         });
 
         request.on("end", () => {
@@ -692,7 +692,7 @@ export default class Server extends MessengerClass {
      */
     if (
         params &&
-        Object.keys(params.query).length > 0
+        this.isObjectNotEmpty(params.query)
     ) {
       let _data = Object.keys(params.query).map((key) => {
         return params.query[key];
