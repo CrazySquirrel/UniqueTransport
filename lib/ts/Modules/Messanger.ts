@@ -308,7 +308,7 @@ export default class Messenger {
    * @param choiceType
    */
   public getChoiceID(choiceType: string, choices: any): string {
-    let rangedChoices = this.rangeChoises(choiceType, choices);
+    let rangedChoices = choices[choiceType];
     let rangedChoicesKeys = Object.keys(rangedChoices);
     return rangedChoicesKeys[Math.floor(Math.random() * rangedChoicesKeys.length)];
   }

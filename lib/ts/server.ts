@@ -30,6 +30,7 @@ if (!root.Promise) {
 
 const HTTP = require("http");
 const Agent = require("agentkeepalive");
+
 const keepaliveAgent = new Agent({
   keepAlive: true,
   keepAliveMsecs: 1000,
@@ -398,41 +399,9 @@ export default class Server extends MessengerClass {
                           headers: request.headers,
                           agent: keepaliveAgent
                         };
-
+                        
                         let _request = HTTP.get(options, (res) => {
-                          let status = res.statusCode;
-                          let headers = res.headers;
-                          if (status === 200) {
-                            /**
-                             * If it another file type than just return it
-                             *
-                             * Watch for sub respond events
-                             */
-                            res.on("data", (chunk) => {
-                              /**
-                               * Throw sub respond data to respond
-                               */
-                              response.write(chunk, "binary");
-                            });
-                            /**
-                             * Watch for sub respond events
-                             */
-                            res.on("end", () => {
-                              /**
-                               * Close respond
-                               */
-                              response.end();
-                            });
-                            /**
-                             * Throw sub respond headers to respond
-                             */
-                            response.writeHead(status, headers);
-                          } else {
-                            /**
-                             * Close respond
-                             */
-                            response.end(this.Settings.ErrorResponseCode);
-                          }
+                          res.pipe(response);
                         });
 
                         _request.shouldKeepAlive = true;
