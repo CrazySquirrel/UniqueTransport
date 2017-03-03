@@ -2,7 +2,9 @@
 
 declare let require: any;
 
-const CryptoJS = require("crypto-js");
+const MD5 = require("crypto-js/md5");
+const AES = require("crypto-js/aes");
+const UTF8 = require("crypto-js/enc-utf8");
 
 export default class Messenger {
 
@@ -21,7 +23,7 @@ export default class Messenger {
    * @return string
    */
   public getRandomWord(): string {
-    let word = CryptoJS.MD5((new Date()).getTime().toString(36) + "-" + Math.round(Math.random() * 1e16).toString(36)).toString().split("");
+    let word = MD5(Date.now().toString(36) + "-" + Math.round(Math.random() * 1e16).toString(36)).toString().split("");
     for (let i = 0; i < word.length; i++) {
       if (isFinite(parseInt(word[i], 10))) {
         word[i] = String.fromCharCode(word[i].charCodeAt(0) + 50);
@@ -112,7 +114,7 @@ export default class Messenger {
    */
   public encodeSync(data: any, password: string) {
     try {
-      return CryptoJS.AES.encrypt(JSON.stringify(data), password).toString();
+      return AES.encrypt(JSON.stringify(data), password).toString();
     } catch (e) {
       return null;
     }
@@ -318,7 +320,7 @@ export default class Messenger {
    */
   private decodeString(data: string, password: string): string | boolean {
     try {
-      return JSON.parse(CryptoJS.AES.decrypt(data, password).toString(CryptoJS.enc.Utf8)) || false;
+      return JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
     } catch (e) {
       return false;
     }
