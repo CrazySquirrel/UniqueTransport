@@ -133,33 +133,31 @@ export default class Messenger {
    * Get choise type based on the rate
    */
   public getChoiseType(rate: any, choices: any): string {
-    let choiceType;
     if (rate === 0) {
       if (this.isObjectNotEmpty(choices.normal)) {
-        choiceType = "normal";
+        return "normal";
       } else if (this.isObjectNotEmpty(choices.bad)) {
-        choiceType = "bad";
+        return "bad";
       } else {
-        choiceType = "good";
+        return "good";
       }
     } else if (rate > 0) {
       if (this.isObjectNotEmpty(choices.bad)) {
-        choiceType = "bad";
+        return "bad";
       } else if (this.isObjectNotEmpty(choices.normal)) {
-        choiceType = "normal";
+        return "normal";
       } else {
-        choiceType = "good";
+        return "good";
       }
     } else if (rate < 0) {
       if (this.isObjectNotEmpty(choices.good)) {
-        choiceType = "good";
+        return "good";
       } else if (this.isObjectNotEmpty(choices.normal)) {
-        choiceType = "normal";
+        return "normal";
       } else {
-        choiceType = "bad";
+        return "bad";
       }
     }
-    return choiceType;
   }
 
   /**
@@ -168,9 +166,7 @@ export default class Messenger {
    */
   public isObjectNotEmpty(obj) {
     for (let prop in obj) {
-      if (obj.hasOwnProperty(prop)) {
-        return true;
-      }
+      return true;
     }
     return false;
   }
@@ -314,8 +310,8 @@ export default class Messenger {
    * @param choiceType
    */
   public getChoiceID(choiceType: string, choices: any): string {
-    let rangedChoicesKeys = Object.keys(choices[choiceType]);
-    return rangedChoicesKeys[Math.floor(Math.random() * rangedChoicesKeys.length)];
+    let keys = Object.keys(choices[choiceType]);
+    return keys[keys.length * Math.random() << 0];
   }
 
   /**

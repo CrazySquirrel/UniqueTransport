@@ -59,52 +59,77 @@ export default class Server extends MessengerClass {
   private listners: any;
   private RequestLogStream: any;
   private NormalRequestHeaders: any;
+  private IgnoredRequestPaths: any;
 
   public constructor(settings: any) {
     super(settings);
 
     this.listners = {};
 
-    this.NormalRequestHeaders = [
-      "accept",
-      "accept-encoding",
-      "accept-language",
-      "cache-control",
-      "chrome-proxy",
-      "connection",
-      "content-length",
-      "content-type",
-      "cookie",
-      "dnt",
-      "from",
-      "host",
-      "origin",
-      "pragma",
-      "proxy-authorization",
-      "referer",
-      "rvbd-csh",
-      "rvbd-ssh",
-      "save-data",
-      "surrogate-capability",
-      "te",
-      "upgrade-insecure-requests",
-      "user-agent",
-      "via",
-      "x-authenticated-groups",
-      "x-authenticated-use",
-      "x-bluecoat-via",
-      "x-compress",
-      "x-forwarded-for",
-      "x-forwarded-proto",
-      "x-imforwards",
-      "x-iws-via",
-      "x-real-host",
-      "x-real-ip",
-      "x-requested-with",
-      "x-turbo-id",
-      "x-wap-profile",
-      "x-yandex-turbo"
-    ].concat(this.Settings.NormalRequestHeaders || []);
+    this.IgnoredRequestPaths = {
+      "test": true,
+      "xmas": true,
+      "weekend": true,
+      "reobtain": true,
+      "uniform": true,
+      "barflies": true,
+      "abduces": true,
+      "suitor": true,
+      "yachted": true
+    };
+
+    if (this.Settings.IgnoredRequestPaths) {
+      Object.keys(this.Settings.IgnoredRequestPaths).forEach((key) => {
+        this.IgnoredRequestPaths[key] = true;
+      });
+    }
+
+    this.NormalRequestHeaders = {
+      "accept": true,
+      "accept-encoding": true,
+      "accept-language": true,
+      "cache-control": true,
+      "chrome-proxy": true,
+      "connection": true,
+      "content-length": true,
+      "content-type": true,
+      "cookie": true,
+      "dnt": true,
+      "from": true,
+      "host": true,
+      "origin": true,
+      "pragma": true,
+      "proxy-authorization": true,
+      "referer": true,
+      "rvbd-csh": true,
+      "rvbd-ssh": true,
+      "save-data": true,
+      "surrogate-capability": true,
+      "te": true,
+      "upgrade-insecure-requests": true,
+      "user-agent": true,
+      "via": true,
+      "x-authenticated-groups": true,
+      "x-authenticated-use": true,
+      "x-bluecoat-via": true,
+      "x-compress": true,
+      "x-forwarded-for": true,
+      "x-forwarded-proto": true,
+      "x-imforwards": true,
+      "x-iws-via": true,
+      "x-real-host": true,
+      "x-real-ip": true,
+      "x-requested-with": true,
+      "x-turbo-id": true,
+      "x-wap-profile": true,
+      "x-yandex-turbo": true
+    };
+
+    if (this.Settings.NormalRequestHeaders) {
+      Object.keys(this.Settings.NormalRequestHeaders).forEach((key) => {
+        this.NormalRequestHeaders[key] = true;
+      });
+    }
 
     if (this.Settings.WriteRequestLog) {
       this.RequestLogStream = FS.createWriteStream("RequestLog.tmp", {"flags": "a"});
@@ -565,191 +590,71 @@ export default class Server extends MessengerClass {
 
   private preprocessor(request) {
     return new Promise((resolve, reject) => {
-      let next = (_data) => {
-        for (let key in _data) {
-          if (
-              _data.hasOwnProperty(key)
-          ) {
-            if (
-                !_data[key] ||
-                _data[key].EncodedPath.length === 0
-            ) {
-              delete _data[key];
-            } else {
-              _data[key].RawPath = _data[key].RawPath.filter((item) => {
-                return item.length > 0
-              });
-            }
-          }
-        }
-
-        let paths = [];
-        for (let key in _data) {
-          if (
-              _data.hasOwnProperty(key)
-          ) {
-            paths = paths.concat(_data[key].RawPath);
-          }
-        }
-
-        resolve(paths);
-      };
-
-      let data: any = {};
-
-      if (this.Settings.SubTransports.path) {
-        data.path = this.getDataFromPath(request);
-      }
-
-      if (this.Settings.SubTransports.name) {
-        data.name = this.getDataFromName(request);
-      }
-
-      if (this.Settings.SubTransports.params) {
-        data.params = this.getDataFromParameters(request);
-      }
-
-      if (this.Settings.SubTransports.header) {
-        data.header = this.getDataFromHeader(request);
-      }
-
-      if (this.Settings.SubTransports.body) {
-        /**
-         * Get data from body
-         */
-        let buffer = [];
-
-        request.on("data", (_data) => {
-          buffer.push(_data.toString());
-        });
-
-        request.on("end", () => {
-          data.body = {
-            EncodedPath: buffer.join(""),
-            RawPath: [buffer.join("")],
-          };
-
-          next(data);
-        });
-
-        request.on("error", () => {
-          reject();
-        });
-      } else {
-        next(data);
-      }
-    });
-  }
-
-  private getDataFromPath(request) {
-    /**
-     * Get data from url
-     */
-    let params = URL.parse(request.url, true);
-    /**
-     * Get data from path
-     */
-    let path = PATH.parse(params.pathname);
-
-    if (
-        path
-    ) {
+      let data = [];
+      /**
+       * Get data from url
+       */
+      let params = URL.parse(request.url, true);
+      /**
+       * Get data from path
+       */
+      let path = PATH.parse(params.pathname);
       if (
           params.pathname.lastIndexOf("/") === params.pathname.length - 1
       ) {
         path.dir = path.dir + "/" + path.name + "/";
         path.name = "";
       }
+      /**
+       * Get data from path
+       */
+      path.dir.split("/").forEach((item) => {
+        if (
+            !this.IgnoredRequestPaths[item]
+        ) {
+          data.push(decodeURIComponent(item));
+        }
+      });
+      /**
+       * Get data from name
+       */
+      data.push(decodeURIComponent(path.name));
+      /**
+       * Get data from params
+       */
+      data.concat(Object.keys(params.query).forEach((key) => {
+        data.push(params.query[key]);
+      }));
 
-      let fullpath = path.dir.split("/").map((item) => {
-        return decodeURIComponent(item);
+      /**
+       * Get data from headers
+       */
+      Object.keys(request.headers).filter((key) => {
+        return (
+            !this.NormalRequestHeaders[key] &&
+            key.indexOf("-") === -1
+        );
+      }).sort().forEach((key) => {
+        data.push(decodeURIComponent(request.headers[key]));
+      });
+      /**
+       * Get data from body
+       */
+      let buffer = [];
+
+      request.on("data", (chunk) => {
+        buffer.push(chunk);
       });
 
-      return {
-        EncodedPath: fullpath.join(""),
-        RawPath: fullpath,
-      };
-    } else {
-      return false;
-    }
-  }
+      request.on("end", () => {
+        data.push(Buffer.concat(buffer).toString("utf-8"));
 
-  private getDataFromName(request) {
-    /**
-     * Get data from url
-     */
-    let params = URL.parse(request.url, true);
-    /**
-     * Get data from path
-     */
-    let path = PATH.parse(params.pathname);
-
-    if (
-        path
-    ) {
-      if (
-          params.pathname.lastIndexOf("/") === params.pathname.length - 1
-      ) {
-        path.dir = path.dir + "/" + path.name + "/";
-        path.name = "";
-      }
-
-      return {
-        EncodedPath: decodeURIComponent(path.name),
-        RawPath: [decodeURIComponent(path.name)],
-      };
-    } else {
-      return false;
-    }
-  }
-
-  private getDataFromParameters(request) {
-    /**
-     * Get data from url
-     */
-    let params = URL.parse(request.url, true);
-    /**
-     * Get data from get parameters
-     */
-    if (
-        params &&
-        Object.keys(params.query).length > 0
-    ) {
-      let _data = Object.keys(params.query).map((key) => {
-        return params.query[key];
+        resolve(data.join(""));
       });
 
-      return {
-        EncodedPath: _data.join(""),
-        RawPath: _data,
-      };
-    } else {
-      return false;
-    }
-  }
-
-  private getDataFromHeader(request) {
-    /**
-     * Get data from headers
-     */
-    let _headerBuffer = {};
-    for (let header in request.headers) {
-      if (
-          request.headers.hasOwnProperty(header) &&
-          this.NormalRequestHeaders.indexOf(header) === -1 &&
-          header.indexOf("-") === -1
-      ) {
-        _headerBuffer[header] = (request.headers[header]);
-      }
-    }
-    let headerBuffer = [];
-    Object.keys(_headerBuffer).sort().map((key) => {
-      headerBuffer.push(decodeURIComponent(_headerBuffer[key]));
+      request.on("error", (e) => {
+        reject();
+      });
     });
-
-    return {
-      EncodedPath: headerBuffer.join(""),
-      RawPath: headerBuffer,
-    };
   }
 }
