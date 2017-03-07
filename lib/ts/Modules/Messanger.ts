@@ -5,9 +5,6 @@ declare let require: any;
 const AES = require("crypto-js/aes");
 const UTF8 = require("crypto-js/enc-utf8");
 
-const btoa = require("btoa");
-const atob = require("atob");
-
 export default class Messenger {
 
   public Settings: any;
@@ -110,7 +107,7 @@ export default class Messenger {
    */
   public encodeSync(data: any, password: string) {
     try {
-      return btoa(JSON.stringify(data));
+      return AES.encrypt(JSON.stringify(data), password).toString();
     } catch (e) {
       return null;
     }
@@ -329,7 +326,7 @@ export default class Messenger {
    */
   private decodeString(data: string, password: string): string | boolean {
     try {
-      return JSON.parse(atob(data)) || false;
+      return JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
     } catch (e) {
       return false;
     }

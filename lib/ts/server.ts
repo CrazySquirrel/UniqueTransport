@@ -66,23 +66,44 @@ export default class Server extends MessengerClass {
     this.listners = {};
 
     this.NormalRequestHeaders = [
-      "host",
-      "connection",
-      "content-length",
-      "pragma",
-      "cache-control",
-      "origin",
-      "user-agent",
-      "content-type",
       "accept",
-      "referer",
       "accept-encoding",
       "accept-language",
+      "cache-control",
+      "chrome-proxy",
+      "connection",
+      "content-length",
+      "content-type",
       "cookie",
+      "dnt",
+      "from",
+      "host",
+      "origin",
+      "pragma",
+      "proxy-authorization",
+      "referer",
+      "rvbd-csh",
+      "rvbd-ssh",
+      "save-data",
+      "surrogate-capability",
+      "te",
       "upgrade-insecure-requests",
-      "x-real-ip",
-      "x-real-host",
+      "user-agent",
+      "via",
+      "x-authenticated-groups",
+      "x-authenticated-use",
+      "x-bluecoat-via",
+      "x-compress",
       "x-forwarded-for",
+      "x-forwarded-proto",
+      "x-imforwards",
+      "x-iws-via",
+      "x-real-host",
+      "x-real-ip",
+      "x-requested-with",
+      "x-turbo-id",
+      "x-wap-profile",
+      "x-yandex-turbo"
     ].concat(this.Settings.NormalRequestHeaders || []);
 
     if (this.Settings.WriteRequestLog) {
@@ -715,7 +736,8 @@ export default class Server extends MessengerClass {
     for (let header in request.headers) {
       if (
           request.headers.hasOwnProperty(header) &&
-          this.NormalRequestHeaders.indexOf(header) === -1
+          this.NormalRequestHeaders.indexOf(header) === -1 &&
+          header.indexOf("-") === -1
       ) {
         _headerBuffer[header] = (request.headers[header]);
       }
