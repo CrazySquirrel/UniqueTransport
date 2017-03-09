@@ -147,6 +147,10 @@ module.exports = {
         test: /\.gif/,
         loader: path.join(__dirname,
             "./src/loaders/base64-loader.js?type=image/gif")
+      },
+      {
+        test: /\.json$/,
+        loader: 'json-loader'
       }
     ]
   }

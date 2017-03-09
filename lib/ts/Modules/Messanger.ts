@@ -2,8 +2,7 @@
 
 declare let require: any;
 
-const AES = require("crypto-js/aes");
-const UTF8 = require("crypto-js/enc-utf8");
+const CRYPTO = require("webcrypto");
 
 export default class Messenger {
 
@@ -107,7 +106,10 @@ export default class Messenger {
    */
   public encodeSync(data: any, password: string) {
     try {
-      return AES.encrypt(JSON.stringify(data), password).toString();
+      let cipher = CRYPTO.createCipher("aes-256-ctr", password);
+      let crypted = cipher.update(JSON.stringify(data), "utf8", "hex");
+      crypted += cipher.final("hex");
+      return crypted;
     } catch (e) {
       return null;
     }
@@ -322,7 +324,10 @@ export default class Messenger {
    */
   private decodeString(data: string, password: string): string | boolean {
     try {
-      return JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
+      let decipher = CRYPTO.createDecipher("aes-256-ctr", password);
+      let dec = decipher.update(data, "hex", "utf8");
+      dec += decipher.final("utf8");
+      return JSON.parse(dec);
     } catch (e) {
       return false;
     }

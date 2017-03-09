@@ -31,7 +31,7 @@ if (typeof root.location === "undefined") {
   root.location = {};
 }
 
-const MD5 = require("crypto-js/md5");
+const CRYPTO = require("webcrypto");
 
 import MessengerClass from "./Modules/Messanger";
 
@@ -352,7 +352,7 @@ export default class Client extends MessengerClass {
         ) {
           let _obj = JSON.parse(JSON.stringify(obj));
           _obj.SubTransports.push(subtransports[x]);
-          choices.normal[MD5(JSON.stringify(_obj)).toString()] = _obj;
+          choices.normal[CRYPTO.createHash("md5").update(JSON.stringify(_obj)).digest('hex')] = _obj;
           this.generateSubtransportChoices(choices, _obj, subtransports.slice(x + 1));
         }
       }
@@ -441,7 +441,7 @@ export default class Client extends MessengerClass {
     try {
       let choises = this.encodeSync(this.choices, this.Settings.Password);
       if (choises) {
-        window.localStorage.setItem(MD5("#PACKAGE_NAME#-#PACKAGE_VERSION#").toString(), choises);
+        window.localStorage.setItem(CRYPTO.createHash("md5").update("#PACKAGE_NAME#-#PACKAGE_VERSION#").digest("hex"), choises);
       }
     } catch (e) {
 
@@ -453,7 +453,7 @@ export default class Client extends MessengerClass {
    */
   private loadChoises() {
     try {
-      return this.decodeSync(window.localStorage.getItem(MD5("#PACKAGE_NAME#-#PACKAGE_VERSION#").toString()), this.Settings.Password);
+      return this.decodeSync(window.localStorage.getItem(CRYPTO.createHash("md5").update("#PACKAGE_NAME#-#PACKAGE_VERSION#").digest("hex")), this.Settings.Password);
     } catch (e) {
 
     }

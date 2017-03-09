@@ -56,4 +56,6 @@ function connect() {
   });
 }
 
-connect();
+for (let i = 0; i < 100; i++) {
+  connect();
+}
