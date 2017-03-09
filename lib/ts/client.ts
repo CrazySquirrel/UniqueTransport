@@ -956,7 +956,8 @@ export default class Client extends MessengerClass {
     /**
      * Split data a parts
      */
-    data = data.match(new RegExp(".{1," + Math.ceil(data.length / transport.length) + "}", "g"));
+    let length = transport.length;
+    data = this.stringChunks(data, length, Math.ceil(data.length / length));
     /**
      * Implement path sub transport
      */
@@ -1030,7 +1031,9 @@ export default class Client extends MessengerClass {
     /**
      * Split data a parts
      */
-    let dataParts = data.match(new RegExp(".{1," + Math.max(Math.ceil(Math.random() * data.length * 0.5), 8) + "}", "g"));
+    let length = data.length;
+    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
+    let dataParts = this.stringChunks(data, Math.ceil(length / offset), offset);
     /**
      * Encode data parts
      */
@@ -1068,7 +1071,9 @@ export default class Client extends MessengerClass {
     /**
      * Split data a parts
      */
-    let dataParts = data.match(new RegExp(".{1," + Math.max(Math.ceil(Math.random() * data.length * 0.5), 8) + "}", "g"));
+    let length = data.length;
+    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
+    let dataParts = this.stringChunks(data, Math.ceil(length / offset), offset);
     /**
      * Encode data parts
      */
@@ -1121,7 +1126,9 @@ export default class Client extends MessengerClass {
     /**
      * Split data a parts
      */
-    let dataParts = data.match(new RegExp(".{1," + Math.max(Math.ceil(Math.random() * data.length * 0.5), 8) + "}", "g"));
+    let length = data.length;
+    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
+    let dataParts = this.stringChunks(data, Math.ceil(length / offset), offset);
     /**
      * Encode data parts
      */
@@ -1132,5 +1139,19 @@ export default class Client extends MessengerClass {
      * Implement path sub transport
      */
     return url + dataParts.join("/") + "/";
+  }
+
+  /**
+   * Get string chunks
+   * @param data
+   * @param length
+   * @return {Array}
+   */
+  private stringChunks(data: string, length: number, offset: number): string[] {
+    let _data = [];
+    for (let i = 0; i < length; i++) {
+      _data.push(data.substr(i * offset, offset));
+    }
+    return _data;
   }
 }
