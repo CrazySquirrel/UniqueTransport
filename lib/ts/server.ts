@@ -29,16 +29,11 @@ if (!root.Promise) {
 }
 
 const HTTP = require("http");
-const Agent = require("agentkeepalive");
 
-const keepaliveAgent = new Agent({
-  keepAlive: true,
-  keepAliveMsecs: 1000,
-  freeSocketKeepAliveTimeout: 30000,
-  timeout: 60000,
-  maxSockets: 100,
-  maxFreeSockets: 10
-});
+HTTP.globalAgent.keepAlive = true;
+HTTP.globalAgent.keepAliveMsecs = 1000;
+HTTP.globalAgent.maxSockets = 1000;
+HTTP.globalAgent.maxFreeSockets = 1000;
 
 const URL = require("url");
 const PNG = require("pngjs").PNG;
@@ -443,8 +438,7 @@ export default class Server extends MessengerClass {
                           hostname: url.host,
                           method: "GET",
                           path: url.path,
-                          headers: request.headers,
-                          agent: keepaliveAgent
+                          headers: request.headers
                         };
 
                         let _request = HTTP.get(options, (res) => {

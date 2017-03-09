@@ -1,15 +1,11 @@
 "use strict";
 
 const HTTP = require("http");
-const Agent = require("agentkeepalive");
-const keepaliveAgent = new Agent({
-  keepAlive: true,
-  keepAliveMsecs: 1000,
-  freeSocketKeepAliveTimeout: 30000,
-  timeout: 60000,
-  maxSockets: 100,
-  maxFreeSockets: 10
-});
+
+HTTP.globalAgent.keepAlive = true;
+HTTP.globalAgent.keepAliveMsecs = 1000;
+HTTP.globalAgent.maxSockets = 1000;
+HTTP.globalAgent.maxFreeSockets = 1000;
 
 let counter = 0;
 
@@ -32,15 +28,13 @@ function connect() {
     headers: {
       "x-real-ip": "192.168.39.171",
       "host": "weekend.rambler.ru",
-      "connection": "close",
       "x-real-host": "weekend.rambler.ru",
       "upgrade-insecure-requests": "1",
       "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36",
       "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
       "accept-encoding": "gzip, deflate, sdch, br",
       "accept-language": "en-US,en;q=0.8"
-    },
-    agent: keepaliveAgent
+    }
   };
 
   HTTP.get(options, (res) => {
