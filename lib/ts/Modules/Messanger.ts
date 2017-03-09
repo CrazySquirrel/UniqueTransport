@@ -2,6 +2,9 @@
 
 declare let require: any;
 
+const atob = require("atob");
+const btoa = require("btoa");
+
 const CRYPTO = require("webcrypto");
 
 const AES = require("crypto-js/aes");
@@ -112,6 +115,19 @@ export default class Messenger {
   public encodeSync(data: any, password: string) {
     if (
         this.cryptoModule === "" ||
+        this.cryptoModule === "base64"
+    ) {
+      try {
+        return btoa(JSON.stringify(data));
+      } catch (e) {
+        /**
+         * TODO: add logger
+         */
+      }
+    }
+
+    if (
+        this.cryptoModule === "" ||
         this.cryptoModule === "webcrypto"
     ) {
       try {
@@ -218,6 +234,16 @@ export default class Messenger {
    */
   private decodeString(data: string, password: string): string | boolean {
     try {
+      let dec = JSON.parse(atob(data));
+      this.cryptoModule = "base64";
+      return dec;
+    } catch (e) {
+      /**
+       * TODO: add logger
+       */
+    }
+
+    try {
       let decipher = CRYPTO.createDecipher("aes-256-ctr", password);
       let dec = decipher.update(data, "hex", "utf8");
       dec += decipher.final("utf8");
@@ -231,9 +257,9 @@ export default class Messenger {
     }
 
     try {
-      data = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
+      let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
       this.cryptoModule = "cryptojs";
-      return data;
+      return dec;
     } catch (e) {
       /**
        * TODO: add logger
