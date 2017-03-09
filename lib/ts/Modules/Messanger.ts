@@ -4,9 +4,13 @@ declare let require: any;
 
 const CRYPTO = require("webcrypto");
 
+const AES = require("crypto-js/aes");
+const UTF8 = require("crypto-js/enc-utf8");
+
 export default class Messenger {
 
   public Settings: any;
+  public cryptoModule: string;
 
   /**
    * Create Messanger Super Object
@@ -14,6 +18,7 @@ export default class Messenger {
    */
   public constructor(settings: any = {}) {
     this.Settings = settings;
+    this.cryptoModule = "";
   }
 
   /**
@@ -105,14 +110,37 @@ export default class Messenger {
    * @param password
    */
   public encodeSync(data: any, password: string) {
-    try {
-      let cipher = CRYPTO.createCipher("aes-256-ctr", password);
-      let crypted = cipher.update(JSON.stringify(data), "utf8", "hex");
-      crypted += cipher.final("hex");
-      return crypted;
-    } catch (e) {
-      return null;
+    if (
+        this.cryptoModule === "" ||
+        this.cryptoModule === "webcrypto"
+    ) {
+      try {
+        let cipher = CRYPTO.createCipher("aes-256-ctr", password);
+        let crypted = cipher.update(JSON.stringify(data), "utf8", "hex");
+        crypted += cipher.final("hex");
+        return crypted;
+      } catch (e) {
+        /**
+         * TODO: add logger
+         */
+      }
     }
+
+    if (
+        this.cryptoModule === "" ||
+        this.cryptoModule === "cryptojs"
+    ) {
+      try {
+        data = AES.encrypt(JSON.stringify(data), password).toString();
+        return data;
+      } catch (e) {
+        /**
+         * TODO: add logger
+         */
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -193,10 +221,26 @@ export default class Messenger {
       let decipher = CRYPTO.createDecipher("aes-256-ctr", password);
       let dec = decipher.update(data, "hex", "utf8");
       dec += decipher.final("utf8");
-      return JSON.parse(dec);
+      dec = JSON.parse(dec);
+      this.cryptoModule = "webcrypto";
+      return dec;
     } catch (e) {
-      return false;
+      /**
+       * TODO: add logger
+       */
     }
+
+    try {
+      data = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
+      this.cryptoModule = "cryptojs";
+      return data;
+    } catch (e) {
+      /**
+       * TODO: add logger
+       */
+    }
+
+    return false;
   }
 
   /**
