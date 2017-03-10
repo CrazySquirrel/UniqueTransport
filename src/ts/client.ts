@@ -52,13 +52,6 @@ const Client = new ClientClass({
         params: true
       }
     },
-    image: {
-      SubTransports: {
-        path: true,
-        name: true,
-        params: true
-      }
-    },
     style: {
       SubTransports: {
         path: true,

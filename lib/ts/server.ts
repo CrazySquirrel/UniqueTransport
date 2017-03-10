@@ -31,9 +31,7 @@ if (!root.Promise) {
 const HTTP = require("http");
 
 const URL = require("url");
-const PNG = require("pngjs").PNG;
 const PATH = require("path");
-const FS = require("fs");
 
 const baseHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -349,27 +347,6 @@ export default class Server extends MessengerClass {
                           case "style":
                             resp = `.${_result.Params.Callback} {content:"${_result.Data}";}`;
                             headers["Content-Type"] = "text/css; charset=utf-8";
-                            break;
-                          case "image":
-                            let size = Math.ceil(Math.sqrt(_result.Data.length) * 2);
-                            let rgb_data = new Buffer(size * size);
-                            for (let i = 0; i < rgb_data.length; i++) {
-                              rgb_data[i] = 0;
-                            }
-                            for (let y = 0; y < size; y++) {
-                              for (let x = 0; x < size; x++) {
-                                let idx = (size * y + x) << 2;
-                                rgb_data[idx + 3] = _result.Data.charCodeAt(Math.floor(idx / 4));
-                              }
-                            }
-                            let png = new PNG({
-                              width: size,
-                              height: size,
-                              filterType: 4,
-                            });
-                            png.data = rgb_data;
-                            resp = PNG.sync.write(png);
-                            headers["Content-Type"] = "image/png";
                             break;
                           case "script":
                             resp = 'window["' + _result.Params.Callback + '"]("' + _result.Data + '")';

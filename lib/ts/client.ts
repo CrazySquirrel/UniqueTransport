@@ -93,13 +93,6 @@ export default class Client extends MessengerClass {
           params: true
         }
       },
-      image: {
-        SubTransports: {
-          path: true,
-          name: true,
-          params: true
-        }
-      },
       style: {
         SubTransports: {
           path: true,
@@ -527,97 +520,6 @@ export default class Client extends MessengerClass {
         window.document.body.appendChild(link);
       }
 
-      /**
-       * Abort connection after timeout
-       */
-      setTimeout(
-          onerror,
-          this.Settings.ConnectionTimeout
-      );
-    });
-  }
-
-  /**
-   * Image transport
-   * @param params
-   */
-  private image(params: any = {}) {
-    return new Promise((resolve, reject) => {
-      let onerror = () => {
-        try {
-          image.src = "";
-          image.parentNode.removeChild(image);
-        } catch (e) {
-
-        }
-        reject();
-      };
-      /**
-       * Get subtransports
-       */
-      let transport = params.Choice.SubTransports;
-      /**
-       * Get url and data for subtransports
-       */
-      let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
-      let url = dataUrl.url;
-      let data = dataUrl.data;
-      /**
-       * Create transport
-       */
-      let image = window.document.createElement("img");
-
-      image.crossOrigin = "Anonymous";
-
-      image.onload = (result: any) => {
-        if (
-            result &&
-            result.path
-        ) {
-          let img = result.path[0];
-
-          let canvas = document.createElement("canvas");
-          canvas.width = img.width;
-          canvas.height = img.height;
-
-          let ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
-
-          let dataURL = ctx.getImageData(0, 0, img.width, img.height).data;
-          let text = "";
-          for (let i = 0; i < dataURL.length; i++) {
-            if ((i + 1) % 4 === 0) {
-              if (dataURL[i] === 0) {
-                break;
-              }
-              text += String.fromCharCode(dataURL[i]);
-            }
-          }
-
-          let _data = this.decodeSync(text, this.Settings.Password);
-          if (_data) {
-            resolve(_data);
-          } else {
-            reject();
-          }
-        } else {
-          reject();
-        }
-      };
-
-      image.onerror = onerror;
-      image.style.position = "absolute";
-      image.style.top = "-10000px";
-      image.style.left = "-10000px";
-      image.src = url;
-
-      let images = window.document.querySelectorAll("img");
-      if (images.length > 0) {
-        let parentScript = images[Math.floor(Math.random() * images.length)];
-        parentScript.parentNode.insertBefore(image, parentScript);
-      } else {
-        window.document.body.appendChild(image);
-      }
       /**
        * Abort connection after timeout
        */
