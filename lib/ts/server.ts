@@ -425,10 +425,11 @@ export default class Server extends MessengerClass {
                         try {
                           response.writeHead(this.Settings.SuccessResponseCode, headers);
                           response.write(resp, (e) => {
-                            console.log(e);
+                            if (e) {
+                              console.log(e);
+                            }
                             response.end();
                           });
-                          response.end();
                         } catch (e) {
                           console.log(e);
                         }
