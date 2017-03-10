@@ -52,7 +52,6 @@ import MessengerClass from "./Modules/Messanger";
 export default class Server extends MessengerClass {
 
   private listners: any;
-  private RequestLogStream: any;
   private NormalRequestHeaders: any;
   private IgnoredRequestPaths: any;
 
@@ -126,10 +125,6 @@ export default class Server extends MessengerClass {
       });
     }
 
-    if (this.Settings.WriteRequestLog) {
-      this.RequestLogStream = FS.createWriteStream("RequestLog.tmp", {"flags": "a"});
-    }
-
     this.on("debug", (data, params) => {
       return new Promise((resolve, reject) => {
         resolve(JSON.stringify({data, params}));
@@ -155,13 +150,6 @@ export default class Server extends MessengerClass {
     );
 
     try {
-      if (this.Settings.WriteRequestLog) {
-        this.RequestLogStream.write(JSON.stringify({
-              url: request.url,
-              headers: request.headers,
-            }) + "\r\n");
-      }
-
       let host;
 
       headers["Access-Control-Allow-Origin"] = "";
@@ -331,8 +319,7 @@ export default class Server extends MessengerClass {
                     result: result,
                   };
                   response.writeHead(this.Settings.SuccessResponseCode, headers);
-                  response.write(JSON.stringify(debug));
-                  response.end();
+                  response.end(JSON.stringify(debug));
                   return false;
                 }
                 /**
@@ -422,25 +409,13 @@ export default class Server extends MessengerClass {
                             resp = _result.Data;
                             headers["Content-Type"] = "text/plain; charset=utf-8";
                         }
-                        try {
-                          response.writeHead(this.Settings.SuccessResponseCode, headers);
-                          response.write(resp, (e) => {
-                            if (e) {
-                              console.log(e);
-                            }
-                            response.end();
-                          });
-                        } catch (e) {
-                          console.log(e);
-                        }
+                        headers["Content-Length"] = resp.length;
+                        response.writeHead(this.Settings.SuccessResponseCode, headers);
+                        response.end(resp);
                       } else if (_result.Params.Action === "Redirect") {
-                        try {
-                          headers["Location"] = _result.Data.link;
-                          response.writeHead(this.Settings.RedirectResponseCode, headers);
-                          response.end();
-                        } catch (e) {
-                          console.log(e);
-                        }
+                        headers["Location"] = _result.Data.link;
+                        response.writeHead(this.Settings.RedirectResponseCode, headers);
+                        response.end();
                       } else if (_result.Params.Action === "Proxy") {
                         let url = URL.parse(_result.Data.link);
 
