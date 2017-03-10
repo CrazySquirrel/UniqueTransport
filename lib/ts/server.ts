@@ -422,14 +422,24 @@ export default class Server extends MessengerClass {
                             resp = _result.Data;
                             headers["Content-Type"] = "text/plain; charset=utf-8";
                         }
-                        headers["Content-Length"] = resp.length;
-                        response.writeHead(this.Settings.SuccessResponseCode, headers);
-                        response.write(resp);
-                        response.end();
+                        try {
+                          response.writeHead(this.Settings.SuccessResponseCode, headers);
+                          response.write(resp, (e) => {
+                            console.log(e);
+                            response.end();
+                          });
+                          response.end();
+                        } catch (e) {
+                          console.log(e);
+                        }
                       } else if (_result.Params.Action === "Redirect") {
-                        headers["Location"] = _result.Data.link;
-                        response.writeHead(this.Settings.RedirectResponseCode, headers);
-                        response.end();
+                        try {
+                          headers["Location"] = _result.Data.link;
+                          response.writeHead(this.Settings.RedirectResponseCode, headers);
+                          response.end();
+                        } catch (e) {
+                          console.log(e);
+                        }
                       } else if (_result.Params.Action === "Proxy") {
                         let url = URL.parse(_result.Data.link);
 
