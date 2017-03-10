@@ -30,11 +30,6 @@ if (!root.Promise) {
 
 const HTTP = require("http");
 
-HTTP.globalAgent.keepAlive = true;
-HTTP.globalAgent.keepAliveMsecs = 5000;
-HTTP.globalAgent.maxSockets = Infinity;
-HTTP.globalAgent.maxFreeSockets = 1000;
-
 const URL = require("url");
 const PNG = require("pngjs").PNG;
 const PATH = require("path");
@@ -446,8 +441,6 @@ export default class Server extends MessengerClass {
                             response.end();
                           });
                         });
-
-                        _request.shouldKeepAlive = true;
                       } else {
                         response.writeHead(this.Settings.ErrorResponseCode, headers);
                         response.end();
