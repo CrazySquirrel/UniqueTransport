@@ -331,7 +331,8 @@ export default class Server extends MessengerClass {
                     result: result,
                   };
                   response.writeHead(this.Settings.SuccessResponseCode, headers);
-                  response.end(JSON.stringify(debug));
+                  response.write(JSON.stringify(debug));
+                  response.end();
                   return false;
                 }
                 /**
@@ -443,8 +444,20 @@ export default class Server extends MessengerClass {
                         };
 
                         let _request = HTTP.get(options, (res) => {
-                          res.pipe(response, (error) => {
-                            console.log(error);
+                          let body = [];
+
+                          res.on("data", (chunk) => {
+                            body.push(chunk);
+                          });
+
+                          res.on("end", () => {
+                            response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                            response.end(Buffer.concat(body));
+                          });
+
+                          res.on("error", (e) => {
+                            response.writeHead(this.Settings.ErrorResponseCode, res.headers);
+                            response.end();
                           });
                         });
 
