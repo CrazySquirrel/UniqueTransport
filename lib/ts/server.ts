@@ -149,7 +149,7 @@ export default class Server extends MessengerClass {
     setTimeout(
         () => {
           response.writeHead(this.Settings.ErrorResponseCode, headers);
-          response.end("");
+          response.end();
         },
         this.Settings.ConnectionTimeout
     );
@@ -316,7 +316,7 @@ export default class Server extends MessengerClass {
             }
           }
           response.writeHead(this.Settings.SuccessResponseCode, headers);
-          response.end("");
+          response.end();
         } else {
           this.preprocessor(request).then(
               (result: any) => {
@@ -423,11 +423,12 @@ export default class Server extends MessengerClass {
                         }
                         headers["Content-Length"] = resp.length;
                         response.writeHead(this.Settings.SuccessResponseCode, headers);
-                        response.end(resp);
+                        response.write(resp);
+                        response.end();
                       } else if (_result.Params.Action === "Redirect") {
                         headers["Location"] = _result.Data.link;
                         response.writeHead(this.Settings.RedirectResponseCode, headers);
-                        response.end("");
+                        response.end();
                       } else if (_result.Params.Action === "Proxy") {
                         let url = URL.parse(_result.Data.link);
 
@@ -442,36 +443,38 @@ export default class Server extends MessengerClass {
                         };
 
                         let _request = HTTP.get(options, (res) => {
-                          res.pipe(response);
+                          res.pipe(response, (error) => {
+                            console.log(error);
+                          });
                         });
 
                         _request.shouldKeepAlive = true;
                       } else {
                         response.writeHead(this.Settings.ErrorResponseCode, headers);
-                        response.end("");
+                        response.end();
                       }
                     }
                 ).catch(
                     (e) => {
                       response.writeHead(this.Settings.ErrorResponseCode, headers);
-                      response.end("");
+                      response.end();
                     }
                 );
               }
           ).catch(
               (e) => {
                 response.writeHead(this.Settings.ErrorResponseCode, headers);
-                response.end("");
+                response.end();
               }
           );
         }
       } else {
         response.writeHead(this.Settings.ErrorResponseCode, headers);
-        response.end("");
+        response.end();
       }
     } catch (e) {
       response.writeHead(this.Settings.ErrorResponseCode, headers);
-      response.end("");
+      response.end();
     }
   }
 
