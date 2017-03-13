@@ -246,7 +246,7 @@ export default class Client extends MessengerClass {
         let promise = new Promise((_resolve, _reject) => {
           let transport = choice.Transport;
           params.Data.Transport = transport;
-          params.Data.Callback = this.getRandomWord() + "-" + this.getRandomWord() + "-" + this.getRandomWord();
+          params.Data.Callback = this.getRandomWord() + "-" + Date.now() + "-" + performance.now();
           params.Data.Action = "Respond";
           params.Data.Url = choice.Url;
 

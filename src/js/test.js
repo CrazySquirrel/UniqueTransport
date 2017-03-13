@@ -3,8 +3,8 @@
 const HTTP = require("http");
 
 HTTP.globalAgent.keepAlive = true;
-HTTP.globalAgent.keepAliveMsecs = 1000;
-HTTP.globalAgent.maxSockets = 1000;
+HTTP.globalAgent.keepAliveMsecs = 5000;
+HTTP.globalAgent.maxSockets = Infinity;
 HTTP.globalAgent.maxFreeSockets = 1000;
 
 let counter = 0;

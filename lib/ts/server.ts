@@ -30,6 +30,11 @@ if (!root.Promise) {
 
 const HTTP = require("http");
 
+HTTP.globalAgent.keepAlive = true;
+HTTP.globalAgent.keepAliveMsecs = 5000;
+HTTP.globalAgent.maxSockets = Infinity;
+HTTP.globalAgent.maxFreeSockets = 1000;
+
 const URL = require("url");
 const PATH = require("path");
 
@@ -377,13 +382,20 @@ export default class Server extends MessengerClass {
                                                     </html>`;
                             headers["Content-Type"] = "text/html; charset=utf-8";
                             break;
-                          default:
+                          case "xhr":
+                          case "fetch":
                             resp = _result.Data;
                             headers["Content-Type"] = "text/plain; charset=utf-8";
+                            break;
+                          default:
+                            response.writeHead(this.Settings.ErrorResponseCode, headers);
+                            response.end();
                         }
-                        headers["Content-Length"] = resp.length;
-                        response.writeHead(this.Settings.SuccessResponseCode, headers);
-                        response.end(resp);
+                        if (resp) {
+                          headers["Content-Length"] = resp.length;
+                          response.writeHead(this.Settings.SuccessResponseCode, headers);
+                          response.end(resp);
+                        }
                       } else if (_result.Params.Action === "Redirect") {
                         headers["Location"] = _result.Data.link;
                         response.writeHead(this.Settings.RedirectResponseCode, headers);
@@ -478,7 +490,8 @@ export default class Server extends MessengerClass {
 
               if (params.Action === "Respond") {
                 if (
-                    this.listners[_data.event]
+                    this.listners[_data.event] &&
+                    ["xhr", "fetch", "iframe", "script", "style"].indexOf(params.Transport) !== -1
                 ) {
                   new Promise(
                       (_resolve, _reject) => {

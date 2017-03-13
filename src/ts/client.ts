@@ -96,3 +96,38 @@ Client.getEncodedProxy("http://avatars.mds.yandex.net/get-direct/42386/HzzAM6tDC
       console.log(url);
     }
 );
+
+/**
+ * Speed test
+ */
+/*
+let counter = 0;
+
+setInterval(
+    () => {
+      console.log(counter);
+      counter = 0;
+    },
+    1000
+);
+
+function connect() {
+  counter++;
+
+  Client.emit({
+    Event: "connect",
+  }).then(
+      (result) => {
+        connect();
+      }
+  ).catch(
+      (e) => {
+
+      }
+  );
+}
+
+for (let i = 0; i < 50; i++) {
+  connect();
+}
+*/
