@@ -1,9 +1,24 @@
 "use strick";
 
 declare let require: any;
+declare let Buffer: any;
+declare let window: any;
+declare let global: any;
 
-const atob = require("atob");
-const btoa = require("btoa");
+let root: any;
+
+if (typeof window === "undefined") {
+  if (typeof global !== "undefined") {
+    root = global;
+  } else {
+    root = {};
+  }
+} else {
+  root = window;
+}
+
+root.atob = root.atob || require("atob");
+root.btoa = root.btoa || require("btoa");
 
 const CRYPTO = require("webcrypto");
 
@@ -118,7 +133,11 @@ export default class Messenger {
         this.cryptoModule === "base64"
     ) {
       try {
-        return btoa(JSON.stringify(data));
+        if (typeof Buffer !== "undefined") {
+          return Buffer.from(JSON.stringify(data)).toString("base64");
+        } else {
+          return root.btoa(JSON.stringify(data));
+        }
       } catch (e) {
         /**
          * TODO: add logger
@@ -234,7 +253,12 @@ export default class Messenger {
    */
   private decodeString(data: string, password: string): string | boolean {
     try {
-      let dec = JSON.parse(atob(data));
+      let dec;
+      if (typeof Buffer !== "undefined") {
+        dec = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
+      } else {
+        dec = JSON.parse(root.atob(data));
+      }
       this.cryptoModule = "base64";
       return dec;
     } catch (e) {
