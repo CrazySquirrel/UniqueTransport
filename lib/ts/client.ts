@@ -121,6 +121,8 @@ export default class Client extends MessengerClass {
     } else {
       this.choices = this.filterChoises();
     }
+
+    this.cleanOldChoises();
   }
 
   /**
@@ -425,6 +427,26 @@ export default class Client extends MessengerClass {
     }
 
     return choices;
+  }
+
+  /**
+   * Clean old choises
+   */
+  private cleanOldChoises() {
+    try {
+      for (let major = 1; major < 3; major++) {
+        for (let minor = 0; minor < 10; minor++) {
+          for (let patch = 0; patch < 100; patch++) {
+            let version = major + "." + minor + "." + patch;
+            if (version !== "#PACKAGE_VERSION#") {
+              window.localStorage.removeItem(CRYPTO.createHash("md5").update("#PACKAGE_NAME#-" + version).digest("hex"));
+            }
+          }
+        }
+      }
+    } catch (e) {
+
+    }
   }
 
   /**
