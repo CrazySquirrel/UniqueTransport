@@ -130,6 +130,23 @@ export default class Messenger {
   public encodeSync(data: any, password: string) {
     if (
         this.cryptoModule === "" ||
+        this.cryptoModule === "base64+"
+    ) {
+      try {
+        if (typeof Buffer !== "undefined") {
+          return Buffer.from(root.unescape(encodeURIComponent(JSON.stringify(data)))).toString("base64");
+        } else {
+          return root.btoa(root.unescape(encodeURIComponent(JSON.stringify(data))));
+        }
+      } catch (e) {
+        /**
+         * TODO: add logger
+         */
+      }
+    }
+
+    if (
+        this.cryptoModule === "" ||
         this.cryptoModule === "base64"
     ) {
       try {
@@ -252,6 +269,21 @@ export default class Messenger {
    * @return string | boolean
    */
   private decodeString(data: string, password: string): string | boolean {
+    try {
+      let dec;
+      if (typeof Buffer !== "undefined") {
+        dec = JSON.parse(decodeURIComponent(root.escape(Buffer.from(data, "base64").toString("utf8"))));
+      } else {
+        dec = JSON.parse(decodeURIComponent(root.escape(root.atob(data))));
+      }
+      this.cryptoModule = "base64+";
+      return dec;
+    } catch (e) {
+      /**
+       * TODO: add logger
+       */
+    }
+
     try {
       let dec;
       if (typeof Buffer !== "undefined") {
