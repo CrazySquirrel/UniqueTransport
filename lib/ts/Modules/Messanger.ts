@@ -130,6 +130,20 @@ export default class Messenger {
   public encodeSync(data: any, password: string) {
     if (
         this.cryptoModule === "" ||
+        this.cryptoModule === "cryptojs"
+    ) {
+      try {
+        data = AES.encrypt(JSON.stringify(data), password).toString();
+        return data;
+      } catch (e) {
+        /**
+         * TODO: add logger
+         */
+      }
+    }
+
+    if (
+        this.cryptoModule === "" ||
         this.cryptoModule === "base64+"
     ) {
       try {
@@ -171,20 +185,6 @@ export default class Messenger {
         let crypted = cipher.update(JSON.stringify(data), "utf8", "hex");
         crypted += cipher.final("hex");
         return crypted;
-      } catch (e) {
-        /**
-         * TODO: add logger
-         */
-      }
-    }
-
-    if (
-        this.cryptoModule === "" ||
-        this.cryptoModule === "cryptojs"
-    ) {
-      try {
-        data = AES.encrypt(JSON.stringify(data), password).toString();
-        return data;
       } catch (e) {
         /**
          * TODO: add logger
@@ -270,6 +270,16 @@ export default class Messenger {
    */
   private decodeString(data: string, password: string): string | boolean {
     try {
+      let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
+      this.cryptoModule = "cryptojs";
+      return dec;
+    } catch (e) {
+      /**
+       * TODO: add logger
+       */
+    }
+
+    try {
       let dec;
       if (typeof Buffer !== "undefined") {
         dec = JSON.parse(decodeURIComponent(root.escape(Buffer.from(data, "base64").toString("utf8"))));
@@ -305,16 +315,6 @@ export default class Messenger {
       dec += decipher.final("utf8");
       dec = JSON.parse(dec);
       this.cryptoModule = "webcrypto";
-      return dec;
-    } catch (e) {
-      /**
-       * TODO: add logger
-       */
-    }
-
-    try {
-      let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
-      this.cryptoModule = "cryptojs";
       return dec;
     } catch (e) {
       /**
