@@ -4,8 +4,6 @@
     "sourceMap": false,
     "inlineSourceMap": true
   },
-  "paths": {
-  },
   "exclude": [
     "node_modules",
     "typings"
