@@ -11,96 +11,265 @@ declare let global: any;
 declare let fetch: any;
 declare let require: any;
 
-let root: any;
+//window.atob = window.atob || require("atob");
+//window.btoa = window.btoa || require("btoa");
 
-if (typeof window === "undefined") {
-  if (typeof global !== "undefined") {
-    root = global;
-  } else {
-    root = {};
-  }
-} else {
-  root = window;
-}
+window.Promise = window.Promise || require("promise-polyfill");
 
-if (!root.Promise) {
-  root.Promise = require("promise-polyfill");
-}
+/*
+ const CRYPTO = require("webcrypto");
 
-if (typeof root.location === "undefined") {
-  root.location = {};
-}
+ const AES = require("crypto-js/aes");
+ const UTF8 = require("crypto-js/enc-utf8");
+ */
 
 const MD5 = require("crypto-js/md5");
 
-import MessengerClass from "./Modules/Messanger";
+export default class Client {
 
-export default class Client extends MessengerClass {
+  /**
+   * Insert data into headers
+   * @param data
+   * @return {{}}
+   */
+  public static headerSubTransport(data: any): any {
+    /**
+     * Split data a parts
+     */
+    let length = data.length;
+    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
+    let dataParts = Client.stringChunks(data, Math.ceil(length / offset), offset);
+    /**
+     * Encode data parts
+     */
+    for (let i = 0; i < dataParts.length; i++) {
+      dataParts[i] = encodeURIComponent(dataParts[i]);
+    }
+    /**
+     * Generate keys for headers and get params
+     */
+    let keys = [];
+    for (let i = 0; i < dataParts.length; i++) {
+      keys.push(Client.getRandomWord());
+    }
+    keys = keys.sort();
+    /**
+     * Format get params object
+     */
+    let params = {};
+    for (let i = 0; i < dataParts.length; i++) {
+      params[keys[i]] = dataParts[i];
+    }
+    /**
+     * Implement header sub transport
+     */
+    return params;
+  }
+
+  /**
+   * Insert data into name
+   * @param url
+   * @param data
+   * @return {string}
+   */
+  public static nameSubTransport(url: string, data: any): string {
+    /**
+     * Implement name sub transport
+     */
+    return url + encodeURIComponent(data);
+  }
+
+  /**
+   * Insert data into url path
+   * @param url
+   * @param data
+   * @return {string}
+   */
+  public static pathSubTransport(url: string, data: any): string {
+    /**
+     * Split data a parts
+     */
+    let length = data.length;
+    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
+    let dataParts = Client.stringChunks(data, Math.ceil(length / offset), offset);
+    /**
+     * Encode data parts
+     */
+    for (let i = 0; i < dataParts.length; i++) {
+      dataParts[i] = encodeURIComponent(dataParts[i]);
+    }
+    /**
+     * Implement path sub transport
+     */
+    return url + dataParts.join("/") + "/";
+  }
+
+  /**
+   * Get choise type based on the rate
+   */
+  public static getChoiseType(rate: any, choices: any): string {
+    if (rate === 0) {
+      if (Client.isObjectNotEmpty(choices.normal)) {
+        return "normal";
+      } else if (Client.isObjectNotEmpty(choices.bad)) {
+        return "bad";
+      } else {
+        return "good";
+      }
+    } else if (rate > 0) {
+      if (Client.isObjectNotEmpty(choices.bad)) {
+        return "bad";
+      } else if (Client.isObjectNotEmpty(choices.normal)) {
+        return "normal";
+      } else {
+        return "good";
+      }
+    } else if (rate < 0) {
+      if (Client.isObjectNotEmpty(choices.good)) {
+        return "good";
+      } else if (Client.isObjectNotEmpty(choices.normal)) {
+        return "normal";
+      } else {
+        return "bad";
+      }
+    }
+  }
+
+  /**
+   * Check if object is empty
+   * @param obj
+   */
+  public static isObjectNotEmpty(obj) {
+    for (let prop in obj) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Get choice ID
+   * @param choiceType
+   * @param choices
+   */
+  public static getChoiceID(choiceType: string, choices: any): string {
+    let keys = Object.keys(choices[choiceType]);
+    return keys[keys.length * Math.random() << 0];
+  }
+
+  /**
+   * Get string chunks
+   * @param data
+   * @param length
+   * @param offset
+   * @return {Array}
+   */
+  public static stringChunks(data: string, length: number, offset: number): string[] {
+    let _data = [];
+    for (let i = 0; i < length; i++) {
+      _data.push(data.substr(i * offset, offset));
+    }
+    return _data;
+  }
+
+  /**
+   * Get random word
+   * @return string
+   */
+  public static  getRandomWord(): string {
+    let word = Math.random().toString(36).replace(/[^a-z]+/g, "");
+    return word.substr(0, 4 + Math.floor(Math.random() * word.length * 0.5));
+  }
+
+  /**
+   * Clean old choises
+   */
+  public static cleanOldChoises() {
+    try {
+      for (let major = 1; major < 3; major++) {
+        for (let minor = 0; minor < 10; minor++) {
+          for (let patch = 0; patch < 100; patch++) {
+            let version = major + "." + minor + "." + patch;
+            if (version !== "#PACKAGE_VERSION#") {
+              window.localStorage.removeItem(MD5("#PACKAGE_NAME#-" + version).toString());
+            }
+          }
+        }
+      }
+    } catch (e) {
+      /**
+       * Log error
+       */
+    }
+  }
+
+  private Settings: any;
+
+  private cryptoModule: any;
 
   private choices: any;
 
   private rate: number;
 
   private defaultSettings: any = {
-    Urls: [
-      root.location.origin + "/"
-    ],
+    ConnectionTimeout: 10000,
     Password: "xmas",
     ReConnectionTimeout: 500,
-    ConnectionTimeout: 10000,
     Transports: {
-      xhr: {
-        HttpMethods: {
-          GET: true,
-          POST: true,
-          PUT: true,
-          PATCH: true,
-        },
-        SubTransports: {
-          path: true,
-          name: true,
-          params: true,
-          header: true,
-          body: true,
-        }
-      },
       fetch: {
         HttpMethods: {
           GET: true,
+          PATCH: true,
           POST: true,
           PUT: true,
-          PATCH: true,
         },
         SubTransports: {
-          path: true,
+          body: true,
+          header: true,
           name: true,
           params: true,
-          header: true,
-          body: true,
+          path: true,
         }
       },
       iframe: {
         SubTransports: {
-          path: true,
           name: true,
-          params: true
+          params: true,
+          path: true,
         }
       },
       script: {
         SubTransports: {
-          path: true,
           name: true,
-          params: true
+          params: true,
+          path: true,
         }
       },
       style: {
         SubTransports: {
-          path: true,
           name: true,
-          params: true
+          params: true,
+          path: true,
         }
-      }
-    }
+      },
+      xhr: {
+        HttpMethods: {
+          GET: true,
+          PATCH: true,
+          POST: true,
+          PUT: true,
+        },
+        SubTransports: {
+          body: true,
+          header: true,
+          name: true,
+          params: true,
+          path: true,
+        }
+      },
+    },
+    Urls: [
+      window.location.origin + "/"
+    ],
   };
 
   /**
@@ -108,7 +277,9 @@ export default class Client extends MessengerClass {
    * @param settings
    */
   public constructor(settings: any = {}) {
-    super(settings);
+    this.Settings = settings;
+
+    this.cryptoModule = "";
 
     this.rate = 0;
 
@@ -122,7 +293,7 @@ export default class Client extends MessengerClass {
       this.choices = this.filterChoises();
     }
 
-    this.cleanOldChoises();
+    Client.cleanOldChoises();
   }
 
   /**
@@ -134,10 +305,10 @@ export default class Client extends MessengerClass {
         link
     ) {
       let _data = this.encodeSync({
-        link: link,
         data: {
           Action: "Redirect",
         },
+        link,
       }, this.Settings.Password);
 
       if (_data) {
@@ -183,10 +354,10 @@ export default class Client extends MessengerClass {
         link
     ) {
       let _data = this.encodeSync({
-        link: link,
         data: {
           Action: "Proxy",
         },
+        link
       }, this.Settings.Password);
 
       if (_data) {
@@ -240,29 +411,29 @@ export default class Client extends MessengerClass {
     }
 
     return new Promise((resolve, reject) => {
-      let choiceType = this.getChoiseType(this.rate, this.choices);
-      let choiceID = this.getChoiceID(choiceType, this.choices);
+      let choiceType = Client.getChoiseType(this.rate, this.choices);
+      let choiceID = Client.getChoiceID(choiceType, this.choices);
       if (choiceID) {
         let choice = this.choices[choiceType][choiceID];
 
         let promise = new Promise((_resolve, _reject) => {
           let transport = choice.Transport;
           params.Data.Transport = transport;
-          params.Data.Callback = this.getRandomWord() + "-" + Date.now() + "-" + performance.now();
+          params.Data.Callback = Client.getRandomWord() + "-" + Date.now() + "-" + performance.now();
           params.Data.Action = "Respond";
           params.Data.Url = choice.Url;
 
           let _data = this.encodeSync({
-            event: params.Event,
             data: params.Data,
+            event: params.Event,
           }, this.Settings.Password);
 
           if (_data) {
             this[transport]({
-              EncodedData: _data,
-              RawData: params.Data,
               Choice: choice,
               Debug: params.Debug,
+              EncodedData: _data,
+              RawData: params.Data,
             }).then(_resolve).catch(_reject);
           } else {
             _reject();
@@ -337,7 +508,7 @@ export default class Client extends MessengerClass {
    * @param obj
    * @param subtransports
    */
-  private generateSubtransportChoices(choices: any, obj: any, subtransports: any): void {
+  public generateSubtransportChoices(choices: any, obj: any, subtransports: any): void {
     let l = subtransports.length;
     if (l) {
       for (let x = 0; x < l; x++) {
@@ -354,13 +525,13 @@ export default class Client extends MessengerClass {
     }
   }
 
-  private filterChoises() {
+  public filterChoises() {
     let _choices = this.generateChoises();
 
     let choices = {
+      bad: {},
       good: {},
       normal: {},
-      bad: {},
     };
 
     for (let choiceID in _choices.normal) {
@@ -381,11 +552,11 @@ export default class Client extends MessengerClass {
   /**
    * Generate choises
    */
-  private generateChoises() {
+  public generateChoises() {
     let choices = {
+      bad: {},
       good: {},
       normal: {},
-      bad: {},
     };
 
     for (let Url of this.Settings.Urls) {
@@ -430,47 +601,31 @@ export default class Client extends MessengerClass {
   }
 
   /**
-   * Clean old choises
-   */
-  private cleanOldChoises() {
-    try {
-      for (let major = 1; major < 3; major++) {
-        for (let minor = 0; minor < 10; minor++) {
-          for (let patch = 0; patch < 100; patch++) {
-            let version = major + "." + minor + "." + patch;
-            if (version !== "#PACKAGE_VERSION#") {
-              window.localStorage.removeItem(MD5("#PACKAGE_NAME#-" + version).toString());
-            }
-          }
-        }
-      }
-    } catch (e) {
-
-    }
-  }
-
-  /**
    * Save choises
    */
-  private saveChoises() {
+  public saveChoises() {
     try {
       let choises = this.encodeSync(this.choices, this.Settings.Password);
       if (choises) {
         window.localStorage.setItem(MD5("#PACKAGE_NAME#-#PACKAGE_VERSION#").toString(), choises);
       }
     } catch (e) {
-
+      /**
+       * Log error
+       */
     }
   }
 
   /**
    * Load choises
    */
-  private loadChoises() {
+  public loadChoises() {
     try {
       return this.decodeSync(window.localStorage.getItem(MD5("#PACKAGE_NAME#-#PACKAGE_VERSION#").toString()), this.Settings.Password);
     } catch (e) {
-
+      /**
+       * Log error
+       */
     }
     return null;
   }
@@ -479,14 +634,16 @@ export default class Client extends MessengerClass {
    * Style transport
    * @param params
    */
-  private style(params: any = {}) {
+  public style(params: any = {}) {
     return new Promise((resolve, reject) => {
       let onerror = () => {
         try {
           link.href = "";
           link.parentNode.removeChild(link);
         } catch (e) {
-
+          /**
+           * Log error
+           */
         }
         reject();
       };
@@ -499,7 +656,6 @@ export default class Client extends MessengerClass {
        */
       let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
       let url = dataUrl.url;
-      let data = dataUrl.data;
       /**
        * Create transport
        */
@@ -556,7 +712,7 @@ export default class Client extends MessengerClass {
    * Script transport
    * @param params
    */
-  private script(params: any = {}) {
+  public script(params: any = {}) {
     return new Promise((resolve, reject) => {
       let onerror = () => {
         try {
@@ -567,7 +723,9 @@ export default class Client extends MessengerClass {
           window[params.RawData.Callback] = undefined;
           delete window[params.RawData.Callback];
         } catch (e) {
-
+          /**
+           * Log error
+           */
         }
         reject();
       };
@@ -580,7 +738,6 @@ export default class Client extends MessengerClass {
        */
       let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
       let url = dataUrl.url;
-      let data = dataUrl.data;
       /**
        * Create listner
        */
@@ -629,7 +786,7 @@ export default class Client extends MessengerClass {
    * Iframe transport
    * @param params
    */
-  private iframe(params: any = {}) {
+  public iframe(params: any = {}) {
     return new Promise((resolve, reject) => {
       let onerror = () => {
         try {
@@ -639,7 +796,9 @@ export default class Client extends MessengerClass {
 
           window.removeEventListener("message", listner);
         } catch (e) {
-
+          /**
+           * Log error
+           */
         }
         reject();
       };
@@ -652,7 +811,6 @@ export default class Client extends MessengerClass {
        */
       let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
       let url = dataUrl.url;
-      let data = dataUrl.data;
       /**
        * Create listner
        */
@@ -704,7 +862,7 @@ export default class Client extends MessengerClass {
    * Fetch transport
    * @param params
    */
-  private fetch(params: any = {}) {
+  public fetch(params: any = {}) {
     return new Promise((resolve, reject) => {
       let onerror = () => {
         reject();
@@ -724,7 +882,7 @@ export default class Client extends MessengerClass {
        */
       let headers = {};
       if (transport.indexOf("header") !== -1) {
-        headers = this.headerSubTransport(data.shift());
+        headers = Client.headerSubTransport(data.shift());
       }
       /**
        * Set settings base on the transports
@@ -782,7 +940,7 @@ export default class Client extends MessengerClass {
    * XHR transport
    * @param params
    */
-  private xhr(params: any = {}) {
+  public xhr(params: any = {}) {
     return new Promise((resolve, reject) => {
       let xhr;
 
@@ -790,7 +948,9 @@ export default class Client extends MessengerClass {
         try {
           xhr.abort();
         } catch (e) {
-
+          /**
+           * Log error
+           */
         }
         reject();
       };
@@ -810,7 +970,7 @@ export default class Client extends MessengerClass {
        */
       let headers = {};
       if (transport.indexOf("header") !== -1) {
-        headers = this.headerSubTransport(data.shift());
+        headers = Client.headerSubTransport(data.shift());
       }
       /**
        * Create transport
@@ -874,25 +1034,24 @@ export default class Client extends MessengerClass {
    * @param data
    * @param url
    * @param transport
-   * @return {{data: any, url: string}}
    */
-  private getDataAndUrl(data: any, url: string, transport: string[]): any {
+  public getDataAndUrl(data: any, url: string, transport: string[]): any {
     /**
      * Split data a parts
      */
     let length = transport.length;
-    data = this.stringChunks(data, length, Math.ceil(data.length / length));
+    data = Client.stringChunks(data, length, Math.ceil(data.length / length));
     /**
      * Implement path sub transport
      */
     if (transport.indexOf("path") !== -1) {
-      url = this.pathSubTransport(url, data.shift());
+      url = Client.pathSubTransport(url, data.shift());
     }
     /**
      * Implement path sub transport
      */
     if (transport.indexOf("name") !== -1) {
-      url = this.nameSubTransport(url, data.shift());
+      url = Client.nameSubTransport(url, data.shift());
     }
     /**
      * Implement path sub transport
@@ -913,7 +1072,7 @@ export default class Client extends MessengerClass {
    * @param type
    * @return {Array}
    */
-  private getTransport(_transports: string[], type: string): string[] {
+  public getTransport(_transports: string[], type: string): string[] {
     /**
      * Filter sub transports by settings
      */
@@ -947,57 +1106,18 @@ export default class Client extends MessengerClass {
   }
 
   /**
-   * Insert data into headers
-   * @param data
-   * @return {{}}
-   */
-  private headerSubTransport(data: any): any {
-    /**
-     * Split data a parts
-     */
-    let length = data.length;
-    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
-    let dataParts = this.stringChunks(data, Math.ceil(length / offset), offset);
-    /**
-     * Encode data parts
-     */
-    for (let i = 0; i < dataParts.length; i++) {
-      dataParts[i] = encodeURIComponent(dataParts[i]);
-    }
-    /**
-     * Generate keys for headers and get params
-     */
-    let keys = [];
-    for (let i = 0; i < dataParts.length; i++) {
-      keys.push(this.getRandomWord());
-    }
-    keys = keys.sort();
-    /**
-     * Format get params object
-     */
-    let params = {};
-    for (let i = 0; i < dataParts.length; i++) {
-      params[keys[i]] = dataParts[i];
-    }
-    /**
-     * Implement header sub transport
-     */
-    return params;
-  }
-
-  /**
    * Insert data into get params
    * @param url
    * @param data
    * @return {string}
    */
-  private paramsSubTransport(url: string, data: any): string {
+  public paramsSubTransport(url: string, data: any): string {
     /**
      * Split data a parts
      */
     let length = data.length;
     let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
-    let dataParts = this.stringChunks(data, Math.ceil(length / offset), offset);
+    let dataParts = Client.stringChunks(data, Math.ceil(length / offset), offset);
     /**
      * Encode data parts
      */
@@ -1009,7 +1129,7 @@ export default class Client extends MessengerClass {
      */
     let keys = [];
     for (let i = 0; i < dataParts.length; i++) {
-      keys.push(this.getRandomWord());
+      keys.push(Client.getRandomWord());
     }
     keys = keys.sort();
     /**
@@ -1028,54 +1148,173 @@ export default class Client extends MessengerClass {
   }
 
   /**
-   * Insert data into name
-   * @param url
-   * @param data
-   * @return {string}
+   * Combine settings
+   * @param settedSettings
+   * @param defaultSettings
    */
-  private nameSubTransport(url: string, data: any): string {
-    /**
-     * Implement name sub transport
-     */
-    return url + encodeURIComponent(data);
+  public combineSettings(settedSettings: any, defaultSettings: any): any {
+    let settings;
+    if (
+        (
+            typeof settedSettings === "boolean" ||
+            typeof settedSettings === "number" ||
+            typeof settedSettings === "string" ||
+            typeof settedSettings === "function" ||
+            typeof settedSettings === "boolean" ||
+            (
+                typeof settedSettings === "object" &&
+                settedSettings
+            )
+        ) && (
+            typeof settedSettings === typeof defaultSettings
+        )
+    ) {
+      settings = settedSettings;
+      if (
+          typeof settedSettings === "object"
+      ) {
+        for (let prop in defaultSettings) {
+          if (defaultSettings.hasOwnProperty(prop)) {
+            settings[prop] = this.combineSettings(settings[prop], defaultSettings[prop]);
+          }
+        }
+      }
+    } else {
+      settings = defaultSettings;
+    }
+    return settings;
   }
 
   /**
-   * Insert data into url path
-   * @param url
+   * Decode data asynchronously
    * @param data
-   * @return {string}
+   * @param password
    */
-  private pathSubTransport(url: string, data: any): string {
-    /**
-     * Split data a parts
-     */
-    let length = data.length;
-    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
-    let dataParts = this.stringChunks(data, Math.ceil(length / offset), offset);
-    /**
-     * Encode data parts
-     */
-    for (let i = 0; i < dataParts.length; i++) {
-      dataParts[i] = encodeURIComponent(dataParts[i]);
-    }
-    /**
-     * Implement path sub transport
-     */
-    return url + dataParts.join("/") + "/";
+  public decode(data: any, password: string) {
+    return new Promise((resolve, reject) => {
+      let _data = this.decodeSync(data, password);
+      if (_data) {
+        resolve(_data);
+      } else {
+        reject();
+      }
+    });
   }
 
   /**
-   * Get string chunks
+   * Encode data object asynchronously
    * @param data
-   * @param length
-   * @return {Array}
+   * @param password
    */
-  private stringChunks(data: string, length: number, offset: number): string[] {
-    let _data = [];
-    for (let i = 0; i < length; i++) {
-      _data.push(data.substr(i * offset, offset));
+  public encode(data: any, password: string) {
+    return new Promise((resolve, reject) => {
+      let _data = this.encodeSync(data, password);
+      if (_data) {
+        resolve(_data);
+      } else {
+        reject();
+      }
+    });
+  }
+
+  /**
+   * Decode data synchronously
+   * @param data
+   * @param password
+   */
+  public decodeSync(data: any, password: string) {
+    try {
+      let dec = JSON.parse(decodeURIComponent(window.escape(window.atob(data))));
+      this.cryptoModule = "base64+";
+      return dec;
+    } catch (e) {
+      //TODO: add logger
     }
-    return _data;
+    /*
+     try {
+     let dec = JSON.parse(window.atob(data));
+     this.cryptoModule = "base64";
+     return dec;
+     } catch (e) {
+     //TODO: add logger
+     }
+
+     try {
+     let decipher = CRYPTO.createDecipher("aes-256-ctr", password);
+     let dec = decipher.update(data, "hex", "utf8");
+     dec += decipher.final("utf8");
+     dec = JSON.parse(dec);
+     this.cryptoModule = "webcrypto";
+     return dec;
+     } catch (e) {
+     //TODO: add logger
+     }
+
+     try {
+     let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
+     this.cryptoModule = "cryptojs";
+     return dec;
+     } catch (e) {
+     //TODO: add logger
+     }
+     */
+    return false;
+  }
+
+  /**
+   * Encode data object synchronously
+   * @param data
+   * @param password
+   */
+  public encodeSync(data: any, password: string) {
+    if (
+        this.cryptoModule === "" ||
+        this.cryptoModule === "base64+"
+    ) {
+      try {
+        return window.btoa(window.unescape(encodeURIComponent(JSON.stringify(data))));
+      } catch (e) {
+        //TODO: add logger
+      }
+    }
+    /*
+     if (
+     this.cryptoModule === "" ||
+     this.cryptoModule === "base64"
+     ) {
+     try {
+     return window.btoa(JSON.stringify(data));
+     } catch (e) {
+     //TODO: add logger
+     }
+     }
+
+     if (
+     this.cryptoModule === "" ||
+     this.cryptoModule === "webcrypto"
+     ) {
+     try {
+     let cipher = CRYPTO.createCipher("aes-256-ctr", password);
+     let crypted = cipher.update(JSON.stringify(data), "utf8", "hex");
+     crypted += cipher.final("hex");
+     return crypted;
+     } catch (e) {
+     //TODO: add logger
+     }
+     }
+
+     if (
+     this.cryptoModule === "" ||
+     this.cryptoModule === "cryptojs"
+     ) {
+     try {
+     data = AES.encrypt(JSON.stringify(data), password).toString();
+     return data;
+     } catch (e) {
+     //TODO: add logger
+     }
+     }
+     */
+    return null;
   }
 }

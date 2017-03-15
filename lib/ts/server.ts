@@ -12,21 +12,13 @@ declare let global: any;
 declare let require: any;
 declare let Buffer: any;
 
-let root: any;
+global.Promise = global.Promise || require("promise-polyfill");
+global.location = global.location || {};
 
-if (typeof window === "undefined") {
-  if (typeof global !== "undefined") {
-    root = global;
-  } else {
-    root = {};
-  }
-} else {
-  root = window;
-}
+const CRYPTO = require("webcrypto");
 
-if (!root.Promise) {
-  root.Promise = require("promise-polyfill");
-}
+const AES = require("crypto-js/aes");
+const UTF8 = require("crypto-js/enc-utf8");
 
 const HTTP = require("http");
 
@@ -45,16 +37,93 @@ const baseHeaders = {
   "Access-Control-Allow-Credentials": true,
 };
 
-import MessengerClass from "./Modules/Messanger";
+export default class Server {
 
-export default class Server extends MessengerClass {
+  /**
+   * Get random word
+   * @return string
+   */
+  public static getRandomWord(): string {
+    let word = Math.random().toString(36).replace(/[^a-z]+/g, "");
+    return word.substr(0, 4 + Math.floor(Math.random() * word.length * 0.5));
+  }
 
-  private listners: any;
-  private NormalRequestHeaders: any;
-  private IgnoredRequestPaths: any;
+  /**
+   * Check if object is empty
+   * @param obj
+   */
+  public static isObjectNotEmpty(obj) {
+    for (let prop in obj) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Get choice ID
+   * @param choiceType
+   * @param choices
+   */
+  public static getChoiceID(choiceType: string, choices: any): string {
+    let keys = Object.keys(choices[choiceType]);
+    return keys[keys.length * Math.random() << 0];
+  }
+
+  /**
+   * Decode data string
+   * @param data
+   * @param password
+   * @return string | boolean
+   */
+  public static decodeString(data: string, password: string): string {
+    try {
+      return JSON.parse(AES.decrypt(data, password).toString(UTF8)) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Get choise type based on the rate
+   */
+  public static getChoiseType(rate: any, choices: any): string {
+    if (rate === 0) {
+      if (Server.isObjectNotEmpty(choices.normal)) {
+        return "normal";
+      } else if (Server.isObjectNotEmpty(choices.bad)) {
+        return "bad";
+      } else {
+        return "good";
+      }
+    } else if (rate > 0) {
+      if (Server.isObjectNotEmpty(choices.bad)) {
+        return "bad";
+      } else if (Server.isObjectNotEmpty(choices.normal)) {
+        return "normal";
+      } else {
+        return "good";
+      }
+    } else if (rate < 0) {
+      if (Server.isObjectNotEmpty(choices.good)) {
+        return "good";
+      } else if (Server.isObjectNotEmpty(choices.normal)) {
+        return "normal";
+      } else {
+        return "bad";
+      }
+    }
+  }
+
+  public Settings: any;
+  public cryptoModule: string;
+
+  public listners: any;
+  public NormalRequestHeaders: any;
+  public IgnoredRequestPaths: any;
 
   public constructor(settings: any) {
-    super(settings);
+    this.Settings = settings;
+    this.cryptoModule = "";
 
     this.listners = {};
 
@@ -124,7 +193,7 @@ export default class Server extends MessengerClass {
     }
 
     this.on("debug", (data, params) => {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         resolve(JSON.stringify({data, params}));
       });
     });
@@ -136,7 +205,7 @@ export default class Server extends MessengerClass {
     this.listners[event] = listner;
   }
 
-  private listenr(request, response) {
+  public listenr(request, response) {
     let headers = Object.assign({}, baseHeaders);
 
     setTimeout(
@@ -294,11 +363,11 @@ export default class Server extends MessengerClass {
         if (
             request.method === "OPTIONS"
         ) {
-          if (request.headers['access-control-request-headers']) {
+          if (request.headers["access-control-request-headers"]) {
             if (headers["Access-Control-Allow-Headers"]) {
-              headers["Access-Control-Allow-Headers"] = headers["Access-Control-Allow-Headers"].split(", ").concat(request.headers['access-control-request-headers'].split(", ")).join(", ");
+              headers["Access-Control-Allow-Headers"] = headers["Access-Control-Allow-Headers"].split(", ").concat(request.headers["access-control-request-headers"].split(", ")).join(", ");
             } else {
-              headers["Access-Control-Allow-Headers"] = request.headers['access-control-request-headers'];
+              headers["Access-Control-Allow-Headers"] = request.headers["access-control-request-headers"];
             }
           }
           response.writeHead(this.Settings.SuccessResponseCode, headers);
@@ -311,10 +380,10 @@ export default class Server extends MessengerClass {
                  */
                 if (result.indexOf("debug") !== -1) {
                   let debug = {
+                    headers: request.headers,
                     rawurl: request.url,
                     url: URL.parse(request.url, true),
-                    headers: request.headers,
-                    result: result,
+                    result,
                   };
                   response.writeHead(this.Settings.SuccessResponseCode, headers);
                   response.end(JSON.stringify(debug));
@@ -339,9 +408,9 @@ export default class Server extends MessengerClass {
                 }
 
                 let params = {
-                  IP: IP,
                   Headers: request.headers,
                   Host: host,
+                  IP,
                 };
 
                 this.processor(result, params).then(
@@ -406,14 +475,14 @@ export default class Server extends MessengerClass {
                         request.headers.host = url.host;
 
                         let options = {
-                          port: "80",
+                          headers: request.headers,
                           hostname: url.host,
                           method: "GET",
                           path: url.path,
-                          headers: request.headers
+                          port: "80",
                         };
 
-                        let _request = HTTP.get(options, (res) => {
+                        HTTP.get(options, (res) => {
                           let body = [];
 
                           res.on("data", (chunk) => {
@@ -425,7 +494,7 @@ export default class Server extends MessengerClass {
                             response.end(Buffer.concat(body));
                           });
 
-                          res.on("error", (e) => {
+                          res.on("error", () => {
                             response.writeHead(this.Settings.ErrorResponseCode, res.headers);
                             response.end();
                           });
@@ -436,14 +505,14 @@ export default class Server extends MessengerClass {
                       }
                     }
                 ).catch(
-                    (e) => {
+                    () => {
                       response.writeHead(this.Settings.ErrorResponseCode, headers);
                       response.end();
                     }
                 );
               }
           ).catch(
-              (e) => {
+              () => {
                 response.writeHead(this.Settings.ErrorResponseCode, headers);
                 response.end();
               }
@@ -459,7 +528,7 @@ export default class Server extends MessengerClass {
     }
   }
 
-  private processor(data, params) {
+  public processor(data, params) {
     return new Promise((resolve, reject) => {
       this.decode(data, this.Settings.Password).then(
           (_data: any) => {
@@ -494,16 +563,16 @@ export default class Server extends MessengerClass {
                     ["xhr", "fetch", "iframe", "script", "style"].indexOf(params.Transport) !== -1
                 ) {
                   new Promise(
-                      (_resolve, _reject) => {
+                      (_resolve) => {
                         _resolve(this.listners[_data.event](_data.data, params));
                       }
                   ).then(
                       (result) => {
                         this.encode(result, this.Settings.Password).then(
-                            (_data) => {
+                            (__data) => {
                               resolve({
+                                Data: __data,
                                 Params: params,
-                                Data: _data,
                               });
                             }
                         ).catch(reject);
@@ -517,21 +586,21 @@ export default class Server extends MessengerClass {
                     this.listners["redirect"]
                 ) {
                   new Promise(
-                      (_resolve, _reject) => {
+                      (_resolve) => {
                         _resolve(this.listners["redirect"](_data, params));
                       }
                   ).then(
                       () => {
                         resolve({
-                          Params: params,
                           Data: _data,
+                          Params: params,
                         });
                       }
                   ).catch(reject);
                 } else {
                   resolve({
-                    Params: params,
                     Data: _data,
+                    Params: params,
                   });
                 }
               } else if (params.Action === "Proxy") {
@@ -539,21 +608,21 @@ export default class Server extends MessengerClass {
                     this.listners["proxy"]
                 ) {
                   new Promise(
-                      (_resolve, _reject) => {
+                      (_resolve) => {
                         _resolve(this.listners["proxy"](_data, params));
                       }
                   ).then(
                       () => {
                         resolve({
-                          Params: params,
                           Data: _data,
+                          Params: params,
                         });
                       }
                   ).catch(reject);
                 } else {
                   resolve({
-                    Params: params,
                     Data: _data,
+                    Params: params,
                   });
                 }
               } else {
@@ -567,7 +636,7 @@ export default class Server extends MessengerClass {
     });
   }
 
-  private preprocessor(request) {
+  public preprocessor(request) {
     return new Promise((resolve, reject) => {
       let data = [];
       /**
@@ -631,9 +700,196 @@ export default class Server extends MessengerClass {
         resolve(data.join(""));
       });
 
-      request.on("error", (e) => {
+      request.on("error", () => {
         reject();
       });
     });
+  }
+
+  /**
+   * Combine settings
+   * @param settedSettings
+   * @param defaultSettings
+   */
+  public combineSettings(settedSettings: any, defaultSettings: any): any {
+    let settings;
+    if (
+        (
+            typeof settedSettings === "boolean" ||
+            typeof settedSettings === "number" ||
+            typeof settedSettings === "string" ||
+            typeof settedSettings === "function" ||
+            typeof settedSettings === "boolean" ||
+            (
+                typeof settedSettings === "object" &&
+                settedSettings
+            )
+        ) && (
+            typeof settedSettings === typeof defaultSettings
+        )
+    ) {
+      settings = settedSettings;
+      if (
+          typeof settedSettings === "object"
+      ) {
+        for (let prop in defaultSettings) {
+          if (defaultSettings.hasOwnProperty(prop)) {
+            settings[prop] = this.combineSettings(settings[prop], defaultSettings[prop]);
+          }
+        }
+      }
+    } else {
+      settings = defaultSettings;
+    }
+    return settings;
+  }
+
+  /**
+   * Decode data asynchronously
+   * @param data
+   * @param password
+   */
+  public decode(data: any, password: string) {
+    return new Promise((resolve, reject) => {
+      let _data = this.decodeSync(data, password);
+      if (_data) {
+        resolve(_data);
+      } else {
+        reject();
+      }
+    });
+  }
+
+  /**
+   * Encode data object asynchronously
+   * @param data
+   * @param password
+   */
+  public encode(data: any, password: string) {
+    return new Promise((resolve, reject) => {
+      let _data = this.encodeSync(data, password);
+      if (_data) {
+        resolve(_data);
+      } else {
+        reject();
+      }
+    });
+  }
+
+  /**
+   * Decode data synchronously
+   * @param data
+   * @param password
+   */
+  public decodeSync(data: any, password: string) {
+    try {
+      let dec = JSON.parse(decodeURIComponent(global.escape(Buffer.from(data, "base64").toString("utf8"))));
+      this.cryptoModule = "base64+";
+      return dec;
+    } catch (e) {
+      /**
+       * TODO: add logger
+       */
+    }
+
+    try {
+      let dec = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
+      this.cryptoModule = "base64";
+      return dec;
+    } catch (e) {
+      /**
+       * TODO: add logger
+       */
+    }
+
+    try {
+      let decipher = CRYPTO.createDecipher("aes-256-ctr", password);
+      let dec = decipher.update(data, "hex", "utf8");
+      dec += decipher.final("utf8");
+      dec = JSON.parse(dec);
+      this.cryptoModule = "webcrypto";
+      return dec;
+    } catch (e) {
+      /**
+       * TODO: add logger
+       */
+    }
+
+    try {
+      let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
+      this.cryptoModule = "cryptojs";
+      return dec;
+    } catch (e) {
+      /**
+       * TODO: add logger
+       */
+    }
+
+    return false;
+  }
+
+  /**
+   * Encode data object synchronously
+   * @param data
+   * @param password
+   */
+  public encodeSync(data: any, password: string) {
+    if (
+        this.cryptoModule === "" ||
+        this.cryptoModule === "base64+"
+    ) {
+      try {
+        return Buffer.from(global.unescape(encodeURIComponent(JSON.stringify(data)))).toString("base64");
+      } catch (e) {
+        /**
+         * TODO: add logger
+         */
+      }
+    }
+
+    if (
+        this.cryptoModule === "" ||
+        this.cryptoModule === "base64"
+    ) {
+      try {
+        return Buffer.from(JSON.stringify(data)).toString("base64");
+      } catch (e) {
+        /**
+         * TODO: add logger
+         */
+      }
+    }
+
+    if (
+        this.cryptoModule === "" ||
+        this.cryptoModule === "webcrypto"
+    ) {
+      try {
+        let cipher = CRYPTO.createCipher("aes-256-ctr", password);
+        let crypted = cipher.update(JSON.stringify(data), "utf8", "hex");
+        crypted += cipher.final("hex");
+        return crypted;
+      } catch (e) {
+        /**
+         * TODO: add logger
+         */
+      }
+    }
+
+    if (
+        this.cryptoModule === "" ||
+        this.cryptoModule === "cryptojs"
+    ) {
+      try {
+        data = AES.encrypt(JSON.stringify(data), password).toString();
+        return data;
+      } catch (e) {
+        /**
+         * TODO: add logger
+         */
+      }
+    }
+
+    return null;
   }
 }

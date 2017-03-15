@@ -10,6 +10,8 @@
     "variable-name": false,
     "no-reference": false,
     "trailing-comma": false,
-    "comment-format": false
+    "comment-format": false,
+    "object-literal-key-quotes": false,
+    "no-string-literal": false
   }
 }

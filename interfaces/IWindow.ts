@@ -7,6 +7,11 @@ import ILocalStorage from "./ILocalStorage";
  * The Window interface
  */
 interface IWindow {
+  atob: any;
+  btoa: any;
+  escape: any;
+  unescape: any;
+  location: any;
   Promise: any;
   document: Document;
   addEventListener: Function;
