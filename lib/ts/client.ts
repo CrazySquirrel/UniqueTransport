@@ -25,84 +25,9 @@ window.Promise = window.Promise || require("promise-polyfill");
 
 const MD5 = require("crypto-js/md5");
 
-export default class Client {
+import Transport from "./transport.ts";
 
-  /**
-   * Insert data into headers
-   * @param data
-   * @return {{}}
-   */
-  public static headerSubTransport(data: any): any {
-    /**
-     * Split data a parts
-     */
-    let length = data.length;
-    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
-    let dataParts = Client.stringChunks(data, Math.ceil(length / offset), offset);
-    /**
-     * Encode data parts
-     */
-    for (let i = 0; i < dataParts.length; i++) {
-      dataParts[i] = encodeURIComponent(dataParts[i]);
-    }
-    /**
-     * Generate keys for headers and get params
-     */
-    let keys = [];
-    for (let i = 0; i < dataParts.length; i++) {
-      keys.push(Client.getRandomWord());
-    }
-    keys = keys.sort();
-    /**
-     * Format get params object
-     */
-    let params = {};
-    for (let i = 0; i < dataParts.length; i++) {
-      params[keys[i]] = dataParts[i];
-    }
-    /**
-     * Implement header sub transport
-     */
-    return params;
-  }
-
-  /**
-   * Insert data into name
-   * @param url
-   * @param data
-   * @return {string}
-   */
-  public static nameSubTransport(url: string, data: any): string {
-    /**
-     * Implement name sub transport
-     */
-    return url + encodeURIComponent(data);
-  }
-
-  /**
-   * Insert data into url path
-   * @param url
-   * @param data
-   * @return {string}
-   */
-  public static pathSubTransport(url: string, data: any): string {
-    /**
-     * Split data a parts
-     */
-    let length = data.length;
-    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
-    let dataParts = Client.stringChunks(data, Math.ceil(length / offset), offset);
-    /**
-     * Encode data parts
-     */
-    for (let i = 0; i < dataParts.length; i++) {
-      dataParts[i] = encodeURIComponent(dataParts[i]);
-    }
-    /**
-     * Implement path sub transport
-     */
-    return url + dataParts.join("/") + "/";
-  }
+export default class Client extends Transport {
 
   /**
    * Get choise type based on the rate
@@ -136,17 +61,6 @@ export default class Client {
   }
 
   /**
-   * Check if object is empty
-   * @param obj
-   */
-  public static isObjectNotEmpty(obj) {
-    for (let prop in obj) {
-      return true;
-    }
-    return false;
-  }
-
-  /**
    * Get choice ID
    * @param choiceType
    * @param choices
@@ -154,30 +68,6 @@ export default class Client {
   public static getChoiceID(choiceType: string, choices: any): string {
     let keys = Object.keys(choices[choiceType]);
     return keys[keys.length * Math.random() << 0];
-  }
-
-  /**
-   * Get string chunks
-   * @param data
-   * @param length
-   * @param offset
-   * @return {Array}
-   */
-  public static stringChunks(data: string, length: number, offset: number): string[] {
-    let _data = [];
-    for (let i = 0; i < length; i++) {
-      _data.push(data.substr(i * offset, offset));
-    }
-    return _data;
-  }
-
-  /**
-   * Get random word
-   * @return string
-   */
-  public static  getRandomWord(): string {
-    let word = Math.random().toString(36).replace(/[^a-z]+/g, "");
-    return word.substr(0, 4 + Math.floor(Math.random() * word.length * 0.5));
   }
 
   /**
@@ -202,88 +92,18 @@ export default class Client {
     }
   }
 
-  private Settings: any;
-
-  private cryptoModule: any;
-
   private choices: any;
 
   private rate: number;
-
-  private defaultSettings: any = {
-    ConnectionTimeout: 10000,
-    Password: "xmas",
-    ReConnectionTimeout: 500,
-    Transports: {
-      fetch: {
-        HttpMethods: {
-          GET: true,
-          PATCH: true,
-          POST: true,
-          PUT: true,
-        },
-        SubTransports: {
-          body: true,
-          header: true,
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-      iframe: {
-        SubTransports: {
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-      script: {
-        SubTransports: {
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-      style: {
-        SubTransports: {
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-      xhr: {
-        HttpMethods: {
-          GET: true,
-          PATCH: true,
-          POST: true,
-          PUT: true,
-        },
-        SubTransports: {
-          body: true,
-          header: true,
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-    },
-    Urls: [
-      window.location.origin + "/"
-    ],
-  };
 
   /**
    * Create Client Object
    * @param settings
    */
   public constructor(settings: any = {}) {
-    this.Settings = settings;
-
-    this.cryptoModule = "";
+    super(settings);
 
     this.rate = 0;
-
-    this.Settings = this.combineSettings(this.Settings, this.defaultSettings);
 
     this.choices = this.loadChoises();
 
@@ -294,104 +114,6 @@ export default class Client {
     }
 
     Client.cleanOldChoises();
-  }
-
-  /**
-   * Encode link synchronously
-   * @param link
-   */
-  public getEncodedLinkSync(link: string): string {
-    if (
-        link
-    ) {
-      let _data = this.encodeSync({
-        data: {
-          Action: "Redirect",
-        },
-        link,
-      }, this.Settings.Password);
-
-      if (_data) {
-        /**
-         * Get subtransports
-         */
-        let transport = this.getTransport(["path", "name", "params"], "base");
-        /**
-         * Get url and data for subtransports
-         */
-        let dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
-
-        return dataUrl.url;
-      } else {
-        return null;
-      }
-    } else {
-      return null;
-    }
-  }
-
-  /**
-   * Encode link asynchronously
-   * @param link
-   */
-  public getEncodedLink(link: string) {
-    return new Promise((resolve, reject) => {
-      let _link = this.getEncodedLinkSync(link);
-      if (_link) {
-        resolve(_link);
-      } else {
-        reject();
-      }
-    });
-  }
-
-  /**
-   * Encode proxy link synchronously
-   * @param link
-   */
-  public getEncodedProxySync(link: string): string {
-    if (
-        link
-    ) {
-      let _data = this.encodeSync({
-        data: {
-          Action: "Proxy",
-        },
-        link
-      }, this.Settings.Password);
-
-      if (_data) {
-        /**
-         * Get subtransports
-         */
-        let transport = this.getTransport(["path", "name", "params"], "base");
-        /**
-         * Get url and data for subtransports
-         */
-        let dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
-
-        return dataUrl.url;
-      } else {
-        return null;
-      }
-    } else {
-      return null;
-    }
-  }
-
-  /**
-   * Encode proxy link asynchronously
-   * @param link
-   */
-  public getEncodedProxy(link: string) {
-    return new Promise((resolve, reject) => {
-      let _link = this.getEncodedProxySync(link);
-      if (_link) {
-        resolve(_link);
-      } else {
-        reject();
-      }
-    });
   }
 
   /**
@@ -457,9 +179,6 @@ export default class Client {
           }
 
           this.saveChoises();
-
-          this.Settings.ConnectionTimeout = this.defaultSettings.ConnectionTimeout;
-          this.Settings.ReConnectionTimeout = this.defaultSettings.ReConnectionTimeout;
 
           resolve(result);
         }).catch(() => {
@@ -1027,162 +746,6 @@ export default class Client {
           this.Settings.ConnectionTimeout
       );
     });
-  }
-
-  /**
-   * Insert data into url
-   * @param data
-   * @param url
-   * @param transport
-   */
-  public getDataAndUrl(data: any, url: string, transport: string[]): any {
-    /**
-     * Split data a parts
-     */
-    let length = transport.length;
-    data = Client.stringChunks(data, length, Math.ceil(data.length / length));
-    /**
-     * Implement path sub transport
-     */
-    if (transport.indexOf("path") !== -1) {
-      url = Client.pathSubTransport(url, data.shift());
-    }
-    /**
-     * Implement path sub transport
-     */
-    if (transport.indexOf("name") !== -1) {
-      url = Client.nameSubTransport(url, data.shift());
-    }
-    /**
-     * Implement path sub transport
-     */
-    if (transport.indexOf("params") !== -1) {
-      url = this.paramsSubTransport(url, data.shift());
-    }
-
-    return {
-      data,
-      url,
-    };
-  }
-
-  /**
-   * Get random transport range
-   * @param _transports
-   * @param type
-   * @return {Array}
-   */
-  public getTransport(_transports: string[], type: string): string[] {
-    /**
-     * Filter sub transports by settings
-     */
-    let transports = [];
-    for (let method of _transports) {
-      if (
-          type === "base" ||
-          (
-              this.Settings &&
-              this.Settings.Transports &&
-              this.Settings.Transports[type] &&
-              this.Settings.Transports[type].SubTransports &&
-              this.Settings.Transports[type].SubTransports[method]
-          )
-      ) {
-        transports.push(method);
-      }
-    }
-    /**
-     * Choose random sub transports
-     */
-    let transport = [];
-    while (transport.length === 0) {
-      for (let i = 0; i < transports.length; i++) {
-        if (Math.random() > 0.5) {
-          transport.push(transports[i]);
-        }
-      }
-    }
-    return transport;
-  }
-
-  /**
-   * Insert data into get params
-   * @param url
-   * @param data
-   * @return {string}
-   */
-  public paramsSubTransport(url: string, data: any): string {
-    /**
-     * Split data a parts
-     */
-    let length = data.length;
-    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
-    let dataParts = Client.stringChunks(data, Math.ceil(length / offset), offset);
-    /**
-     * Encode data parts
-     */
-    for (let i = 0; i < dataParts.length; i++) {
-      dataParts[i] = encodeURIComponent(dataParts[i]);
-    }
-    /**
-     * Generate keys for headers and get params
-     */
-    let keys = [];
-    for (let i = 0; i < dataParts.length; i++) {
-      keys.push(Client.getRandomWord());
-    }
-    keys = keys.sort();
-    /**
-     * Format get params object
-     */
-    let params = {};
-    for (let i = 0; i < dataParts.length; i++) {
-      params[keys[i]] = dataParts[i];
-    }
-    /**
-     * Implement params sub transport
-     */
-    return url + "?" + Object.keys(params).map((key) => {
-          return key + "=" + params[key];
-        }).join("&");
-  }
-
-  /**
-   * Combine settings
-   * @param settedSettings
-   * @param defaultSettings
-   */
-  public combineSettings(settedSettings: any, defaultSettings: any): any {
-    let settings;
-    if (
-        (
-            typeof settedSettings === "boolean" ||
-            typeof settedSettings === "number" ||
-            typeof settedSettings === "string" ||
-            typeof settedSettings === "function" ||
-            typeof settedSettings === "boolean" ||
-            (
-                typeof settedSettings === "object" &&
-                settedSettings
-            )
-        ) && (
-            typeof settedSettings === typeof defaultSettings
-        )
-    ) {
-      settings = settedSettings;
-      if (
-          typeof settedSettings === "object"
-      ) {
-        for (let prop in defaultSettings) {
-          if (defaultSettings.hasOwnProperty(prop)) {
-            settings[prop] = this.combineSettings(settings[prop], defaultSettings[prop]);
-          }
-        }
-      }
-    } else {
-      settings = defaultSettings;
-    }
-    return settings;
   }
 
   /**

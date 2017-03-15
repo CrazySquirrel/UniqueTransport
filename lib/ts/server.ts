@@ -37,27 +37,9 @@ const baseHeaders = {
   "Access-Control-Allow-Credentials": true,
 };
 
-export default class Server {
+import Transport from "./transport.ts";
 
-  /**
-   * Get random word
-   * @return string
-   */
-  public static getRandomWord(): string {
-    let word = Math.random().toString(36).replace(/[^a-z]+/g, "");
-    return word.substr(0, 4 + Math.floor(Math.random() * word.length * 0.5));
-  }
-
-  /**
-   * Check if object is empty
-   * @param obj
-   */
-  public static isObjectNotEmpty(obj) {
-    for (let prop in obj) {
-      return true;
-    }
-    return false;
-  }
+export default class Server extends Transport {
 
   /**
    * Get choice ID
@@ -69,128 +51,14 @@ export default class Server {
     return keys[keys.length * Math.random() << 0];
   }
 
-  /**
-   * Decode data string
-   * @param data
-   * @param password
-   * @return string | boolean
-   */
-  public static decodeString(data: string, password: string): string {
-    try {
-      return JSON.parse(AES.decrypt(data, password).toString(UTF8)) || null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /**
-   * Get choise type based on the rate
-   */
-  public static getChoiseType(rate: any, choices: any): string {
-    if (rate === 0) {
-      if (Server.isObjectNotEmpty(choices.normal)) {
-        return "normal";
-      } else if (Server.isObjectNotEmpty(choices.bad)) {
-        return "bad";
-      } else {
-        return "good";
-      }
-    } else if (rate > 0) {
-      if (Server.isObjectNotEmpty(choices.bad)) {
-        return "bad";
-      } else if (Server.isObjectNotEmpty(choices.normal)) {
-        return "normal";
-      } else {
-        return "good";
-      }
-    } else if (rate < 0) {
-      if (Server.isObjectNotEmpty(choices.good)) {
-        return "good";
-      } else if (Server.isObjectNotEmpty(choices.normal)) {
-        return "normal";
-      } else {
-        return "bad";
-      }
-    }
-  }
-
-  public Settings: any;
-  public cryptoModule: string;
-
   public listners: any;
   public NormalRequestHeaders: any;
   public IgnoredRequestPaths: any;
 
   public constructor(settings: any) {
-    this.Settings = settings;
-    this.cryptoModule = "";
+    super(settings);
 
     this.listners = {};
-
-    this.IgnoredRequestPaths = {
-      "test": true,
-      "xmas": true,
-      "weekend": true,
-      "reobtain": true,
-      "uniform": true,
-      "barflies": true,
-      "abduces": true,
-      "suitor": true,
-      "yachted": true
-    };
-
-    if (this.Settings.IgnoredRequestPaths) {
-      Object.keys(this.Settings.IgnoredRequestPaths).forEach((key) => {
-        this.IgnoredRequestPaths[key] = true;
-      });
-    }
-
-    this.NormalRequestHeaders = {
-      "accept": true,
-      "accept-encoding": true,
-      "accept-language": true,
-      "cache-control": true,
-      "chrome-proxy": true,
-      "connection": true,
-      "content-length": true,
-      "content-type": true,
-      "cookie": true,
-      "dnt": true,
-      "from": true,
-      "host": true,
-      "origin": true,
-      "pragma": true,
-      "proxy-authorization": true,
-      "referer": true,
-      "rvbd-csh": true,
-      "rvbd-ssh": true,
-      "save-data": true,
-      "surrogate-capability": true,
-      "te": true,
-      "upgrade-insecure-requests": true,
-      "user-agent": true,
-      "via": true,
-      "x-authenticated-groups": true,
-      "x-authenticated-use": true,
-      "x-bluecoat-via": true,
-      "x-compress": true,
-      "x-forwarded-for": true,
-      "x-forwarded-proto": true,
-      "x-imforwards": true,
-      "x-iws-via": true,
-      "x-real-host": true,
-      "x-real-ip": true,
-      "x-requested-with": true,
-      "x-turbo-id": true,
-      "x-wap-profile": true,
-      "x-yandex-turbo": true
-    };
-
-    if (this.Settings.NormalRequestHeaders) {
-      Object.keys(this.Settings.NormalRequestHeaders).forEach((key) => {
-        this.NormalRequestHeaders[key] = true;
-      });
-    }
 
     this.on("debug", (data, params) => {
       return new Promise((resolve) => {
@@ -658,7 +526,7 @@ export default class Server {
        */
       path.dir.split("/").forEach((item) => {
         if (
-            !this.IgnoredRequestPaths[item]
+            !this.Settings.IgnoredRequestPaths[item]
         ) {
           data.push(decodeURIComponent(item));
         }
@@ -679,7 +547,7 @@ export default class Server {
        */
       Object.keys(request.headers).filter((key) => {
         return (
-            !this.NormalRequestHeaders[key] &&
+            !this.Settings.NormalRequestHeaders[key] &&
             key.indexOf("-") === -1
         );
       }).sort().forEach((key) => {
@@ -704,44 +572,6 @@ export default class Server {
         reject();
       });
     });
-  }
-
-  /**
-   * Combine settings
-   * @param settedSettings
-   * @param defaultSettings
-   */
-  public combineSettings(settedSettings: any, defaultSettings: any): any {
-    let settings;
-    if (
-        (
-            typeof settedSettings === "boolean" ||
-            typeof settedSettings === "number" ||
-            typeof settedSettings === "string" ||
-            typeof settedSettings === "function" ||
-            typeof settedSettings === "boolean" ||
-            (
-                typeof settedSettings === "object" &&
-                settedSettings
-            )
-        ) && (
-            typeof settedSettings === typeof defaultSettings
-        )
-    ) {
-      settings = settedSettings;
-      if (
-          typeof settedSettings === "object"
-      ) {
-        for (let prop in defaultSettings) {
-          if (defaultSettings.hasOwnProperty(prop)) {
-            settings[prop] = this.combineSettings(settings[prop], defaultSettings[prop]);
-          }
-        }
-      }
-    } else {
-      settings = defaultSettings;
-    }
-    return settings;
   }
 
   /**
