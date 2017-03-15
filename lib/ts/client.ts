@@ -30,47 +30,6 @@ import Transport from "./transport.ts";
 export default class Client extends Transport {
 
   /**
-   * Get choise type based on the rate
-   */
-  public static getChoiseType(rate: any, choices: any): string {
-    if (rate === 0) {
-      if (Client.isObjectNotEmpty(choices.normal)) {
-        return "normal";
-      } else if (Client.isObjectNotEmpty(choices.bad)) {
-        return "bad";
-      } else {
-        return "good";
-      }
-    } else if (rate > 0) {
-      if (Client.isObjectNotEmpty(choices.bad)) {
-        return "bad";
-      } else if (Client.isObjectNotEmpty(choices.normal)) {
-        return "normal";
-      } else {
-        return "good";
-      }
-    } else if (rate < 0) {
-      if (Client.isObjectNotEmpty(choices.good)) {
-        return "good";
-      } else if (Client.isObjectNotEmpty(choices.normal)) {
-        return "normal";
-      } else {
-        return "bad";
-      }
-    }
-  }
-
-  /**
-   * Get choice ID
-   * @param choiceType
-   * @param choices
-   */
-  public static getChoiceID(choiceType: string, choices: any): string {
-    let keys = Object.keys(choices[choiceType]);
-    return keys[keys.length * Math.random() << 0];
-  }
-
-  /**
    * Clean old choises
    */
   public static cleanOldChoises() {

@@ -33,6 +33,47 @@ abstract class Transport {
   abstract encodeSync(data: any, password: string);
 
   /**
+   * Get choise type based on the rate
+   */
+  public static getChoiseType(rate: any, choices: any): string {
+    if (rate === 0) {
+      if (Transport.isObjectNotEmpty(choices.normal)) {
+        return "normal";
+      } else if (Transport.isObjectNotEmpty(choices.bad)) {
+        return "bad";
+      } else {
+        return "good";
+      }
+    } else if (rate > 0) {
+      if (Transport.isObjectNotEmpty(choices.bad)) {
+        return "bad";
+      } else if (Transport.isObjectNotEmpty(choices.normal)) {
+        return "normal";
+      } else {
+        return "good";
+      }
+    } else if (rate < 0) {
+      if (Transport.isObjectNotEmpty(choices.good)) {
+        return "good";
+      } else if (Transport.isObjectNotEmpty(choices.normal)) {
+        return "normal";
+      } else {
+        return "bad";
+      }
+    }
+  }
+
+  /**
+   * Get choice ID
+   * @param choiceType
+   * @param choices
+   */
+  public static getChoiceID(choiceType: string, choices: any): string {
+    let keys = Object.keys(choices[choiceType]);
+    return keys[keys.length * Math.random() << 0];
+  }
+
+  /**
    * Insert data into headers
    * @param data
    * @return {{}}
