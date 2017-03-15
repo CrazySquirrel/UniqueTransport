@@ -25,8 +25,8 @@
     "karma:client": "rm -rf ./doc/report/client/ && rm -rf ./doc/coverage/client/ && NODE_ENV=testing karma start karma.client.conf.js",
     "karma:server": "rm -rf ./doc/report/server/ && rm -rf ./doc/coverage/server/ && NODE_ENV=testing karma start karma.server.conf.js",
     "stats": "npm run stats:client && npm run stats:server",
-    "stats:client": "NODE_ENV=development webpack --bail --config=webpack.config.client.js --profile --json > ./doc/webpack.config.karma.client.js",
-    "stats:server": "NODE_ENV=development webpack --bail --config=webpack.config.server.js --profile --json > ./doc/webpack.config.karma.server.js",
+    "stats:client": "NODE_ENV=development webpack --bail --config=webpack.config.client.js --profile --json > ./doc/webpack.config.karma.client.json",
+    "stats:server": "NODE_ENV=development webpack --bail --config=webpack.config.server.js --profile --json > ./doc/webpack.config.karma.server.json",
     "docs": "npm run docs:client && npm run docs:server",
     "docs:client": "rm -rf ./doc/js/client/ && typedoc --mode file --target ES6 --module 'commonjs' --out ./doc/js/client/ ./src/ts/client.ts",
     "docs:server": "rm -rf ./doc/js/server/ && typedoc --mode file --target ES6 --module 'commonjs' --out ./doc/js/server/ ./src/ts/server.ts"

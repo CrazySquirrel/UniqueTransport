@@ -1,26 +1,6 @@
 "use strick";
 
 declare let require: any;
-declare let Buffer: any;
-declare let window: any;
-declare let global: any;
-
-let root: any;
-
-if (typeof window === "undefined") {
-  if (typeof global !== "undefined") {
-    root = global;
-  } else {
-    root = {};
-  }
-} else {
-  root = window;
-}
-
-root.atob = root.atob || require("atob");
-root.btoa = root.btoa || require("btoa");
-
-const CRYPTO = require("webcrypto");
 
 const AES = require("crypto-js/aes");
 const UTF8 = require("crypto-js/enc-utf8");
@@ -128,71 +108,11 @@ export default class Messenger {
    * @param password
    */
   public encodeSync(data: any, password: string) {
-    if (
-        this.cryptoModule === "" ||
-        this.cryptoModule === "cryptojs"
-    ) {
-      try {
-        data = AES.encrypt(JSON.stringify(data), password).toString();
-        return data;
-      } catch (e) {
-        /**
-         * TODO: add logger
-         */
-      }
+    try {
+      return AES.encrypt(JSON.stringify(data), password).toString();
+    } catch (e) {
+      return null;
     }
-
-    if (
-        this.cryptoModule === "" ||
-        this.cryptoModule === "base64+"
-    ) {
-      try {
-        if (typeof Buffer !== "undefined") {
-          return Buffer.from(root.unescape(encodeURIComponent(JSON.stringify(data)))).toString("base64");
-        } else {
-          return root.btoa(root.unescape(encodeURIComponent(JSON.stringify(data))));
-        }
-      } catch (e) {
-        /**
-         * TODO: add logger
-         */
-      }
-    }
-
-    if (
-        this.cryptoModule === "" ||
-        this.cryptoModule === "base64"
-    ) {
-      try {
-        if (typeof Buffer !== "undefined") {
-          return Buffer.from(JSON.stringify(data)).toString("base64");
-        } else {
-          return root.btoa(JSON.stringify(data));
-        }
-      } catch (e) {
-        /**
-         * TODO: add logger
-         */
-      }
-    }
-
-    if (
-        this.cryptoModule === "" ||
-        this.cryptoModule === "webcrypto"
-    ) {
-      try {
-        let cipher = CRYPTO.createCipher("aes-256-ctr", password);
-        let crypted = cipher.update(JSON.stringify(data), "utf8", "hex");
-        crypted += cipher.final("hex");
-        return crypted;
-      } catch (e) {
-        /**
-         * TODO: add logger
-         */
-      }
-    }
-
-    return null;
   }
 
   /**
@@ -268,61 +188,12 @@ export default class Messenger {
    * @param password
    * @return string | boolean
    */
-  private decodeString(data: string, password: string): string | boolean {
+  private decodeString(data: string, password: string): string {
     try {
-      let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
-      this.cryptoModule = "cryptojs";
-      return dec;
+      return JSON.parse(AES.decrypt(data, password).toString(UTF8)) || null;
     } catch (e) {
-      /**
-       * TODO: add logger
-       */
+      return null;
     }
-
-    try {
-      let dec;
-      if (typeof Buffer !== "undefined") {
-        dec = JSON.parse(decodeURIComponent(root.escape(Buffer.from(data, "base64").toString("utf8"))));
-      } else {
-        dec = JSON.parse(decodeURIComponent(root.escape(root.atob(data))));
-      }
-      this.cryptoModule = "base64+";
-      return dec;
-    } catch (e) {
-      /**
-       * TODO: add logger
-       */
-    }
-
-    try {
-      let dec;
-      if (typeof Buffer !== "undefined") {
-        dec = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
-      } else {
-        dec = JSON.parse(root.atob(data));
-      }
-      this.cryptoModule = "base64";
-      return dec;
-    } catch (e) {
-      /**
-       * TODO: add logger
-       */
-    }
-
-    try {
-      let decipher = CRYPTO.createDecipher("aes-256-ctr", password);
-      let dec = decipher.update(data, "hex", "utf8");
-      dec += decipher.final("utf8");
-      dec = JSON.parse(dec);
-      this.cryptoModule = "webcrypto";
-      return dec;
-    } catch (e) {
-      /**
-       * TODO: add logger
-       */
-    }
-
-    return false;
   }
 
   /**
