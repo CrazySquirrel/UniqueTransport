@@ -66,7 +66,9 @@ export default class Server extends Transport {
       });
     });
 
-    HTTP.createServer(this.listenr.bind(this)).listen(this.Settings.ServerPort);
+    if (!this.Settings.WithoutHttpServer) {
+      HTTP.createServer(this.listenr.bind(this)).listen(this.Settings.ServerPort);
+    }
   }
 
   public on(event: string, listner: Function) {

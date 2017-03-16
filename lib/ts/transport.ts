@@ -380,6 +380,7 @@ abstract class Transport {
     Urls: [
       root.location.origin + "/"
     ],
+    WithoutHttpServer: false,
   };
 
   public constructor(settings: any) {
