@@ -338,6 +338,7 @@ export default class Server extends Transport {
                               response.writeHead(this.Settings.ErrorResponseCode, headers);
                               response.end();
                             } else {
+                              headers["Accept-Encoding"] = "gzip";
                               headers["Content-Length"] = result.length;
                               response.writeHead(this.Settings.SuccessResponseCode, headers);
                               response.end(result);
