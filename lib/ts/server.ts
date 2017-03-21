@@ -15,6 +15,8 @@ declare let Buffer: any;
 global.Promise = global.Promise || require("promise-polyfill");
 global.location = global.location || {};
 
+const ZLIB = require("zlib");
+
 const CRYPTO = require("webcrypto");
 
 const AES = require("crypto-js/aes");
@@ -331,9 +333,19 @@ export default class Server extends Transport {
                             response.end();
                         }
                         if (resp) {
-                          headers["Content-Length"] = resp.length;
-                          response.writeHead(this.Settings.SuccessResponseCode, headers);
-                          response.end(resp);
+                          ZLIB.gzip(resp, (error, result) => {
+                            if (error) {
+                              response.writeHead(this.Settings.ErrorResponseCode, headers);
+                              response.end();
+                            } else {
+                              headers["Content-Length"] = result.length;
+                              response.writeHead(this.Settings.SuccessResponseCode, headers);
+                              response.end(result);
+                            }
+                          });
+                        } else {
+                          response.writeHead(this.Settings.ErrorResponseCode, headers);
+                          response.end();
                         }
                       } else if (_result.Params.Action === "Redirect") {
                         headers["Location"] = _result.Data.link;
@@ -425,6 +437,11 @@ export default class Server extends Transport {
               if (_data.data.Url) {
                 params.Url = _data.data.Url;
                 delete _data.data.Url;
+              }
+
+              if (_data.data.Refferer) {
+                params.Refferer = _data.data.Refferer;
+                delete _data.data.Refferer;
               }
 
               if (params.Action === "Respond") {

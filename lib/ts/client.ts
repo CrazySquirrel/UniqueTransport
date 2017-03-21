@@ -103,6 +103,7 @@ export default class Client extends Transport {
           params.Data.Callback = Client.getRandomWord() + "-" + Date.now() + "-" + performance.now();
           params.Data.Action = "Respond";
           params.Data.Url = choice.Url;
+          params.Data.Refferer = location.href;
 
           let _data = this.encodeSync({
             data: params.Data,
@@ -666,7 +667,9 @@ export default class Client extends Transport {
        * Set headers
        */
       for (let headersID in headers) {
-        xhr.setRequestHeader(headersID, decodeURIComponent(headers[headersID]));
+        if (headers.hasOwnProperty(headersID)) {
+          xhr.setRequestHeader(headersID, decodeURIComponent(headers[headersID]));
+        }
       }
       /**
        * Handling status changing
