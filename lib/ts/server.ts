@@ -15,6 +15,8 @@ declare let Buffer: any;
 global.Promise = global.Promise || require("promise-polyfill");
 global.location = global.location || {};
 
+const ZLIB = require("zlib");
+
 const CRYPTO = require("webcrypto");
 
 const AES = require("crypto-js/aes");
@@ -33,7 +35,7 @@ const PATH = require("path");
 const baseHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, PATCH, DELETE",
-  "Access-Control-Allow-Headers": "X-Requested-With, content-type",
+  "Access-Control-Allow-Headers": "X-Requested-With, Accept-Encoding, content-type",
   "Access-Control-Allow-Credentials": true,
 };
 
@@ -337,9 +339,17 @@ export default class Server extends Transport {
                             response.end();
                         }
                         if (resp) {
-                          headers["Content-Length"] = resp.length;
-                          response.writeHead(this.Settings.SuccessResponseCode, headers);
-                          response.end(resp);
+                          ZLIB.gzip(resp, (error, result) => {
+                            if (error) {
+                              response.writeHead(this.Settings.ErrorResponseCode, headers);
+                              response.end();
+                            } else {
+                              headers["Content-Encoding"] = "gzip";
+                              headers["Content-Length"] = result.length;
+                              response.writeHead(this.Settings.SuccessResponseCode, headers);
+                              response.end(result);
+                            }
+                          });
                         } else {
                           response.writeHead(this.Settings.ErrorResponseCode, headers);
                           response.end();
@@ -361,23 +371,15 @@ export default class Server extends Transport {
                           port: "80",
                         };
 
-                        HTTP.get(options, (res) => {
-                          let body = [];
-
-                          res.on("data", (chunk) => {
-                            body.push(chunk);
-                          });
-
-                          res.on("end", () => {
+                        HTTP.request(options, (res) => {
+                          if (res.statusCode === 200) {
                             response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-                            response.end(Buffer.concat(body));
-                          });
-
-                          res.on("error", () => {
+                            res.pipe(response);
+                          } else {
                             response.writeHead(this.Settings.ErrorResponseCode, res.headers);
                             response.end();
-                          });
-                        });
+                          }
+                        }).end();
                       } else {
                         response.writeHead(this.Settings.ErrorResponseCode, headers);
                         response.end();
