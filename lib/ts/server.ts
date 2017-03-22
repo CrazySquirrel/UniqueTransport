@@ -337,9 +337,9 @@ export default class Server extends Transport {
                             response.end();
                         }
                         if (resp) {
-                          headers["Content-Length"] = result.length;
+                          headers["Content-Length"] = resp.length;
                           response.writeHead(this.Settings.SuccessResponseCode, headers);
-                          response.end(result);
+                          response.end(resp);
                         } else {
                           response.writeHead(this.Settings.ErrorResponseCode, headers);
                           response.end();
