@@ -285,6 +285,12 @@ export default class Server extends Transport {
 
                 this.processor(result, params).then(
                     (_result: any) => {
+                      if (_result.Params.Protocol) {
+                        headers["Access-Control-Allow-Origin"] = headers["Access-Control-Allow-Origin"].split("//");
+                        headers["Access-Control-Allow-Origin"][0] = _result.Params.Protocol;
+                        headers["Access-Control-Allow-Origin"] = headers["Access-Control-Allow-Origin"].join("//");
+                      }
+
                       if (_result.Params.Action === "Respond") {
                         let resp = "";
                         switch (_result.Params.Transport) {
@@ -433,6 +439,11 @@ export default class Server extends Transport {
               if (_data.data.Refferer) {
                 params.Refferer = _data.data.Refferer;
                 delete _data.data.Refferer;
+              }
+
+              if (_data.data.Protocol) {
+                params.Protocol = _data.data.Protocol;
+                delete _data.data.Protocol;
               }
 
               if (params.Action === "Respond") {
