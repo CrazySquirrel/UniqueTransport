@@ -15,6 +15,9 @@ declare let Buffer: any;
 global.Promise = global.Promise || require("promise-polyfill");
 global.location = global.location || {};
 
+const PNG_QUANT = require("pngquant");
+PNG_QUANT.setBinaryPath("./node_modules/pngquant-bin/vendor/pngquant");
+
 const ZLIB = require("zlib");
 
 const CRYPTO = require("webcrypto");
@@ -373,8 +376,14 @@ export default class Server extends Transport {
 
                         HTTP.request(options, (res) => {
                           if (res.statusCode === 200) {
-                            response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-                            res.pipe(response);
+                            if (res.headers["content-type"] === "image/png") {
+                              delete res.headers["content-length"];
+                              response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                              res.pipe(new PNG_QUANT([256, "--speed", "10", "--quality", "65-80"])).pipe(response);
+                            } else {
+                              response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                              res.pipe(response);
+                            }
                           } else {
                             response.writeHead(this.Settings.ErrorResponseCode, res.headers);
                             response.end();
