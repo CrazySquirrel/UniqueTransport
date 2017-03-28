@@ -30,7 +30,7 @@ if (!root.location) {
 
 abstract class Transport {
 
-  abstract encodeSync(data: any, password: string);
+  public abstract encodeSync(data: any, password: string);
 
   /**
    * Get choise type based on the rate
@@ -269,120 +269,6 @@ abstract class Transport {
 
   public cryptoModule: any;
 
-  private defaultSettings: any = {
-    ConnectionTimeout: 10000,
-    IgnoredRequestPaths: {
-      "test": true,
-      "xmas": true,
-      "weekend": true,
-      "reobtain": true,
-      "uniform": true,
-      "barflies": true,
-      "abduces": true,
-      "suitor": true,
-      "yachted": true
-    },
-    NormalRequestHeaders: {
-      "accept": true,
-      "accept-encoding": true,
-      "accept-language": true,
-      "cache-control": true,
-      "chrome-proxy": true,
-      "connection": true,
-      "content-length": true,
-      "content-type": true,
-      "cookie": true,
-      "dnt": true,
-      "from": true,
-      "host": true,
-      "origin": true,
-      "pragma": true,
-      "proxy-authorization": true,
-      "referer": true,
-      "rvbd-csh": true,
-      "rvbd-ssh": true,
-      "save-data": true,
-      "surrogate-capability": true,
-      "te": true,
-      "upgrade-insecure-requests": true,
-      "user-agent": true,
-      "via": true,
-      "x-authenticated-groups": true,
-      "x-authenticated-use": true,
-      "x-bluecoat-via": true,
-      "x-compress": true,
-      "x-forwarded-for": true,
-      "x-forwarded-proto": true,
-      "x-imforwards": true,
-      "x-iws-via": true,
-      "x-real-host": true,
-      "x-real-ip": true,
-      "x-requested-with": true,
-      "x-turbo-id": true,
-      "x-wap-profile": true,
-      "x-yandex-turbo": true
-    },
-    Password: "xmas",
-    ReConnectionTimeout: 500,
-    Transports: {
-      fetch: {
-        HttpMethods: {
-          GET: true,
-          PATCH: true,
-          POST: true,
-          PUT: true,
-        },
-        SubTransports: {
-          body: true,
-          header: true,
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-      iframe: {
-        SubTransports: {
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-      script: {
-        SubTransports: {
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-      style: {
-        SubTransports: {
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-      xhr: {
-        HttpMethods: {
-          GET: true,
-          PATCH: true,
-          POST: true,
-          PUT: true,
-        },
-        SubTransports: {
-          body: true,
-          header: true,
-          name: true,
-          params: true,
-          path: true,
-        }
-      },
-    },
-    Urls: [
-      root.location.origin + "/"
-    ],
-    WithoutHttpServer: false,
-  };
-
   public constructor(settings: any) {
     this.Settings = settings;
 
@@ -564,6 +450,121 @@ abstract class Transport {
       url,
     };
   }
+
+  private defaultSettings: any = {
+    ConnectionTimeout: 10000,
+    IgnoredRequestPaths: {
+      "test": true,
+      "xmas": true,
+      "weekend": true,
+      "reobtain": true,
+      "uniform": true,
+      "barflies": true,
+      "abduces": true,
+      "suitor": true,
+      "yachted": true
+    },
+    NormalRequestHeaders: {
+      "accept": true,
+      "accept-encoding": true,
+      "accept-language": true,
+      "cache-control": true,
+      "chrome-proxy": true,
+      "connection": true,
+      "content-length": true,
+      "content-type": true,
+      "cookie": true,
+      "dnt": true,
+      "from": true,
+      "host": true,
+      "origin": true,
+      "pragma": true,
+      "proxy-authorization": true,
+      "referer": true,
+      "rvbd-csh": true,
+      "rvbd-ssh": true,
+      "save-data": true,
+      "surrogate-capability": true,
+      "te": true,
+      "upgrade-insecure-requests": true,
+      "user-agent": true,
+      "via": true,
+      "x-authenticated-groups": true,
+      "x-authenticated-use": true,
+      "x-bluecoat-via": true,
+      "x-compress": true,
+      "x-forwarded-for": true,
+      "x-forwarded-proto": true,
+      "x-imforwards": true,
+      "x-iws-via": true,
+      "x-real-host": true,
+      "x-real-ip": true,
+      "x-requested-with": true,
+      "x-turbo-id": true,
+      "x-wap-profile": true,
+      "x-yandex-turbo": true
+    },
+    OptimizeImages: false,
+    Password: "xmas",
+    ReConnectionTimeout: 500,
+    Transports: {
+      fetch: {
+        HttpMethods: {
+          GET: true,
+          PATCH: true,
+          POST: true,
+          PUT: true,
+        },
+        SubTransports: {
+          body: true,
+          header: true,
+          name: true,
+          params: true,
+          path: true,
+        }
+      },
+      iframe: {
+        SubTransports: {
+          name: true,
+          params: true,
+          path: true,
+        }
+      },
+      script: {
+        SubTransports: {
+          name: true,
+          params: true,
+          path: true,
+        }
+      },
+      style: {
+        SubTransports: {
+          name: true,
+          params: true,
+          path: true,
+        }
+      },
+      xhr: {
+        HttpMethods: {
+          GET: true,
+          PATCH: true,
+          POST: true,
+          PUT: true,
+        },
+        SubTransports: {
+          body: true,
+          header: true,
+          name: true,
+          params: true,
+          path: true,
+        }
+      },
+    },
+    Urls: [
+      root.location.origin + "/"
+    ],
+    WithoutHttpServer: false,
+  };
 }
 
 export default Transport;

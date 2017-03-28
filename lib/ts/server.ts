@@ -342,15 +342,15 @@ export default class Server extends Transport {
                             response.end();
                         }
                         if (resp) {
-                          ZLIB.gzip(resp, (error, result) => {
+                          ZLIB.gzip(resp, (error, __result) => {
                             if (error) {
                               response.writeHead(this.Settings.ErrorResponseCode, headers);
                               response.end();
                             } else {
                               headers["Content-Encoding"] = "gzip";
-                              headers["Content-Length"] = result.length;
+                              headers["Content-Length"] = __result.length;
                               response.writeHead(this.Settings.SuccessResponseCode, headers);
-                              response.end(result);
+                              response.end(__result);
                             }
                           });
                         } else {
@@ -376,10 +376,15 @@ export default class Server extends Transport {
 
                         HTTP.request(options, (res) => {
                           if (res.statusCode === 200) {
-                            if (res.headers["content-type"] === "image/png") {
-                              delete res.headers["content-length"];
-                              response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-                              res.pipe(new PNG_QUANT([256, "--speed", "10", "--quality", "65-80"])).pipe(response);
+                            if (this.Settings.OptimizeImages) {
+                              if (res.headers["content-type"] === "image/png") {
+                                delete res.headers["content-length"];
+                                response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                                res.pipe(new PNG_QUANT([256, "--speed", "10", "--quality", "65-80"])).pipe(response);
+                              } else {
+                                response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                                res.pipe(response);
+                              }
                             } else {
                               response.writeHead(this.Settings.SuccessResponseCode, res.headers);
                               res.pipe(response);
@@ -645,13 +650,19 @@ export default class Server extends Transport {
    */
   public decodeSync(data: any, password: string) {
     try {
+      let dec = JSON.parse(decodeURIComponent(global.escape(Buffer.from(data, "base64").toString("utf8"))).split("@", 2)[1]);
+      this.cryptoModule = "base64salt";
+      return dec;
+    } catch (e) {
+      // TODO: add logger
+    }
+
+    try {
       let dec = JSON.parse(decodeURIComponent(global.escape(Buffer.from(data, "base64").toString("utf8"))));
       this.cryptoModule = "base64+";
       return dec;
     } catch (e) {
-      /**
-       * TODO: add logger
-       */
+      // TODO: add logger
     }
 
     try {
@@ -659,9 +670,7 @@ export default class Server extends Transport {
       this.cryptoModule = "base64";
       return dec;
     } catch (e) {
-      /**
-       * TODO: add logger
-       */
+      // TODO: add logger
     }
 
     try {
@@ -672,19 +681,7 @@ export default class Server extends Transport {
       this.cryptoModule = "webcrypto";
       return dec;
     } catch (e) {
-      /**
-       * TODO: add logger
-       */
-    }
-
-    try {
-      let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
-      this.cryptoModule = "cryptojs";
-      return dec;
-    } catch (e) {
-      /**
-       * TODO: add logger
-       */
+      // TODO: add logger
     }
 
     return false;
@@ -698,14 +695,23 @@ export default class Server extends Transport {
   public encodeSync(data: any, password: string) {
     if (
         this.cryptoModule === "" ||
+        this.cryptoModule === "base64salt"
+    ) {
+      try {
+        return Buffer.from(global.unescape(encodeURIComponent((Math.random() * 1e8).toString(36) + "@" + JSON.stringify(data)))).toString("base64");
+      } catch (e) {
+        // TODO: add logger
+      }
+    }
+
+    if (
+        this.cryptoModule === "" ||
         this.cryptoModule === "base64+"
     ) {
       try {
         return Buffer.from(global.unescape(encodeURIComponent(JSON.stringify(data)))).toString("base64");
       } catch (e) {
-        /**
-         * TODO: add logger
-         */
+        // TODO: add logger
       }
     }
 
@@ -716,9 +722,7 @@ export default class Server extends Transport {
       try {
         return Buffer.from(JSON.stringify(data)).toString("base64");
       } catch (e) {
-        /**
-         * TODO: add logger
-         */
+        // TODO: add logger
       }
     }
 
@@ -732,9 +736,7 @@ export default class Server extends Transport {
         crypted += cipher.final("hex");
         return crypted;
       } catch (e) {
-        /**
-         * TODO: add logger
-         */
+        // TODO: add logger
       }
     }
 
@@ -746,9 +748,7 @@ export default class Server extends Transport {
         data = AES.encrypt(JSON.stringify(data), password).toString();
         return data;
       } catch (e) {
-        /**
-         * TODO: add logger
-         */
+        // TODO: add logger
       }
     }
 

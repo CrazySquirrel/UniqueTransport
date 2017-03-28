@@ -749,13 +749,23 @@ export default class Client extends Transport {
    * @param password
    */
   public decodeSync(data: any, password: string) {
+
     try {
-      let dec = JSON.parse(decodeURIComponent(window.escape(window.atob(data))));
-      this.cryptoModule = "base64+";
+      let dec = JSON.parse(decodeURIComponent(window.escape(window.atob(data))).split("@", 2)[1]);
+      this.cryptoModule = "base64salt";
       return dec;
     } catch (e) {
       //TODO: add logger
     }
+    /*
+     try {
+     let dec = JSON.parse(decodeURIComponent(window.escape(window.atob(data))));
+     this.cryptoModule = "base64+";
+     return dec;
+     } catch (e) {
+     //TODO: add logger
+     }
+     */
     /*
      try {
      let dec = JSON.parse(window.atob(data));
@@ -764,7 +774,8 @@ export default class Client extends Transport {
      } catch (e) {
      //TODO: add logger
      }
-
+     */
+    /*
      try {
      let decipher = CRYPTO.createDecipher("aes-256-ctr", password);
      let dec = decipher.update(data, "hex", "utf8");
@@ -775,7 +786,8 @@ export default class Client extends Transport {
      } catch (e) {
      //TODO: add logger
      }
-
+     */
+    /*
      try {
      let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
      this.cryptoModule = "cryptojs";
@@ -795,14 +807,26 @@ export default class Client extends Transport {
   public encodeSync(data: any, password: string) {
     if (
         this.cryptoModule === "" ||
-        this.cryptoModule === "base64+"
+        this.cryptoModule === "base64salt"
     ) {
       try {
-        return window.btoa(window.unescape(encodeURIComponent(JSON.stringify(data))));
+        return window.btoa(window.unescape(encodeURIComponent((Math.random() * 1e8).toString(36) + "@" + JSON.stringify(data))));
       } catch (e) {
         //TODO: add logger
       }
     }
+    /*
+     if (
+     this.cryptoModule === "" ||
+     this.cryptoModule === "base64+"
+     ) {
+     try {
+     return window.btoa(window.unescape(encodeURIComponent(JSON.stringify(data))));
+     } catch (e) {
+     //TODO: add logger
+     }
+     }
+     */
     /*
      if (
      this.cryptoModule === "" ||
@@ -814,7 +838,8 @@ export default class Client extends Transport {
      //TODO: add logger
      }
      }
-
+     */
+    /*
      if (
      this.cryptoModule === "" ||
      this.cryptoModule === "webcrypto"
@@ -828,7 +853,8 @@ export default class Client extends Transport {
      //TODO: add logger
      }
      }
-
+     */
+    /*
      if (
      this.cryptoModule === "" ||
      this.cryptoModule === "cryptojs"
