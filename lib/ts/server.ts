@@ -145,15 +145,16 @@ export default class Server extends Transport {
                 IP,
               };
 
-              this.processor(result, params).then(
+              this.processor(result, params, request, headers).then(
                   (_result: any) => {
-                    headers["Access-Control-Allow-Origin"] = _result.Params.Protocol + "//" + _result.Params.Host;
-
-                    _result.Params.Host = this.getHostFromHeaderXRealHost(request, headers, _result.Params.Host);
-                    _result.Params.Host = this.getHostFromHeaderOrigin(request, headers, _result.Params.Host);
-                    _result.Params.Host = this.getHostFromHeaderReferer(request, headers, _result.Params.Host);
-                    _result.Params.Host = this.getHostFromHeaderHost(request, headers, _result.Params.Host);
-
+                    /*
+                     if (
+                     _result.Params.Protocol &&
+                     _result.Params.Host
+                     ) {
+                     headers["Access-Control-Allow-Origin"] = _result.Params.Protocol + "//" + _result.Params.Host;
+                     }
+                     */
                     headers["Access-Control-Allow-Origin"] = "*";
 
                     if (
@@ -304,7 +305,7 @@ export default class Server extends Transport {
     }
   }
 
-  public processor(data, params) {
+  public processor(data, params, request, headers) {
     return new Promise((resolve, reject) => {
       this.decode(data, this.Settings.Password).then(
           (_data: any) => {
@@ -347,6 +348,11 @@ export default class Server extends Transport {
                 params.Host = _data.data.Host;
                 delete _data.data.Host;
               }
+
+              params.Host = this.getHostFromHeaderXRealHost(request, headers, params.Host);
+              params.Host = this.getHostFromHeaderOrigin(request, headers, params.Host);
+              params.Host = this.getHostFromHeaderReferer(request, headers, params.Host);
+              params.Host = this.getHostFromHeaderHost(request, headers, params.Host);
 
               if (params.Action === "Respond") {
                 if (
