@@ -154,6 +154,8 @@ export default class Server extends Transport {
                     _result.Params.Host = this.getHostFromHeaderReferer(request, headers, _result.Params.Host);
                     _result.Params.Host = this.getHostFromHeaderHost(request, headers, _result.Params.Host);
 
+                    headers["Access-Control-Allow-Origin"] = "*";
+
                     if (
                         _result.Params.Host
                     ) {
