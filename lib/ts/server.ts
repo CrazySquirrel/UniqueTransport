@@ -92,210 +92,71 @@ export default class Server extends Transport {
     );
 
     try {
-      let host;
-
-      headers["Access-Control-Allow-Origin"] = "";
-
       if (
-          !headers["Access-Control-Allow-Origin"] &&
-          request.headers["x-real-host"]
+          request.method === "OPTIONS"
       ) {
-        let origin;
-
-        if (request.headers["x-real-host"].indexOf("http") === -1) {
-          origin = URL.parse("https://" + request.headers["x-real-host"]);
-        } else {
-          origin = URL.parse(request.headers["x-real-host"]);
-        }
-
-        if (
-            origin &&
-            origin.hostname
-        ) {
-          host = origin.hostname;
-
-          headers["Access-Control-Allow-Origin"] = "";
-
-          if (origin.protocol) {
-            headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-          }
-
-          if (origin.hostname) {
-            headers["Access-Control-Allow-Origin"] += origin.hostname;
-          }
-
-          if (origin.port) {
-            headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+        if (request.headers["access-control-request-headers"]) {
+          if (headers["Access-Control-Allow-Headers"]) {
+            headers["Access-Control-Allow-Headers"] = headers["Access-Control-Allow-Headers"].split(", ").concat(request.headers["access-control-request-headers"].split(", ")).join(", ");
+          } else {
+            headers["Access-Control-Allow-Headers"] = request.headers["access-control-request-headers"];
           }
         }
-      }
+        response.writeHead(this.Settings.SuccessResponseCode, headers);
+        response.end();
+      } else {
 
-      if (
-          !headers["Access-Control-Allow-Origin"] &&
-          request.headers.origin
-      ) {
-        let origin;
-
-        if (request.headers.origin.indexOf("http") === -1) {
-          origin = URL.parse("https://" + request.headers.origin);
-        } else {
-          origin = URL.parse(request.headers.origin);
-        }
-
-        if (
-            origin &&
-            origin.hostname
-        ) {
-          host = origin.hostname;
-
-          headers["Access-Control-Allow-Origin"] = "";
-
-          if (origin.protocol) {
-            headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-          }
-
-          if (origin.hostname) {
-            headers["Access-Control-Allow-Origin"] += origin.hostname;
-          }
-
-          if (origin.port) {
-            headers["Access-Control-Allow-Origin"] += ":" + origin.port;
-          }
-        }
-      }
-
-      if (
-          !headers["Access-Control-Allow-Origin"] &&
-          request.headers.referer
-      ) {
-        let origin;
-
-        if (request.headers.referer.indexOf("http") === -1) {
-          origin = URL.parse("https://" + request.headers.referer);
-        } else {
-          origin = URL.parse(request.headers.referer);
-        }
-
-        if (
-            origin &&
-            origin.hostname
-        ) {
-          host = origin.hostname;
-
-          headers["Access-Control-Allow-Origin"] = "";
-
-          if (origin.protocol) {
-            headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-          }
-
-          if (origin.hostname) {
-            headers["Access-Control-Allow-Origin"] += origin.hostname;
-          }
-
-          if (origin.port) {
-            headers["Access-Control-Allow-Origin"] += ":" + origin.port;
-          }
-        }
-      }
-
-      if (
-          !headers["Access-Control-Allow-Origin"] &&
-          request.headers.host
-      ) {
-        let origin;
-
-        if (request.headers.host.indexOf("http") === -1) {
-          origin = URL.parse("https://" + request.headers.host);
-        } else {
-          origin = URL.parse(request.headers.host);
-        }
-
-        if (
-            origin &&
-            origin.hostname
-        ) {
-          host = origin.hostname;
-
-          headers["Access-Control-Allow-Origin"] = "";
-
-          if (origin.protocol) {
-            headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-          }
-
-          if (origin.hostname) {
-            headers["Access-Control-Allow-Origin"] += origin.hostname;
-          }
-
-          if (origin.port) {
-            headers["Access-Control-Allow-Origin"] += ":" + origin.port;
-          }
-        }
-      }
-
-      if (
-          host
-      ) {
-        if (
-            request.method === "OPTIONS"
-        ) {
-          if (request.headers["access-control-request-headers"]) {
-            if (headers["Access-Control-Allow-Headers"]) {
-              headers["Access-Control-Allow-Headers"] = headers["Access-Control-Allow-Headers"].split(", ").concat(request.headers["access-control-request-headers"].split(", ")).join(", ");
-            } else {
-              headers["Access-Control-Allow-Headers"] = request.headers["access-control-request-headers"];
-            }
-          }
-          response.writeHead(this.Settings.SuccessResponseCode, headers);
-          response.end();
-        } else {
-          this.preprocessor(request).then(
-              (result: any) => {
-                /**
-                 * SSP-892 ->
-                 */
-                if (result.indexOf("debug") !== -1) {
-                  let debug = {
-                    headers: request.headers,
-                    rawurl: request.url,
-                    url: URL.parse(request.url, true),
-                    result,
-                  };
-                  response.writeHead(this.Settings.SuccessResponseCode, headers);
-                  response.end(JSON.stringify(debug));
-                  return false;
-                }
-                /**
-                 * <-- SSP-892
-                 */
-                let IP = request.headers["x-real-ip"];
-                if (!IP) {
-                  let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
-                  let resIP = (regIP).exec(request.connection.remoteAddress);
-                  if (resIP) {
-                    IP = resIP[0];
-                  }
-                }
-                if (
-                    !IP ||
-                    IP === "127.0.0.1"
-                ) {
-                  IP = "95.165.148.52";
-                }
-
-                let params = {
-                  Headers: request.headers,
-                  Host: host,
-                  IP,
+        this.preprocessor(request).then(
+            (result: any) => {
+              /**
+               * SSP-892 ->
+               */
+              if (result.indexOf("debug") !== -1) {
+                let debug = {
+                  headers: request.headers,
+                  rawurl: request.url,
+                  url: URL.parse(request.url, true),
+                  result,
                 };
+                response.writeHead(this.Settings.SuccessResponseCode, headers);
+                response.end(JSON.stringify(debug));
+                return false;
+              }
+              /**
+               * <-- SSP-892
+               */
+              let IP = request.headers["x-real-ip"];
+              if (!IP) {
+                let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
+                let resIP = (regIP).exec(request.connection.remoteAddress);
+                if (resIP) {
+                  IP = resIP[0];
+                }
+              }
+              if (
+                  !IP ||
+                  IP === "127.0.0.1"
+              ) {
+                IP = "95.165.148.52";
+              }
 
-                this.processor(result, params).then(
-                    (_result: any) => {
-                      if (_result.Params.Protocol) {
-                        headers["Access-Control-Allow-Origin"] = headers["Access-Control-Allow-Origin"].split("//");
-                        headers["Access-Control-Allow-Origin"][0] = _result.Params.Protocol;
-                        headers["Access-Control-Allow-Origin"] = headers["Access-Control-Allow-Origin"].join("//");
-                      }
+              let params = {
+                Headers: request.headers,
+                IP,
+              };
 
+              this.processor(result, params).then(
+                  (_result: any) => {
+                    headers["Access-Control-Allow-Origin"] = _result.Params.Protocol + "//" + _result.Params.Host;
+
+                    _result.Params.Host = this.getHostFromHeaderXRealHost(request, headers, _result.Params.Host);
+                    _result.Params.Host = this.getHostFromHeaderOrigin(request, headers, _result.Params.Host);
+                    _result.Params.Host = this.getHostFromHeaderReferer(request, headers, _result.Params.Host);
+                    _result.Params.Host = this.getHostFromHeaderHost(request, headers, _result.Params.Host);
+
+                    if (
+                        _result.Params.Host
+                    ) {
                       if (_result.Params.Action === "Respond") {
                         let resp = "";
                         switch (_result.Params.Transport) {
@@ -390,34 +251,52 @@ export default class Server extends Transport {
                               res.pipe(response);
                             }
                           } else {
-                            response.writeHead(this.Settings.ErrorResponseCode, res.headers);
-                            response.end();
+                            this.responceError("001", request, response, res.headers, new Error("Proxy resource does not exist"));
                           }
                         }).end();
                       } else {
-                        response.writeHead(this.Settings.ErrorResponseCode, headers);
-                        response.end();
+                        this.responceError("002", request, response, headers, new Error("Unsupported action"));
                       }
+                    } else {
+                      this.responceError("003", request, response, headers, new Error("Host does not exist"));
                     }
-                ).catch(
-                    () => {
-                      response.writeHead(this.Settings.ErrorResponseCode, headers);
-                      response.end();
-                    }
-                );
-              }
-          ).catch(
-              () => {
-                response.writeHead(this.Settings.ErrorResponseCode, headers);
-                response.end();
-              }
-          );
-        }
-      } else {
-        response.writeHead(this.Settings.ErrorResponseCode, headers);
-        response.end();
+                  }
+              ).catch(
+                  (e) => {
+                    this.responceError("004", request, response, headers, e);
+                  }
+              );
+            }
+        ).catch(
+            (e) => {
+              this.responceError("005", request, response, headers, e);
+            }
+        );
       }
     } catch (e) {
+      this.responceError("006", request, response, headers, e);
+    }
+  }
+
+  public responceError(id, request, response, headers, e) {
+    if (request.headers["x-real-404"]) {
+      let url = URL.parse(request.headers["x-real-404"]);
+
+      request.headers.host = url.host;
+
+      let options = {
+        headers: request.headers,
+        hostname: url.host,
+        method: "GET",
+        path: url.path,
+        port: "80"
+      };
+
+      HTTP.request(options, (res) => {
+        response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+        res.pipe(response);
+      }).end();
+    } else {
       response.writeHead(this.Settings.ErrorResponseCode, headers);
       response.end();
     }
@@ -460,6 +339,11 @@ export default class Server extends Transport {
               if (_data.data.Protocol) {
                 params.Protocol = _data.data.Protocol;
                 delete _data.data.Protocol;
+              }
+
+              if (_data.data.Host) {
+                params.Host = _data.data.Host;
+                delete _data.data.Host;
               }
 
               if (params.Action === "Respond") {
@@ -753,5 +637,153 @@ export default class Server extends Transport {
     }
 
     return null;
+  }
+
+  public getHostFromHeaderXRealHost(request, headers, host) {
+    if (
+        !host &&
+        request.headers["x-real-host"]
+    ) {
+      let origin;
+
+      if (request.headers["x-real-host"].indexOf("http") === -1) {
+        origin = URL.parse("https://" + request.headers["x-real-host"]);
+      } else {
+        origin = URL.parse(request.headers["x-real-host"]);
+      }
+
+      if (
+          origin &&
+          origin.hostname
+      ) {
+        host = origin.hostname;
+
+        headers["Access-Control-Allow-Origin"] = "";
+
+        if (origin.protocol) {
+          headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+        }
+
+        if (origin.hostname) {
+          headers["Access-Control-Allow-Origin"] += origin.hostname;
+        }
+
+        if (origin.port) {
+          headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+        }
+      }
+    }
+    return host;
+  }
+
+  public getHostFromHeaderOrigin(request, headers, host) {
+    if (
+        !host &&
+        request.headers.origin
+    ) {
+      let origin;
+
+      if (request.headers.origin.indexOf("http") === -1) {
+        origin = URL.parse("https://" + request.headers.origin);
+      } else {
+        origin = URL.parse(request.headers.origin);
+      }
+
+      if (
+          origin &&
+          origin.hostname
+      ) {
+        host = origin.hostname;
+
+        headers["Access-Control-Allow-Origin"] = "";
+
+        if (origin.protocol) {
+          headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+        }
+
+        if (origin.hostname) {
+          headers["Access-Control-Allow-Origin"] += origin.hostname;
+        }
+
+        if (origin.port) {
+          headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+        }
+      }
+    }
+    return host;
+  }
+
+  public getHostFromHeaderReferer(request, headers, host) {
+    if (
+        !host &&
+        request.headers.referer
+    ) {
+      let origin;
+
+      if (request.headers.referer.indexOf("http") === -1) {
+        origin = URL.parse("https://" + request.headers.referer);
+      } else {
+        origin = URL.parse(request.headers.referer);
+      }
+
+      if (
+          origin &&
+          origin.hostname
+      ) {
+        host = origin.hostname;
+
+        headers["Access-Control-Allow-Origin"] = "";
+
+        if (origin.protocol) {
+          headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+        }
+
+        if (origin.hostname) {
+          headers["Access-Control-Allow-Origin"] += origin.hostname;
+        }
+
+        if (origin.port) {
+          headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+        }
+      }
+    }
+    return host;
+  }
+
+  public getHostFromHeaderHost(request, headers, host) {
+    if (
+        !host &&
+        request.headers.host
+    ) {
+      let origin;
+
+      if (request.headers.host.indexOf("http") === -1) {
+        origin = URL.parse("https://" + request.headers.host);
+      } else {
+        origin = URL.parse(request.headers.host);
+      }
+
+      if (
+          origin &&
+          origin.hostname
+      ) {
+        host = origin.hostname;
+
+        headers["Access-Control-Allow-Origin"] = "";
+
+        if (origin.protocol) {
+          headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
+        }
+
+        if (origin.hostname) {
+          headers["Access-Control-Allow-Origin"] += origin.hostname;
+        }
+
+        if (origin.port) {
+          headers["Access-Control-Allow-Origin"] += ":" + origin.port;
+        }
+      }
+    }
+    return host;
   }
 }

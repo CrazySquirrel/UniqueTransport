@@ -105,6 +105,7 @@ export default class Client extends Transport {
           params.Data.Url = choice.Url;
           params.Data.Refferer = location.href;
           params.Data.Protocol = location.protocol;
+          params.Data.Host = location.host;
 
           let _data = this.encodeSync({
             data: params.Data,

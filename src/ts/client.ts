@@ -6,60 +6,7 @@ const Client = new ClientClass({
   Urls: [
     "http://localhost:8888/test/"
   ],
-  Password: "xmas",
-  Transports: {
-    xhr: {
-      HttpMethods: {
-        GET: true,
-        POST: true,
-        PUT: true,
-        PATCH: true,
-      },
-      SubTransports: {
-        path: true,
-        name: true,
-        params: true,
-        header: true,
-        body: true,
-      }
-    },
-    fetch: {
-      HttpMethods: {
-        GET: true,
-        POST: true,
-        PUT: true,
-        PATCH: true,
-      },
-      SubTransports: {
-        path: true,
-        name: true,
-        params: true,
-        header: true,
-        body: true,
-      }
-    },
-    iframe: {
-      SubTransports: {
-        path: true,
-        name: true,
-        params: true
-      }
-    },
-    script: {
-      SubTransports: {
-        path: true,
-        name: true,
-        params: true
-      }
-    },
-    style: {
-      SubTransports: {
-        path: true,
-        name: true,
-        params: true
-      }
-    }
-  }
+  Password: "xmas"
 });
 
 Client.emit({

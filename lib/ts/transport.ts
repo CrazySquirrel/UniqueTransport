@@ -288,6 +288,9 @@ abstract class Transport {
       let _data = this.encodeSync({
         data: {
           Action: "Redirect",
+          Refferer: location.href,
+          Protocol: location.protocol,
+          Host: location.host
         },
         link,
       }, this.Settings.Password);
@@ -337,6 +340,9 @@ abstract class Transport {
       let _data = this.encodeSync({
         data: {
           Action: "Proxy",
+          Refferer: location.href,
+          Protocol: location.protocol,
+          Host: location.host
         },
         link
       }, this.Settings.Password);
@@ -498,6 +504,7 @@ abstract class Transport {
       "x-imforwards": true,
       "x-iws-via": true,
       "x-real-host": true,
+      "x-real-404": true,
       "x-real-ip": true,
       "x-requested-with": true,
       "x-turbo-id": true,
