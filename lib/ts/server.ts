@@ -32,6 +32,13 @@ HTTP.globalAgent.keepAliveMsecs = 5000;
 HTTP.globalAgent.maxSockets = Infinity;
 HTTP.globalAgent.maxFreeSockets = 1000;
 
+const HTTPS = require("https");
+
+HTTPS.globalAgent.keepAlive = true;
+HTTPS.globalAgent.keepAliveMsecs = 5000;
+HTTPS.globalAgent.maxSockets = Infinity;
+HTTPS.globalAgent.maxFreeSockets = 1000;
+
 const URL = require("url");
 const PATH = require("path");
 
@@ -228,6 +235,8 @@ export default class Server extends Transport {
                       } else if (_result.Params.Action === "Proxy") {
                         let url = URL.parse(_result.Data.link);
 
+                        url.port = url.port || url.protocol === "https:" ? 443 : 80;
+
                         request.headers.host = url.host;
 
                         let options = {
@@ -235,10 +244,10 @@ export default class Server extends Transport {
                           hostname: url.host,
                           method: "GET",
                           path: url.path,
-                          port: "80",
+                          port: url.port
                         };
 
-                        HTTP.request(options, (res) => {
+                        (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
                           if (res.statusCode === 200) {
                             if (this.Settings.OptimizeImages) {
                               if (res.headers["content-type"] === "image/png") {
