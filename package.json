@@ -1,6 +1,6 @@
 {
   "name": "UniqueTransport",
-  "version": "1.0.77",
+  "version": "1.0.78",
   "description": "This plugin is designed to deliver a message from Alice to Bob at any cost.",
   "keywords": [
     "TypeScript",
