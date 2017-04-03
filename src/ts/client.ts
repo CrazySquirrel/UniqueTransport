@@ -10,13 +10,6 @@ const Client = new ClientClass({
   ConnectionTimeout: 10000,
   ReConnectionTimeout: 500,
   Transports: {
-    script: {
-      SubTransports: {
-        name: true,
-        params: true,
-        path: true,
-      }
-    },
     style: {
       SubTransports: {
         name: true,
@@ -66,33 +59,33 @@ Client.getEncodedProxy("http://avatars.mds.yandex.net/get-direct/42386/HzzAM6tDC
  * Speed test
  */
 /*
- let counter = 0;
+let counter = 0;
 
- setInterval(
- () => {
- console.log(counter);
- counter = 0;
- },
- 1000
- );
+setInterval(
+    () => {
+      console.log(counter);
+      counter = 0;
+    },
+    1000
+);
 
- function connect() {
- counter++;
+function connect() {
+  counter++;
 
- Client.emit({
- Event: "connect",
- }).then(
- (result) => {
- connect();
- }
- ).catch(
- (e) => {
+  Client.emit({
+    Event: "connect",
+  }).then(
+      (result) => {
+        connect();
+      }
+  ).catch(
+      (e) => {
 
- }
- );
- }
+      }
+  );
+}
 
- for (let i = 0; i < 50; i++) {
- connect();
- }
- */
+for (let i = 0; i < 50; i++) {
+  connect();
+}
+*/

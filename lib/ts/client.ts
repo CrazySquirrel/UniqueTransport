@@ -100,7 +100,13 @@ export default class Client extends Transport {
         let promise = new Promise((_resolve, _reject) => {
           let transport = choice.Transport;
           params.Data.Transport = transport;
-          params.Data.Callback = Client.getRandomWord() + "-" + Date.now() + "-" + performance.now();
+          params.Data.Callback = [
+            Client.getRandomWord(),
+            "-",
+            Date.now().toString(36).replace(/[^a-z]+/g, ""),
+            "-",
+            Math.round(performance.now() * 1e8).toString(36).replace(/[^a-z]+/g, "")
+          ].join("");
           params.Data.Action = "Respond";
           params.Data.Url = choice.Url;
           params.Data.Refferer = location.href;
