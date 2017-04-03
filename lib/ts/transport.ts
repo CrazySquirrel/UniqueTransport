@@ -272,7 +272,7 @@ abstract class Transport {
   public constructor(settings: any) {
     this.Settings = settings;
 
-    this.Settings = Transport.combineSettings(this.Settings, this.defaultSettings);
+    //this.Settings = Transport.combineSettings(this.Settings, this.defaultSettings);
 
     this.cryptoModule = "";
   }
