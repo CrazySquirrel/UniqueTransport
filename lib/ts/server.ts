@@ -15,9 +15,6 @@ declare let Buffer: any;
 global.Promise = global.Promise || require("promise-polyfill");
 global.location = global.location || {};
 
-//const PNG_QUANT = require("pngquant");
-//PNG_QUANT.setBinaryPath("./node_modules/pngquant-bin/vendor/pngquant");
-
 const ZLIB = require("zlib");
 
 const CRYPTO = require("webcrypto");
@@ -247,50 +244,47 @@ export default class Server extends Transport {
                           port: url.port
                         };
 
-                        (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                        let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
                           if (res.statusCode === 200) {
-                            /*if (this.Settings.OptimizeImages) {
-                              if (res.headers["content-type"] === "image/png") {
-                                delete res.headers["content-length"];
-                                response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-                                res.pipe(new PNG_QUANT([256, "--speed", "10", "--quality", "65-80"])).pipe(response);
-                              } else {
-                                response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-                                res.pipe(response);
-                              }
-                            } else {*/
-                              response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-                              res.pipe(response);
-                            //}
+                            response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                            res.pipe(response);
                           } else {
                             this.responceError("001", request, response, res.headers, new Error("Proxy resource does not exist"));
                           }
                         }).end();
+
+                        req.on("error", (err) => {
+                          this.responceError("002", request, response, headers, err, options, url, _result);
+                        });
                       } else {
-                        this.responceError("002", request, response, headers, new Error("Unsupported action"));
+                        this.responceError("003", request, response, headers, new Error("Unsupported action"));
                       }
                     } else {
-                      this.responceError("003", request, response, headers, new Error("Host does not exist"));
+                      this.responceError("004", request, response, headers, new Error("Host does not exist"));
                     }
                   }
               ).catch(
                   (e) => {
-                    this.responceError("004", request, response, headers, e);
+                    this.responceError("005", request, response, headers, e);
                   }
               );
             }
         ).catch(
             (e) => {
-              this.responceError("005", request, response, headers, e);
+              this.responceError("006", request, response, headers, e);
             }
         );
       }
     } catch (e) {
-      this.responceError("006", request, response, headers, e);
+      this.responceError("007", request, response, headers, e);
     }
   }
 
-  public responceError(id, request, response, headers, e) {
+  public responceError(id, request, response, headers, e, ...data) {
+    if (typeof this.Settings.ErrorHandler === "function") {
+      this.Settings.ErrorHandler(e, id, data);
+    }
+
     if (request.headers["x-real-404"]) {
       let url = URL.parse(request.headers["x-real-404"]);
 
@@ -506,8 +500,8 @@ export default class Server extends Transport {
         resolve(data.join(""));
       });
 
-      request.on("error", () => {
-        reject();
+      request.on("error", (err) => {
+        reject(err);
       });
     });
   }
