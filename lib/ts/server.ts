@@ -37,6 +37,7 @@ HTTPS.globalAgent.maxSockets = Infinity;
 HTTPS.globalAgent.maxFreeSockets = 1000;
 
 const URL = require("url");
+const DNS = require("dns");
 const PATH = require("path");
 
 const baseHeaders = {
@@ -151,14 +152,6 @@ export default class Server extends Transport {
 
               this.processor(result, params, request, headers).then(
                   (_result: any) => {
-                    /*
-                     if (
-                     _result.Params.Protocol &&
-                     _result.Params.Host
-                     ) {
-                     headers["Access-Control-Allow-Origin"] = _result.Params.Protocol + "//" + _result.Params.Host;
-                     }
-                     */
                     headers["Access-Control-Allow-Origin"] = "*";
 
                     if (
@@ -244,42 +237,43 @@ export default class Server extends Transport {
                           port: url.port
                         };
 
-                        if (typeof this.Settings.ProxyHandler === "function") {
-                          this.Settings.ProxyHandler(null, null, {
-                            result: _result,
-                            url,
-                            options
-                          });
-                        }
+                        DNS.lookup(
+                            options.hostname,
+                            (err) => {
+                              if (err) {
+                                this.responceError("001", request, response, headers, err);
+                              } else {
+                                let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                                  if (res.statusCode === 200) {
+                                    response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                                    res.pipe(response);
+                                  } else {
+                                    this.responceError("002", request, response, res.headers, new Error("Proxy resource does not exist"));
+                                  }
+                                }).end();
 
-                        let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
-                          if (res.statusCode === 200) {
-                            response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-                            res.pipe(response);
-                          } else {
-                            this.responceError("001", request, response, res.headers, new Error("Proxy resource does not exist"));
-                          }
-                        }).end();
-
-                        req.on("error", (err) => {
-                          this.responceError("002", request, response, headers, err, options, url, _result);
-                        });
+                                req.on("error", (_err) => {
+                                  this.responceError("003", request, response, headers, _err, options, url, _result);
+                                });
+                              }
+                            }
+                        );
                       } else {
-                        this.responceError("003", request, response, headers, new Error("Unsupported action"));
+                        this.responceError("004", request, response, headers, new Error("Unsupported action"));
                       }
                     } else {
-                      this.responceError("004", request, response, headers, new Error("Host does not exist"));
+                      this.responceError("005", request, response, headers, new Error("Host does not exist"));
                     }
                   }
               ).catch(
                   (e) => {
-                    this.responceError("005", request, response, headers, e);
+                    this.responceError("006", request, response, headers, e);
                   }
               );
             }
         ).catch(
             (e) => {
-              this.responceError("006", request, response, headers, e);
+              this.responceError("007", request, response, headers, e);
             }
         );
       }
@@ -289,10 +283,6 @@ export default class Server extends Transport {
   }
 
   public responceError(id, request, response, headers, e, ...data) {
-    if (typeof this.Settings.ErrorHandler === "function") {
-      this.Settings.ErrorHandler(e, id, data);
-    }
-
     if (request.headers["x-real-404"]) {
       let url = URL.parse(request.headers["x-real-404"]);
 
@@ -387,7 +377,7 @@ export default class Server extends Transport {
                       }
                   ).catch(reject);
                 } else {
-                  reject();
+                  reject(new Error("Transport undefined or unsupported or listener unexist"));
                 }
               } else if (params.Action === "Redirect") {
                 if (
@@ -434,10 +424,10 @@ export default class Server extends Transport {
                   });
                 }
               } else {
-                reject();
+                reject(new Error("Action unsupported"));
               }
             } else {
-              reject();
+              reject(new Error("Invalid data"));
             }
           }
       ).catch(reject);
@@ -525,7 +515,7 @@ export default class Server extends Transport {
       if (_data) {
         resolve(_data);
       } else {
-        reject();
+        reject(new Error("Decode failed"));
       }
     });
   }
@@ -541,7 +531,7 @@ export default class Server extends Transport {
       if (_data) {
         resolve(_data);
       } else {
-        reject();
+        reject(new Error("Encode failed"));
       }
     });
   }
