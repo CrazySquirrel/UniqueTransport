@@ -244,6 +244,14 @@ export default class Server extends Transport {
                           port: url.port
                         };
 
+                        if (typeof this.Settings.ProxyHandler === "function") {
+                          this.Settings.ProxyHandler(null, null, {
+                            result: _result,
+                            url,
+                            options
+                          });
+                        }
+
                         let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
                           if (res.statusCode === 200) {
                             response.writeHead(this.Settings.SuccessResponseCode, res.headers);
