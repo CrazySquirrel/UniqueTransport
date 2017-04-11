@@ -241,7 +241,11 @@ export default class Server extends Transport {
                             options.hostname,
                             (err) => {
                               if (err) {
-                                this.responceError("001", request, response, headers, err);
+                                this.responceError("001", request, response, headers, err, {
+                                  result: _result,
+                                  url,
+                                  options
+                                });
                               } else {
                                 (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
                                   if (res.statusCode === 200) {
@@ -279,6 +283,10 @@ export default class Server extends Transport {
   }
 
   public responceError(id, request, response, headers, e, ...data) {
+    if (typeof this.Settings.ErrorHandler === "function") {
+      this.Settings.ErrorHandler(e, id, data);
+    }
+
     if (request.headers["x-real-404"]) {
       let url = URL.parse(request.headers["x-real-404"]);
 
