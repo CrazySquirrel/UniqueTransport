@@ -243,7 +243,7 @@ export default class Server extends Transport {
                               if (err) {
                                 this.responceError("001", request, response, headers, err);
                               } else {
-                                let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                                (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
                                   if (res.statusCode === 200) {
                                     response.writeHead(this.Settings.SuccessResponseCode, res.headers);
                                     res.pipe(response);
@@ -251,10 +251,6 @@ export default class Server extends Transport {
                                     this.responceError("002", request, response, res.headers, new Error("Proxy resource does not exist"));
                                   }
                                 }).end();
-
-                                req.on("error", (_err) => {
-                                  this.responceError("003", request, response, headers, _err, options, url, _result);
-                                });
                               }
                             }
                         );
