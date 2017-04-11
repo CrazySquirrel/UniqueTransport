@@ -247,38 +247,56 @@ export default class Server extends Transport {
                                   options
                                 });
                               } else {
-                                (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                                let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                                  res.on("error", (_err) => {
+                                    this.responceError("002", request, response, headers, _err, {
+                                      result: _result,
+                                      url,
+                                      options
+                                    });
+                                  });
+
                                   if (res.statusCode === 200) {
                                     response.writeHead(this.Settings.SuccessResponseCode, res.headers);
                                     res.pipe(response);
                                   } else {
-                                    this.responceError("002", request, response, res.headers, new Error("Proxy resource does not exist"));
+                                    this.responceError("003", request, response, res.headers, new Error("Proxy resource does not exist"));
                                   }
-                                }).end();
+                                });
+
+                                req.on("error", (_err) => {
+                                  this.responceError("004", request, response, headers, _err, {
+                                    result: _result,
+                                    url,
+                                    options
+                                  });
+                                });
+
+                                req.end();
                               }
                             }
                         );
                       } else {
-                        this.responceError("004", request, response, headers, new Error("Unsupported action"));
+                        this.responceError("005", request, response, headers, new Error("Unsupported action"));
                       }
                     } else {
-                      this.responceError("005", request, response, headers, new Error("Host does not exist"));
+                      this.responceError("006", request, response, headers, new Error("Host does not exist"));
                     }
                   }
               ).catch(
                   (e) => {
-                    this.responceError("006", request, response, headers, e);
+                    this.responceError("007", request, response, headers, e);
                   }
               );
             }
         ).catch(
             (e) => {
-              this.responceError("007", request, response, headers, e);
+              this.responceError("008", request, response, headers, e);
             }
         );
       }
     } catch (e) {
-      this.responceError("007", request, response, headers, e);
+      this.responceError("009", request, response, headers, e);
     }
   }
 
