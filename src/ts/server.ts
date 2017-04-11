@@ -3,6 +3,9 @@
 import ServerClass from "../../lib/ts/server";
 
 const Server = new ServerClass({
+  ErrorHandler: (...data) => {
+    console.log(data);
+  },
   ServerPort: 8888,
   ConnectionTimeout: 10000,
   Password: "xmas",

@@ -153,150 +153,183 @@ export default class Server extends Transport {
               this.processor(result, params, request, headers).then(
                   (_result: any) => {
                     headers["Access-Control-Allow-Origin"] = "*";
-
                     if (
                         _result.Params.Host
                     ) {
                       if (_result.Params.Action === "Respond") {
-                        let resp = "";
-                        switch (_result.Params.Transport) {
-                          case "style":
-                            resp = `.${_result.Params.Callback} {content:"${_result.Data}";}`;
-                            headers["Content-Type"] = "text/css; charset=utf-8";
-                            break;
-                          case "script":
-                            resp = 'window["' + _result.Params.Callback + '"]("' + _result.Data + '")';
-                            headers["Content-Type"] = "text/javascript; charset=utf-8";
-                            break;
-                          case "iframe":
-                            resp = `<!DOCTYPE html>
-                                                    <html lang="en">
-                                                    <head>
-                                                        <meta charset="UTF-8">
-                                                        <title>${_result.Params.Callback}</title>
-                                                    </head>
-                                                    <body>
-                                                        <script type="text/javascript">
-                                                        var timer = setInterval(
-                                                            function(){
-                                                                    try{
-                                                                        if(parent &&parent.postMessage){
-                                                                            parent.postMessage("${_result.Data}","${headers["Access-Control-Allow-Origin"]}");
-                                                                            clearTimeout(timer);
-                                                                        }
-                                                                    }catch(e){}
-                                                            },
-                                                            100
-                                                        );
-                                                        </script>
-                                                    </body>
-                                                    </html>`;
-                            headers["Content-Type"] = "text/html; charset=utf-8";
-                            break;
-                          case "xhr":
-                          case "fetch":
-                            resp = _result.Data;
-                            headers["Content-Type"] = "text/plain; charset=utf-8";
-                            break;
-                          default:
-                            response.writeHead(this.Settings.ErrorResponseCode, headers);
-                            response.end();
-                        }
-                        if (resp) {
-                          ZLIB.gzip(resp, (error, __result) => {
-                            if (error) {
-                              response.writeHead(this.Settings.ErrorResponseCode, headers);
-                              response.end();
-                            } else {
-                              headers["Content-Encoding"] = "gzip";
-                              headers["Content-Length"] = __result.length;
-                              response.writeHead(this.Settings.SuccessResponseCode, headers);
-                              response.end(__result);
-                            }
-                          });
-                        } else {
-                          response.writeHead(this.Settings.ErrorResponseCode, headers);
-                          response.end();
-                        }
+                        this.Respond(_result, headers, request, response);
                       } else if (_result.Params.Action === "Redirect") {
-                        headers["Location"] = _result.Data.link;
-                        response.writeHead(this.Settings.RedirectResponseCode, headers);
-                        response.end();
+                        this.Redirect(_result, headers, request, response);
                       } else if (_result.Params.Action === "Proxy") {
-                        let url = URL.parse(_result.Data.link);
-
-                        url.port = url.port || url.protocol === "https:" ? 443 : 80;
-
-                        request.headers.host = url.host;
-
-                        let options = {
-                          headers: request.headers,
-                          hostname: url.host,
-                          method: "GET",
-                          path: url.path,
-                          port: url.port
-                        };
-
-                        DNS.lookup(
-                            options.hostname,
-                            (err) => {
-                              if (err) {
-                                this.responceError("001", request, response, headers, err, {
-                                  result: _result,
-                                  url,
-                                  options
-                                });
-                              } else {
-                                let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
-                                  res.on("error", (_err) => {
-                                    this.responceError("002", request, response, headers, _err, {
-                                      result: _result,
-                                      url,
-                                      options
-                                    });
-                                  });
-
-                                  if (res.statusCode === 200) {
-                                    response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-                                    res.pipe(response);
-                                  } else {
-                                    this.responceError("003", request, response, res.headers, new Error("Proxy resource does not exist"));
-                                  }
-                                });
-
-                                req.on("error", (_err) => {
-                                  this.responceError("004", request, response, headers, _err, {
-                                    result: _result,
-                                    url,
-                                    options
-                                  });
-                                });
-
-                                req.end();
-                              }
-                            }
-                        );
+                        this.Proxy(_result, headers, request, response);
                       } else {
-                        this.responceError("005", request, response, headers, new Error("Unsupported action"));
+                        this.responceError("0.0.1", request, response, headers, new Error("Unsupported action"));
                       }
                     } else {
-                      this.responceError("006", request, response, headers, new Error("Host does not exist"));
+                      this.responceError("0.0.2", request, response, headers, new Error("Host does not exist"));
                     }
                   }
               ).catch(
                   (e) => {
-                    this.responceError("007", request, response, headers, e);
+                    this.responceError("0.0.3", request, response, headers, e, {
+                      result,
+                      params,
+                      headers
+                    });
                   }
               );
             }
         ).catch(
             (e) => {
-              this.responceError("008", request, response, headers, e);
+              this.responceError("0.0.4", request, response, headers, e);
             }
         );
       }
     } catch (e) {
-      this.responceError("009", request, response, headers, e);
+      this.responceError("0.0.5", request, response, headers, e);
+    }
+  }
+
+  public Proxy(result, headers, request, response) {
+    try {
+      let url = URL.parse(result.Data.link);
+
+      url.port = url.port || url.protocol === "https:" ? 443 : 80;
+
+      request.headers.host = url.host;
+
+      let options = {
+        headers: request.headers,
+        hostname: url.host,
+        method: "GET",
+        path: url.path,
+        port: url.port
+      };
+
+      DNS.lookup(
+          options.hostname,
+          (err) => {
+            if (err) {
+              this.responceError("0.1.1", request, response, headers, err, {
+                result,
+                url,
+                options
+              });
+            } else {
+              let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                res.on("error", (_err) => {
+                  this.responceError("0.1.2", request, response, headers, _err, {
+                    result,
+                    url,
+                    options
+                  });
+                });
+
+                if (res.statusCode === 200) {
+                  response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                  res.pipe(response);
+                } else {
+                  this.responceError("0.1.3", request, response, res.headers, new Error("Proxy resource does not exist"));
+                }
+              });
+
+              req.on("error", (_err) => {
+                this.responceError("0.1.4", request, response, headers, _err, {
+                  result,
+                  url,
+                  options
+                });
+              });
+
+              req.end();
+            }
+          }
+      );
+    } catch (e) {
+      this.responceError("0.1.5", request, response, headers, e, {
+        result
+      });
+    }
+  }
+
+  public Redirect(result, headers, request, response) {
+    try {
+      headers["Location"] = result.Data.link;
+      response.writeHead(this.Settings.RedirectResponseCode, headers);
+      response.end();
+    } catch (e) {
+      this.responceError("0.2.1", request, response, headers, e, {
+        result
+      });
+    }
+  }
+
+  public Respond(result, headers, request, response) {
+    try {
+      let resp = "";
+      switch (result.Params.Transport) {
+        case "style":
+          resp = `.${result.Params.Callback} {content:"${result.Data}";}`;
+          headers["Content-Type"] = "text/css; charset=utf-8";
+          break;
+        case "script":
+          resp = 'window["' + result.Params.Callback + '"]("' + result.Data + '")';
+          headers["Content-Type"] = "text/javascript; charset=utf-8";
+          break;
+        case "iframe":
+          resp = `<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${result.Params.Callback}</title>
+                </head>
+                <body>
+                    <script type="text/javascript">
+                    var timer = setInterval(
+                        function(){
+                                try{
+                                    if(parent &&parent.postMessage){
+                                        parent.postMessage("${result.Data}","${headers["Access-Control-Allow-Origin"]}");
+                                        clearTimeout(timer);
+                                    }
+                                }catch(e){}
+                        },
+                        100
+                    );
+                    </script>
+                </body>
+                </html>`;
+          headers["Content-Type"] = "text/html; charset=utf-8";
+          break;
+        case "xhr":
+        case "fetch":
+          resp = result.Data;
+          headers["Content-Type"] = "text/plain; charset=utf-8";
+          break;
+        default:
+          this.responceError("0.3.1", request, response, headers, new Error("Unsupported transport"));
+      }
+      if (resp) {
+        ZLIB.gzip(resp, (error, _result) => {
+          if (error) {
+            this.responceError("0.3.2", request, response, headers, error, {
+              result: _result
+            });
+          } else {
+            headers["Content-Encoding"] = "gzip";
+            headers["Content-Length"] = _result.length;
+            response.writeHead(this.Settings.SuccessResponseCode, headers);
+            response.end(_result);
+          }
+        });
+      } else {
+        response.writeHead(this.Settings.ErrorResponseCode, headers);
+        response.end();
+      }
+    } catch (e) {
+      this.responceError("0.3.3", request, response, headers, e, {
+        result
+      });
     }
   }
 
