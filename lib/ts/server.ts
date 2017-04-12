@@ -169,10 +169,18 @@ export default class Server extends Transport {
                         } else if (_result.Params.Action === "Proxy") {
                           this.Proxy(_result, headers, request, response);
                         } else {
-                          this.responceError("0.0.4", request, response, headers, new Error("Unsupported action"));
+                          this.responceError("0.0.4", request, response, headers, new Error("Unsupported action"), {
+                            result,
+                            params,
+                            headers
+                          });
                         }
                       } else {
-                        this.responceError("0.0.5", request, response, headers, new Error("Host does not exist"));
+                        this.responceError("0.0.5", request, response, headers, new Error("Host does not exist"), {
+                          result,
+                          params,
+                          headers
+                        });
                       }
                     }
                 ).catch(
