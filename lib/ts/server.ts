@@ -171,11 +171,15 @@ export default class Server extends Transport {
                   }
               ).catch(
                   (e) => {
-                    this.responceError("0.0.3", request, response, headers, e, {
-                      result,
-                      params,
-                      headers
-                    });
+                    if (request.url.indexOf(".map") !== -1) {
+                      this.responceError("0.0.3", request, response, headers);
+                    } else {
+                      this.responceError("0.0.4", request, response, headers, e, {
+                        result,
+                        params,
+                        headers
+                      });
+                    }
                   }
               );
             }
@@ -333,8 +337,11 @@ export default class Server extends Transport {
     }
   }
 
-  public responceError(id, request, response, headers, e, ...data) {
-    if (typeof this.Settings.ErrorHandler === "function") {
+  public responceError(id, request, response, headers, e?, ...data) {
+    if (
+        e &&
+        typeof this.Settings.ErrorHandler === "function"
+    ) {
       this.Settings.ErrorHandler(e, id, data);
     }
 
