@@ -90,13 +90,20 @@ export default class Server extends Transport {
 
     setTimeout(
         () => {
-          response.writeHead(this.Settings.ErrorResponseCode, headers);
-          response.end();
+          this.responceError("0.0.1", request, response, headers);
         },
         this.Settings.ConnectionTimeout
     );
 
     try {
+      request.on("error", (_err) => {
+        this.responceError("0.0.2", request, response, headers, _err);
+      });
+
+      response.on("error", (_err) => {
+        this.responceError("0.0.3", request, response, headers, _err);
+      });
+
       if (
           request.method === "OPTIONS"
       ) {
@@ -107,15 +114,15 @@ export default class Server extends Transport {
             headers["Access-Control-Allow-Headers"] = request.headers["access-control-request-headers"];
           }
         }
-        response.writeHead(this.Settings.SuccessResponseCode, headers);
-        response.end();
+        if (!response.answered) {
+          response.answered = true;
+          response.writeHead(this.Settings.SuccessResponseCode, headers);
+          response.end();
+        }
       } else {
 
         this.preprocessor(request).then(
             (result: any) => {
-              /**
-               * SSP-892 ->
-               */
               if (result.indexOf("debug") !== -1) {
                 let debug = {
                   headers: request.headers,
@@ -123,74 +130,74 @@ export default class Server extends Transport {
                   url: URL.parse(request.url, true),
                   result,
                 };
-                response.writeHead(this.Settings.SuccessResponseCode, headers);
-                response.end(JSON.stringify(debug));
-                return false;
-              }
-              /**
-               * <-- SSP-892
-               */
-              let IP = request.headers["x-real-ip"];
-              if (!IP) {
-                let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
-                let resIP = (regIP).exec(request.connection.remoteAddress);
-                if (resIP) {
-                  IP = resIP[0];
+                if (!response.answered) {
+                  response.answered = true;
+                  response.writeHead(this.Settings.SuccessResponseCode, headers);
+                  response.end(JSON.stringify(debug));
                 }
-              }
-              if (
-                  !IP ||
-                  IP === "127.0.0.1"
-              ) {
-                IP = "95.165.148.52";
-              }
+              } else {
+                let IP = request.headers["x-real-ip"];
+                if (!IP) {
+                  let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
+                  let resIP = (regIP).exec(request.connection.remoteAddress);
+                  if (resIP) {
+                    IP = resIP[0];
+                  }
+                }
+                if (
+                    !IP ||
+                    IP === "127.0.0.1"
+                ) {
+                  IP = "95.165.148.52";
+                }
 
-              let params = {
-                Headers: request.headers,
-                IP,
-              };
+                let params = {
+                  Headers: request.headers,
+                  IP,
+                };
 
-              this.processor(result, params, request, headers).then(
-                  (_result: any) => {
-                    headers["Access-Control-Allow-Origin"] = "*";
-                    if (
-                        _result.Params.Host
-                    ) {
-                      if (_result.Params.Action === "Respond") {
-                        this.Respond(_result, headers, request, response);
-                      } else if (_result.Params.Action === "Redirect") {
-                        this.Redirect(_result, headers, request, response);
-                      } else if (_result.Params.Action === "Proxy") {
-                        this.Proxy(_result, headers, request, response);
+                this.processor(result, params, request, headers).then(
+                    (_result: any) => {
+                      headers["Access-Control-Allow-Origin"] = "*";
+                      if (
+                          _result.Params.Host
+                      ) {
+                        if (_result.Params.Action === "Respond") {
+                          this.Respond(_result, headers, request, response);
+                        } else if (_result.Params.Action === "Redirect") {
+                          this.Redirect(_result, headers, request, response);
+                        } else if (_result.Params.Action === "Proxy") {
+                          this.Proxy(_result, headers, request, response);
+                        } else {
+                          this.responceError("0.0.4", request, response, headers, new Error("Unsupported action"));
+                        }
                       } else {
-                        this.responceError("0.0.1", request, response, headers, new Error("Unsupported action"));
+                        this.responceError("0.0.5", request, response, headers, new Error("Host does not exist"));
                       }
-                    } else {
-                      this.responceError("0.0.2", request, response, headers, new Error("Host does not exist"));
                     }
-                  }
-              ).catch(
-                  (e) => {
-                    if (request.url.indexOf(".map") !== -1) {
-                      this.responceError("0.0.3", request, response, headers);
-                    } else {
-                      this.responceError("0.0.4", request, response, headers, e, {
-                        result,
-                        params,
-                        headers
-                      });
+                ).catch(
+                    (e) => {
+                      if (request.url.indexOf(".map") !== -1) {
+                        this.responceError("0.0.6", request, response, headers);
+                      } else {
+                        this.responceError("0.0.7", request, response, headers, e, {
+                          result,
+                          params,
+                          headers
+                        });
+                      }
                     }
-                  }
-              );
+                );
+              }
             }
         ).catch(
             (e) => {
-              this.responceError("0.0.4", request, response, headers, e);
+              this.responceError("0.0.8", request, response, headers, e);
             }
         );
       }
     } catch (e) {
-      this.responceError("0.0.5", request, response, headers, e);
+      this.responceError("0.0.9", request, response, headers, e);
     }
   }
 
@@ -230,8 +237,11 @@ export default class Server extends Transport {
                 });
 
                 if (res.statusCode === 200) {
-                  response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-                  res.pipe(response);
+                  if (!response.answered) {
+                    response.answered = true;
+                    response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                    res.pipe(response);
+                  }
                 } else {
                   this.responceError("0.1.3", request, response, res.headers, new Error("Proxy resource does not exist"));
                 }
@@ -259,8 +269,11 @@ export default class Server extends Transport {
   public Redirect(result, headers, request, response) {
     try {
       headers["Location"] = result.Data.link;
-      response.writeHead(this.Settings.RedirectResponseCode, headers);
-      response.end();
+      if (!response.answered) {
+        response.answered = true;
+        response.writeHead(this.Settings.RedirectResponseCode, headers);
+        response.end();
+      }
     } catch (e) {
       this.responceError("0.2.1", request, response, headers, e, {
         result
@@ -322,16 +335,18 @@ export default class Server extends Transport {
           } else {
             headers["Content-Encoding"] = "gzip";
             headers["Content-Length"] = _result.length;
-            response.writeHead(this.Settings.SuccessResponseCode, headers);
-            response.end(_result);
+            if (!response.answered) {
+              response.answered = true;
+              response.writeHead(this.Settings.SuccessResponseCode, headers);
+              response.end(_result);
+            }
           }
         });
       } else {
-        response.writeHead(this.Settings.ErrorResponseCode, headers);
-        response.end();
+        this.responceError("0.3.3", request, response, headers);
       }
     } catch (e) {
-      this.responceError("0.3.3", request, response, headers, e, {
+      this.responceError("0.3.4", request, response, headers, e, {
         result
       });
     }
@@ -359,12 +374,18 @@ export default class Server extends Transport {
       };
 
       HTTP.request(options, (res) => {
-        response.writeHead(this.Settings.SuccessResponseCode, res.headers);
-        res.pipe(response);
+        if (!response.answered) {
+          response.answered = true;
+          response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+          res.pipe(response);
+        }
       }).end();
     } else {
-      response.writeHead(this.Settings.ErrorResponseCode, headers);
-      response.end();
+      if (!response.answered) {
+        response.answered = true;
+        response.writeHead(this.Settings.ErrorResponseCode, headers);
+        response.end();
+      }
     }
   }
 
