@@ -243,7 +243,11 @@ export default class Server extends Transport {
                     res.pipe(response);
                   }
                 } else {
-                  this.responceError("0.1.3", request, response, res.headers, new Error("Proxy resource does not exist"));
+                  this.responceError("0.1.3", request, response, res.headers, new Error("Proxy resource does not exist"), {
+                    result,
+                    url,
+                    options
+                  });
                 }
               });
 
