@@ -459,6 +459,12 @@ abstract class Transport {
 
   private defaultSettings: any = {
     ConnectionTimeout: 10000,
+    IgnoredQueryParams: {
+      "safe": true
+    },
+    IgnoredNames: {
+      "safe": true
+    },
     IgnoredRequestPaths: {
       "test": true,
       "xmas": true,
@@ -468,9 +474,10 @@ abstract class Transport {
       "barflies": true,
       "abduces": true,
       "suitor": true,
-      "yachted": true
+      "yachted": true,
+      "safe": true
     },
-    NormalRequestHeaders: {
+    IgnoredRequestHeaders: {
       "accept": true,
       "accept-encoding": true,
       "accept-language": true,
@@ -509,7 +516,8 @@ abstract class Transport {
       "x-requested-with": true,
       "x-turbo-id": true,
       "x-wap-profile": true,
-      "x-yandex-turbo": true
+      "x-yandex-turbo": true,
+      "safe": true
     },
     OptimizeImages: false,
     Password: "xmas",

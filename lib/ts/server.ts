@@ -62,11 +62,12 @@ export default class Server extends Transport {
   }
 
   public listners: any;
-  public NormalRequestHeaders: any;
-  public IgnoredRequestPaths: any;
+  public defaultSettings: any;
 
   public constructor(settings: any) {
     super(settings);
+
+    this.Settings = Transport.combineSettings(this.Settings, this.defaultSettings);
 
     this.listners = {};
 
@@ -295,6 +296,7 @@ export default class Server extends Transport {
 
   public Respond(result, headers, request, response) {
     try {
+      headers["Pragma"] = "no-cache";
       let resp = "";
       switch (result.Params.Transport) {
         case "style":
@@ -559,12 +561,20 @@ export default class Server extends Transport {
       /**
        * Get data from name
        */
-      data.push(decodeURIComponent(path.name));
+      if (
+          !this.Settings.IgnoredNames[path.name]
+      ) {
+        data.push(decodeURIComponent(path.name));
+      }
       /**
        * Get data from params
        */
       data.concat(Object.keys(params.query).forEach((key) => {
-        data.push(params.query[key]);
+        if (
+            !this.Settings.IgnoredQueryParams[key]
+        ) {
+          data.push(params.query[key]);
+        }
       }));
 
       /**
@@ -572,7 +582,7 @@ export default class Server extends Transport {
        */
       Object.keys(request.headers).filter((key) => {
         return (
-            !this.Settings.NormalRequestHeaders[key] &&
+            !this.Settings.IgnoredRequestHeaders[key] &&
             key.indexOf("-") === -1
         );
       }).sort().forEach((key) => {
