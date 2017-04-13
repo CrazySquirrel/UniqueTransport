@@ -473,8 +473,8 @@ export default class Server extends Transport {
 
               params.Hosts.push(this.getHostFromHeaderXRealHost(request, params));
               params.Hosts.push(this.getHostFromHeaderOrigin(request, params));
-              params.Hosts.push(this.getHostFromHeaderReferer(request, params));
               params.Hosts.push(this.getHostFromParamsReferer(request, params));
+              params.Hosts.push(this.getHostFromHeaderReferer(request, params));
               params.Hosts.push(this.getHostFromHeaderHost(request, params));
 
               params.Hosts = params.Hosts.filter((value) => {
@@ -713,6 +713,16 @@ export default class Server extends Transport {
       return dec;
     } catch (e) {
       // TODO: add logger
+    }
+
+    try {
+      let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
+      this.cryptoModule = "cryptojs";
+      return dec;
+    } catch (e) {
+      /**
+       * TODO: add logger
+       */
     }
 
     return false;
