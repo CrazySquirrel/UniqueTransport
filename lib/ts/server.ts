@@ -474,6 +474,7 @@ export default class Server extends Transport {
               params.Hosts.push(this.getHostFromHeaderXRealHost(request, params));
               params.Hosts.push(this.getHostFromHeaderOrigin(request, params));
               params.Hosts.push(this.getHostFromHeaderReferer(request, params));
+              params.Hosts.push(this.getHostFromParamsReferer(request, params));
               params.Hosts.push(this.getHostFromHeaderHost(request, params));
 
               params.Hosts = params.Hosts.filter((value) => {
@@ -831,6 +832,25 @@ export default class Server extends Transport {
         origin = URL.parse(params.Protocol + "//" + request.headers.referer);
       } else {
         origin = URL.parse(request.headers.referer);
+      }
+
+      if (
+          origin &&
+          origin.hostname
+      ) {
+        return origin.hostname;
+      }
+    }
+  }
+
+  public getHostFromParamsReferer(request, params) {
+    if (params.Refferer) {
+      let origin;
+
+      if (params.Refferer.indexOf("http") === -1) {
+        origin = URL.parse(params.Protocol + "//" + params.Refferer);
+      } else {
+        origin = URL.parse(params.Refferer);
       }
 
       if (
