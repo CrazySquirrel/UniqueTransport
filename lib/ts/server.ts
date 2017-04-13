@@ -316,7 +316,7 @@ export default class Server extends Transport {
 
   public Respond(result, headers, request, response) {
     try {
-      headers["Pragma"] = "no-cache";
+      headers["Cache-Control"] = "no-cache";
       let resp = "";
       switch (result.Params.Transport) {
         case "style":
