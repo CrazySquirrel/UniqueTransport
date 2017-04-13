@@ -462,15 +462,27 @@ export default class Server extends Transport {
                 delete _data.data.Protocol;
               }
 
+              params.Protocol = params.Protocol || "http:";
+
+              params.Hosts = [];
+
               if (_data.data.Host) {
-                params.Host = _data.data.Host;
+                params.Hosts.push(params.Host);
                 delete _data.data.Host;
               }
 
-              params.Host = this.getHostFromHeaderXRealHost(request, headers, params.Host);
-              params.Host = this.getHostFromHeaderOrigin(request, headers, params.Host);
-              params.Host = this.getHostFromHeaderReferer(request, headers, params.Host);
-              params.Host = this.getHostFromHeaderHost(request, headers, params.Host);
+              params.Hosts.push(this.getHostFromHeaderXRealHost(request, params));
+              params.Hosts.push(this.getHostFromHeaderOrigin(request, params));
+              params.Hosts.push(this.getHostFromHeaderReferer(request, params));
+              params.Hosts.push(this.getHostFromHeaderHost(request, params));
+
+              params.Hosts = params.Hosts.filter((value) => {
+                return !!value;
+              });
+
+              if (params.Hosts.length > 0) {
+                params.Host = params.Hosts[0];
+              }
 
               if (params.Action === "Respond") {
                 if (
@@ -773,15 +785,12 @@ export default class Server extends Transport {
     return null;
   }
 
-  public getHostFromHeaderXRealHost(request, headers, host) {
-    if (
-        !host &&
-        request.headers["x-real-host"]
-    ) {
+  public getHostFromHeaderXRealHost(request, params) {
+    if (request.headers["x-real-host"]) {
       let origin;
 
       if (request.headers["x-real-host"].indexOf("http") === -1) {
-        origin = URL.parse("https://" + request.headers["x-real-host"]);
+        origin = URL.parse(params.Protocol + "//" + request.headers["x-real-host"]);
       } else {
         origin = URL.parse(request.headers["x-real-host"]);
       }
@@ -790,35 +799,17 @@ export default class Server extends Transport {
           origin &&
           origin.hostname
       ) {
-        host = origin.hostname;
-
-        headers["Access-Control-Allow-Origin"] = "";
-
-        if (origin.protocol) {
-          headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-        }
-
-        if (origin.hostname) {
-          headers["Access-Control-Allow-Origin"] += origin.hostname;
-        }
-
-        if (origin.port) {
-          headers["Access-Control-Allow-Origin"] += ":" + origin.port;
-        }
+        return origin.hostname;
       }
     }
-    return host;
   }
 
-  public getHostFromHeaderOrigin(request, headers, host) {
-    if (
-        !host &&
-        request.headers.origin
-    ) {
+  public getHostFromHeaderOrigin(request, params) {
+    if (request.headers.origin) {
       let origin;
 
       if (request.headers.origin.indexOf("http") === -1) {
-        origin = URL.parse("https://" + request.headers.origin);
+        origin = URL.parse(params.Protocol + "//" + request.headers.origin);
       } else {
         origin = URL.parse(request.headers.origin);
       }
@@ -827,35 +818,17 @@ export default class Server extends Transport {
           origin &&
           origin.hostname
       ) {
-        host = origin.hostname;
-
-        headers["Access-Control-Allow-Origin"] = "";
-
-        if (origin.protocol) {
-          headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-        }
-
-        if (origin.hostname) {
-          headers["Access-Control-Allow-Origin"] += origin.hostname;
-        }
-
-        if (origin.port) {
-          headers["Access-Control-Allow-Origin"] += ":" + origin.port;
-        }
+        return origin.hostname;
       }
     }
-    return host;
   }
 
-  public getHostFromHeaderReferer(request, headers, host) {
-    if (
-        !host &&
-        request.headers.referer
-    ) {
+  public getHostFromHeaderReferer(request, params) {
+    if (request.headers.referer) {
       let origin;
 
       if (request.headers.referer.indexOf("http") === -1) {
-        origin = URL.parse("https://" + request.headers.referer);
+        origin = URL.parse(params.Protocol + "//" + request.headers.referer);
       } else {
         origin = URL.parse(request.headers.referer);
       }
@@ -864,35 +837,17 @@ export default class Server extends Transport {
           origin &&
           origin.hostname
       ) {
-        host = origin.hostname;
-
-        headers["Access-Control-Allow-Origin"] = "";
-
-        if (origin.protocol) {
-          headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-        }
-
-        if (origin.hostname) {
-          headers["Access-Control-Allow-Origin"] += origin.hostname;
-        }
-
-        if (origin.port) {
-          headers["Access-Control-Allow-Origin"] += ":" + origin.port;
-        }
+        return origin.hostname;
       }
     }
-    return host;
   }
 
-  public getHostFromHeaderHost(request, headers, host) {
-    if (
-        !host &&
-        request.headers.host
-    ) {
+  public getHostFromHeaderHost(request, params) {
+    if (request.headers.host) {
       let origin;
 
       if (request.headers.host.indexOf("http") === -1) {
-        origin = URL.parse("https://" + request.headers.host);
+        origin = URL.parse(params.Protocol + "//" + request.headers.host);
       } else {
         origin = URL.parse(request.headers.host);
       }
@@ -901,23 +856,8 @@ export default class Server extends Transport {
           origin &&
           origin.hostname
       ) {
-        host = origin.hostname;
-
-        headers["Access-Control-Allow-Origin"] = "";
-
-        if (origin.protocol) {
-          headers["Access-Control-Allow-Origin"] += origin.protocol + "//";
-        }
-
-        if (origin.hostname) {
-          headers["Access-Control-Allow-Origin"] += origin.hostname;
-        }
-
-        if (origin.port) {
-          headers["Access-Control-Allow-Origin"] += ":" + origin.port;
-        }
+        return origin.hostname;
       }
     }
-    return host;
   }
 }
