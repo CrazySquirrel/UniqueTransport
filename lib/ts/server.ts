@@ -260,12 +260,19 @@ export default class Server extends Transport {
 
                 if (res.statusCode === 200) {
                   if (!response.answered) {
+                    let _headers = res.headers;
+                    for (let prop in headers) {
+                      if (headers.hasOwnProperty(prop)) {
+                        delete _headers[prop.toLowerCase()];
+                        _headers[prop] = headers[prop];
+                      }
+                    }
                     response.answered = true;
-                    response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+                    response.writeHead(this.Settings.SuccessResponseCode, _headers);
                     res.pipe(response);
                   }
                 } else {
-                  this.responceError("0.1.3", request, response, res.headers, new Error("Proxy resource does not exist"), {
+                  this.responceError("0.1.3", request, response, headers, new Error("Proxy resource does not exist"), {
                     result,
                     url,
                     options
@@ -403,7 +410,7 @@ export default class Server extends Transport {
       HTTP.request(options, (res) => {
         if (!response.answered) {
           response.answered = true;
-          response.writeHead(this.Settings.SuccessResponseCode, res.headers);
+          response.writeHead(this.Settings.SuccessResponseCode, headers);
           res.pipe(response);
         }
       }).end();
