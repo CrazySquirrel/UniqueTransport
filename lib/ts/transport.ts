@@ -458,6 +458,9 @@ abstract class Transport {
   }
 
   private defaultSettings: any = {
+    ServerType: "http",
+    HTTPSKeyPath: null,
+    HTTPSCertPath: null,
     ConnectionTimeout: 10000,
     IgnoredQueryParams: {
       "safe": true

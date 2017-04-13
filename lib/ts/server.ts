@@ -22,6 +22,8 @@ const CRYPTO = require("webcrypto");
 const AES = require("crypto-js/aes");
 const UTF8 = require("crypto-js/enc-utf8");
 
+const FS = require("fs");
+
 const HTTP = require("http");
 
 HTTP.globalAgent.keepAlive = true;
@@ -78,7 +80,18 @@ export default class Server extends Transport {
     });
 
     if (!this.Settings.WithoutHttpServer) {
-      HTTP.createServer(this.listenr.bind(this)).listen(this.Settings.ServerPort);
+      if (
+          this.Settings.ServerType === "https" &&
+          this.Settings.HTTPSKeyPath &&
+          this.Settings.HTTPSCertPath
+      ) {
+        HTTPS.createServer({
+          cert: FS.readFileSync(this.Settings.HTTPSCertPath),
+          key: FS.readFileSync(this.Settings.HTTPSKeyPath)
+        }, this.listenr.bind(this)).listen(this.Settings.ServerPort);
+      } else {
+        HTTP.createServer(this.listenr.bind(this)).listen(this.Settings.ServerPort);
+      }
     }
   }
 
