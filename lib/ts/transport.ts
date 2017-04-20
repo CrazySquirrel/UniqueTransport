@@ -461,6 +461,7 @@ abstract class Transport {
     ServerType: "http",
     HTTPSKeyPath: "",
     HTTPSCertPath: "",
+    MaxProxySize: 1024 * 1024 * 1024, //1GB
     ConnectionTimeout: 10000,
     IgnoredQueryParams: {
       "safe": true

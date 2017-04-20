@@ -64,12 +64,15 @@ export default class Server extends Transport {
   }
 
   public listners: any;
+  public proxyShit: any;
   public defaultSettings: any;
 
   public constructor(settings: any) {
     super(settings);
 
     this.Settings = Transport.combineSettings(this.Settings, this.defaultSettings);
+
+    this.proxyShit = {};
 
     this.listners = {};
 
@@ -225,75 +228,88 @@ export default class Server extends Transport {
 
   public Proxy(result, headers, request, response) {
     try {
-      let url = URL.parse(result.Data.link);
-
-      url.port = url.port || url.protocol === "https:" ? 443 : 80;
-
-      request.headers.host = url.host;
-
-      let options = {
-        headers: request.headers,
-        hostname: url.host,
-        method: "GET",
-        path: url.path,
-        port: url.port
+      let redirectProxy = () => {
+        this.proxyShit[result.Data.link] = true;
+        if (!response.answered) {
+          response.answered = true;
+          headers["Location"] = result.Data.link;
+          response.writeHead(this.Settings.RedirectResponseCode, headers);
+          response.end();
+        }
       };
 
-      DNS.lookup(
-          options.hostname,
-          (err) => {
-            if (err) {
-              this.responceError("0.1.1", request, response, headers, err, {
-                result,
-                url,
-                options
-              });
-            } else {
-              let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
-                res.on("error", (_err) => {
-                  this.responceError("0.1.2", request, response, headers, _err, {
-                    result,
-                    url,
-                    options
-                  });
-                });
+      try {
+        if (this.proxyShit[result.Data.link]) {
+          redirectProxy();
+        } else {
+          let url = URL.parse(result.Data.link);
 
-                if (res.statusCode === 200) {
-                  if (!response.answered) {
-                    let _headers = res.headers;
-                    for (let prop in headers) {
-                      if (headers.hasOwnProperty(prop)) {
-                        delete _headers[prop.toLowerCase()];
-                        _headers[prop] = headers[prop];
-                      }
-                    }
-                    response.answered = true;
-                    response.writeHead(this.Settings.SuccessResponseCode, _headers);
-                    res.pipe(response);
-                  }
+          url.port = url.port || url.protocol === "https:" ? 443 : 80;
+
+          request.headers.host = url.host;
+
+          let options = {
+            headers: request.headers,
+            hostname: url.host,
+            method: "GET",
+            path: url.path,
+            port: url.port
+          };
+
+          DNS.lookup(
+              options.hostname,
+              (err) => {
+                if (err) {
+                  redirectProxy();
                 } else {
-                  this.responceError("0.1.3", request, response, headers, new Error("Proxy resource does not exist"), {
-                    result,
-                    url,
-                    options
+                  let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                    res.on("error", () => {
+                      redirectProxy();
+                    });
+
+                    if (res.statusCode === 200) {
+                      if (
+                          this.Settings.MaxProxySize &&
+                          res.headers["content-length"] &&
+                          parseInt(res.headers["content-length"], 10) > this.Settings.MaxProxySize
+                      ) {
+                        req.abort();
+                        redirectProxy();
+                      } else {
+                        if (!response.answered) {
+                          let _headers = res.headers;
+                          for (let prop in headers) {
+                            if (headers.hasOwnProperty(prop)) {
+                              delete _headers[prop.toLowerCase()];
+                              _headers[prop] = headers[prop];
+                            }
+                          }
+                          response.answered = true;
+                          response.writeHead(this.Settings.SuccessResponseCode, _headers);
+                          res.pipe(response);
+                        }
+                      }
+                    } else {
+                      req.abort();
+                      redirectProxy();
+                    }
                   });
+
+                  req.on("error", () => {
+                    req.abort();
+                    redirectProxy();
+                  });
+
+                  req.end();
                 }
-              });
-
-              req.on("error", (_err) => {
-                this.responceError("0.1.4", request, response, headers, _err, {
-                  result,
-                  url,
-                  options
-                });
-              });
-
-              req.end();
-            }
-          }
-      );
+              }
+          );
+        }
+      } catch (e) {
+        redirectProxy();
+      }
     } catch (e) {
-      this.responceError("0.1.5", request, response, headers, e, {
+      this.responceError("0.1.1", request, response, headers, e, {
         result
       });
     }
