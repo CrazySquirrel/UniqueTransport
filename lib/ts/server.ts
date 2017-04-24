@@ -271,7 +271,8 @@ export default class Server extends Transport {
                       if (
                           this.Settings.MaxProxySize &&
                           res.headers["content-length"] &&
-                          parseInt(res.headers["content-length"], 10) > this.Settings.MaxProxySize
+                          parseInt(res.headers["content-length"], 10) > this.Settings.MaxProxySize &&
+                          res.headers["content-type"] !== "text/css"
                       ) {
                         req.abort();
                         redirectProxy();
