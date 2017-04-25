@@ -11,11 +11,13 @@ after_success:
 addons:
   code_climate:
     repo_token: 2ed0fdccdf32de9d1ac308c418d63c9684cc547231fec9dc3fa822e971c57bff
+branches:
+  only:
+    - master
 deploy:
   provider: npm
   email: 'info@crazysquirrel.ru'
   api_key: '443206b0-d7ea-47eb-89ca-9ff2e6ec246b'
   skip_cleanup: true
   on:
-    tags: true
     branch: master

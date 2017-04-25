@@ -1,5 +1,5 @@
 {
-  "name": "UniqueTransport",
+  "name": "unique-transport",
   "version": "1.0.102",
   "description": "This plugin is designed to deliver a message from Alice to Bob at any cost.",
   "keywords": [
@@ -29,9 +29,14 @@
     "stats:server": "NODE_ENV=development webpack --bail --config=webpack.config.server.js --profile --json > ./doc/webpack.config.karma.server.json",
     "docs": "npm run docs:client && npm run docs:server",
     "docs:client": "rm -rf ./doc/js/client/ && typedoc --mode file --target ES6 --module 'commonjs' --out ./doc/js/client/ ./src/ts/client.ts",
-    "docs:server": "rm -rf ./doc/js/server/ && typedoc --mode file --target ES6 --module 'commonjs' --out ./doc/js/server/ ./src/ts/server.ts"
+    "docs:server": "rm -rf ./doc/js/server/ && typedoc --mode file --target ES6 --module 'commonjs' --out ./doc/js/server/ ./src/ts/server.ts",
+    "lint": "codeclimate analyze",
+    "release": "standard-version && git push origin master --tags",
+    "commit": "git-cz -a"
   },
-  "pre-commit": [],
+  "pre-commit": [
+    "lint"
+  ],
   "eslintConfig": {
     "env": {
       "es6": true
@@ -40,6 +45,17 @@
   "dependencies": {
     "agentkeepalive": "^3.1.0",
     "atob": "^2.0.3",
+    "btoa": "^1.1.2",
+    "crypto-js": "^3.1.9-1",
+    "html-entities": "^1.2.0",
+    "http2": "^3.3.6",
+    "pngjs": "^3.0.1",
+    "pngquant": "^1.2.0",
+    "pngquant-bin": "^3.1.1",
+    "promise-polyfill": "^6.0.2",
+    "webcrypto": "^0.1.0"
+  },
+  "devDependencies": {
     "babel-core": "^6.14.0",
     "babel-loader": "^6.2.5",
     "babel-plugin-istanbul": "^3.0.0",
@@ -49,16 +65,14 @@
     "babel-runtime": "^6.20.0",
     "browser-sync": "^2.15.0",
     "browser-sync-webpack-plugin": "^1.1.2",
-    "btoa": "^1.1.2",
     "clean-webpack-plugin": "^0.1.13",
+    "commitizen": "^2.9.6",
     "compression": "^1.6.2",
     "compression-webpack-plugin": "^0.3.1",
-    "crypto-js": "^3.1.9-1",
+    "cz-conventional-changelog": "^2.0.0",
     "eslint": "^3.4.0",
     "extract-text-webpack-plugin": "^1.0.1",
-    "html-entities": "^1.2.0",
     "html-loader": "^0.4.4",
-    "http2": "^3.3.6",
     "jasmine": "^2.5.3",
     "jasmine-core": "^2.5.2",
     "jasmine-expect": "^3.0.1",
@@ -76,20 +90,21 @@
     "karma-source-map-support": "^1.2.0",
     "karma-webpack": "^1.8.0",
     "nodemon": "^1.11.0",
-    "pngjs": "^3.0.1",
-    "pngquant": "^1.2.0",
-    "pngquant-bin": "^3.1.1",
-    "promise-polyfill": "^6.0.2",
     "raw-loader": "^0.5.1",
     "sass-lint": "^1.10.2",
+    "standard-version": "^4.0.0",
     "string-replace-webpack-plugin": "https://github.com/CrazySquirrel/string-replace-webpack-plugin.git",
     "ts-loader": "^0.8.2",
     "tslint": "^3.15.1",
     "typedoc": "^0.5.1",
     "typescript": "^2.0.9",
-    "webcrypto": "^0.1.0",
     "webpack": "^1.13.3",
     "webpack-closure-compiler": "^2.1.2",
     "webpack-notifier": "^1.4.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-conventional-changelog"
+    }
   }
 }
