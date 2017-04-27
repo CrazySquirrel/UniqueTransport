@@ -457,7 +457,7 @@ abstract class Transport {
     };
   }
 
-  private defaultSettings: any = {
+  public defaultSettings: any = {
     ServerType: "http",
     HTTPSKeyPath: "",
     HTTPSCertPath: "",

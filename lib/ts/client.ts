@@ -353,17 +353,39 @@ export default class Client extends Transport {
           if (link.sheet.cssRules) {
             if (link.sheet.cssRules[0]) {
               if (link.sheet.cssRules[0].cssText) {
-                let rules = (/([^{]*)\{([^}]*)\}/i).exec(link.sheet.cssRules[0].cssText);
-                if (rules) {
-                  let rule = (/content:([^"]*)"([^"]*)"/i).exec(rules[2]);
-
-                  let _data = this.decodeSync(rule[2], this.Settings.Password);
+                let reg1 = new RegExp("\\." + params.RawData.Callback + "[^\\s]*\\s\\{([^}]+)\\}", "ig");
+                let selectors = link.sheet.cssRules[0].cssText.match(reg1);
+                if (selectors) {
+                  let reg2 = new RegExp("\\." + params.RawData.Callback + "[^\\s]*\\s\\{([^}]+)\\}", "i");
+                  let encodedString = "";
+                  selectors.forEach((selector) => {
+                    let rules: any = reg2.exec(selector);
+                    if (rules) {
+                      rules = rules[1].split("\n");
+                      rules.forEach((rule) => {
+                        rule = rule.split(":");
+                        let prop = rule.shift().trim();
+                        rule = rule.join(":").trim();
+                        let data: any = "";
+                        switch (prop) {
+                          case"content":
+                            data = (/['"]([^'"]+)['"]/i).exec(rule);
+                            data = data ? data[1] : "";
+                            break;
+                          default:
+                        }
+                        encodedString += data;
+                      });
+                    }
+                  });
+                  let _data = this.decodeSync(encodedString, this.Settings.Password);
                   if (_data) {
-                    resolve(_data);
+                    return resolve(_data);
                   } else {
-                    reject();
+                    return reject();
                   }
                 }
+                return reject();
               }
             }
           }
