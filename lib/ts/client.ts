@@ -349,46 +349,52 @@ export default class Client extends Transport {
       let link: any = window.document.createElement("link");
 
       link.onload = () => {
+        let reg1 = new RegExp("\\." + params.RawData.Callback + "[^\\s]*[\\s]*\\{([^}]+)\\}", "ig");
+        let reg2 = new RegExp("\\." + params.RawData.Callback + "[^\\s]*[\\s]*\\{([^}]+)\\}", "i");
+        let encodedString = "";
+
         if (link.sheet) {
           if (link.sheet.cssRules) {
-            if (link.sheet.cssRules[0]) {
-              if (link.sheet.cssRules[0].cssText) {
-                let reg1 = new RegExp("\\." + params.RawData.Callback + "[^\\s]*\\s\\{([^}]+)\\}", "ig");
-                let selectors = link.sheet.cssRules[0].cssText.match(reg1);
-                if (selectors) {
-                  let reg2 = new RegExp("\\." + params.RawData.Callback + "[^\\s]*\\s\\{([^}]+)\\}", "i");
-                  let encodedString = "";
-                  selectors.forEach((selector) => {
-                    let rules: any = reg2.exec(selector);
-                    if (rules) {
-                      rules = rules[1].split("\n");
-                      rules.forEach((rule) => {
-                        rule = rule.split(":");
-                        let prop = rule.shift().trim();
-                        rule = rule.join(":").trim();
-                        let data: any = "";
-                        switch (prop) {
-                          case"content":
-                            data = (/['"]([^'"]+)['"]/i).exec(rule);
-                            data = data ? data[1] : "";
-                            break;
-                          default:
-                        }
-                        encodedString += data;
-                      });
-                    }
-                  });
-                  let _data = this.decodeSync(encodedString, this.Settings.Password);
-                  if (_data) {
-                    return resolve(_data);
-                  } else {
-                    return reject();
+            let cssRulesLength = link.sheet.cssRules.length;
+            for (let i = 0; i < cssRulesLength; i++) {
+              let selectors = link.sheet.cssRules[i].cssText.match(reg1);
+              if (selectors) {
+                selectors.forEach((selector) => {
+                  let rules: any = reg2.exec(selector);
+                  if (rules) {
+                    rules = rules[1].split(";");
+                    rules.forEach((rule) => {
+                      rule = rule.split(":");
+                      let prop = rule.shift().trim();
+                      rule = rule.join(":").trim();
+                      let data: any = "";
+                      switch (prop) {
+                        case"content":
+                          data = (/['"]([^'"]+)['"]/i).exec(rule);
+                          data = data ? data[1] : "";
+                          break;
+                        default:
+                          if (rule) {
+                            rule = rule.split("px");
+                            if (rule) {
+                              data = String.fromCharCode(rule[0]);
+                            }
+                          }
+                      }
+                      encodedString += data;
+                    });
                   }
-                }
-                return reject();
+                });
               }
             }
           }
+        }
+
+        let _data = this.decodeSync(encodedString, this.Settings.Password);
+        if (_data) {
+          return resolve(_data);
+        } else {
+          return reject();
         }
       };
 

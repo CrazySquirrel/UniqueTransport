@@ -337,7 +337,64 @@ export default class Server extends Transport {
       let resp = "";
       switch (result.Params.Transport) {
         case "style":
-          resp = `.${result.Params.Callback} {content:"${result.Data}";}`;
+          let props: any = [
+            "width:#{vd}px;",
+            "height:#{vd}px;",
+            "top:#{vd}px;",
+            "left:#{vd}px;",
+            "bottom:#{vd}px;",
+            "right:#{vd}px;",
+            "padding:#{vd}px;",
+            "margin:#{vd}px;"
+          ];
+
+          props = props.map((prop) => {
+            prop = prop.replace(/#\{/ig, "${");
+
+            let keys = prop.match(/\$\{([^$}]+)}/ig).map((k) => {
+              return k.substring(2, k.length - 1);
+            }).sort().filter((value, index, self) => {
+              return self.indexOf(value) === index;
+            });
+
+            return {
+              params: keys,
+              fn: new Function(...keys, "return `" + prop + "`;")
+            };
+          });
+
+          resp = "";
+          let i = 0;
+
+          while (result.Data.length > 0 && i < 1000) {
+            let rules = [];
+            for (let prop of props) {
+              let params = [];
+              let isdata = false;
+              for (let param of prop.params) {
+                let data: any;
+                switch (param) {
+                  case"vd":
+                    data = result.Data.substr(0, 1);
+                    if (data) {
+                      params.push(data.charCodeAt(0));
+                      result.Data = result.Data.substr(1);
+                      isdata = true;
+                    } else {
+                      params.push("");
+                    }
+                    break;
+                  default:
+                    params.push("");
+                }
+              }
+              if (isdata) {
+                rules.push(prop.fn(...params));
+              }
+            }
+            resp += `.${result.Params.Callback}__${Server.getRandomWord()}{${rules.join("")}}`;
+            i++;
+          }
           headers["Content-Type"] = "text/css; charset=utf-8";
           break;
         case "script":
