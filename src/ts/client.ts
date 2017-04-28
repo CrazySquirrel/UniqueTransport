@@ -57,13 +57,13 @@ Client.getEncodedProxy("http://avatars.mds.yandex.net/get-direct/42386/HzzAM6tDC
 
 Client.getEncodedProxy("https://weather.rambler.ru/static/v2.6.1/dist/rambler-weather.min.css?v2.6.1").then(
     (url: any) => {
-      let link = window.document.createElement("link");
+      let link: any = window.document.createElement("link");
       link.type = "text/css";
       link.rel = "stylesheet";
       link.crossOrigin = "Anonymous";
 
       link.onload = () => {
-        let styleSheets = window.document.styleSheets;
+        let styleSheets: any = window.document.styleSheets;
         let styleSheetsLength = styleSheets.length;
         for (let i = 0; i < styleSheetsLength; i++) {
           try {
