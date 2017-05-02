@@ -6,8 +6,22 @@
     "TypeScript",
     "Unique transport"
   ],
+  "homepage": "https://github.com/CrazySquirrel/UniqueTransport",
+  "bugs": {
+    "url": "https://github.com/CrazySquirrel/UniqueTransport/issues",
+    "email": "info@crazysquirrel.ru"
+  },
   "author": "Sergey Yastrebov <info@crazysquirrel.ru>",
   "license": "MIT",
+  "main": "./lib/js/server.js",
+  "module": "./lib/js/server.js",
+  "browser": "./lib/js/server.js",
+  "jsnext:main": "./lib/js/server.js",
+  "types": "./lib/ts/server.d.ts",
+  "bin": {
+    "UniqueTransport": "./lib/js/server.js"
+  },
+  "man": "./README.md",
   "repository": {
     "type": "git",
     "url": "git@github.com:CrazySquirrel/UniqueTransport.git"
@@ -56,6 +70,9 @@
     "webcrypto": "^0.1.0"
   },
   "devDependencies": {
+    "@types/jasmine": "^2.5.47",
+    "@types/jasmine-expect": "^3.6.1",
+    "@types/jasmine-matchers": "^0.2.30",
     "babel-core": "^6.14.0",
     "babel-loader": "^6.2.5",
     "babel-plugin-istanbul": "^3.0.0",
