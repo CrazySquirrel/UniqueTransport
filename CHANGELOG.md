@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.0.107"></a>
+## [1.0.107](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.106...v1.0.107) (2017-05-11)
+
+
+### Bug Fixes
+
+* **Proxy:** Proxy css bug fix ([d75b7b0](https://github.com/CrazySquirrel/UniqueTransport/commit/d75b7b0))
+
+
+
 <a name="1.0.106"></a>
 ## [1.0.106](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.105...v1.0.106) (2017-05-11)
 
