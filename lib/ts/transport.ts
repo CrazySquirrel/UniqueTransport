@@ -24,13 +24,11 @@ if (typeof window === "undefined") {
 
 if (!root.location) {
   root.location = {
-    origin: ""
+    origin: "",
   };
 }
 
 abstract class Transport {
-
-  public abstract encodeSync(data: any, password: string);
 
   /**
    * Get choise type based on the rate
@@ -69,7 +67,7 @@ abstract class Transport {
    * @param choices
    */
   public static getChoiceID(choiceType: string, choices: any): string {
-    let keys = Object.keys(choices[choiceType]);
+    const keys = Object.keys(choices[choiceType]);
     return keys[keys.length * Math.random() << 0];
   }
 
@@ -82,9 +80,9 @@ abstract class Transport {
     /**
      * Split data a parts
      */
-    let length = data.length;
-    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
-    let dataParts = Transport.stringChunks(data, Math.ceil(length / offset), offset);
+    const length = data.length;
+    const offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
+    const dataParts = Transport.stringChunks(data, Math.ceil(length / offset), offset);
     /**
      * Encode data parts
      */
@@ -102,7 +100,7 @@ abstract class Transport {
     /**
      * Format get params object
      */
-    let params = {};
+    const params = {};
     for (let i = 0; i < dataParts.length; i++) {
       params[keys[i]] = dataParts[i];
     }
@@ -135,9 +133,9 @@ abstract class Transport {
     /**
      * Split data a parts
      */
-    let length = data.length;
-    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
-    let dataParts = Transport.stringChunks(data, Math.ceil(length / offset), offset);
+    const length = data.length;
+    const offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
+    const dataParts = Transport.stringChunks(data, Math.ceil(length / offset), offset);
     /**
      * Encode data parts
      */
@@ -155,7 +153,7 @@ abstract class Transport {
     /**
      * Format get params object
      */
-    let params = {};
+    const params = {};
     for (let i = 0; i < dataParts.length; i++) {
       params[keys[i]] = dataParts[i];
     }
@@ -177,9 +175,9 @@ abstract class Transport {
     /**
      * Split data a parts
      */
-    let length = data.length;
-    let offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
-    let dataParts = Transport.stringChunks(data, Math.ceil(length / offset), offset);
+    const length = data.length;
+    const offset = Math.max(Math.ceil(Math.random() * length * 0.5), 8);
+    const dataParts = Transport.stringChunks(data, Math.ceil(length / offset), offset);
     /**
      * Encode data parts
      */
@@ -200,7 +198,7 @@ abstract class Transport {
    * @return {Array}
    */
   public static stringChunks(data: string, length: number, offset: number): string[] {
-    let _data = [];
+    const _data = [];
     for (let i = 0; i < length; i++) {
       _data.push(data.substr(i * offset, offset));
     }
@@ -212,7 +210,7 @@ abstract class Transport {
    * @return string
    */
   public static getRandomWord(): string {
-    let word = Math.random().toString(36).replace(/[^a-z]+/g, "");
+    const word = Math.random().toString(36).replace(/[^a-z]+/g, "");
     return word.substr(0, 4 + Math.floor(Math.random() * word.length * 0.5));
   }
 
@@ -221,8 +219,10 @@ abstract class Transport {
    * @param obj
    */
   public static isObjectNotEmpty(obj) {
-    for (let prop in obj) {
-      return true;
+    for (const prop in obj) {
+      if (obj.hasOwnProperty(prop)) {
+        return true;
+      }
     }
     return false;
   }
@@ -253,7 +253,7 @@ abstract class Transport {
       if (
           typeof settedSettings === "object"
       ) {
-        for (let prop in defaultSettings) {
+        for (const prop in defaultSettings) {
           if (defaultSettings.hasOwnProperty(prop)) {
             settings[prop] = Transport.combineSettings(settings[prop], defaultSettings[prop]);
           }
@@ -269,205 +269,17 @@ abstract class Transport {
 
   public cryptoModule: any;
 
-  public constructor(settings: any) {
-    this.Settings = settings;
-
-    //this.Settings = Transport.combineSettings(this.Settings, this.defaultSettings);
-
-    this.cryptoModule = "";
-  }
-
-  /**
-   * Encode link synchronously
-   * @param link
-   */
-  public getEncodedLinkSync(link: string): string {
-    if (
-        link
-    ) {
-      let _data = this.encodeSync({
-        data: {
-          Action: "Redirect",
-          Refferer: location.href,
-          Protocol: location.protocol,
-          Host: location.host
-        },
-        link,
-      }, this.Settings.Password);
-
-      if (_data) {
-        /**
-         * Get subtransports
-         */
-        let transport = this.getTransport(["path", "name", "params"], "base");
-        /**
-         * Get url and data for subtransports
-         */
-        let dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
-
-        return dataUrl.url;
-      } else {
-        return null;
-      }
-    } else {
-      return null;
-    }
-  }
-
-  /**
-   * Encode link asynchronously
-   * @param link
-   */
-  public getEncodedLink(link: string) {
-    return new Promise((resolve, reject) => {
-      let _link = this.getEncodedLinkSync(link);
-      if (_link) {
-        resolve(_link);
-      } else {
-        reject();
-      }
-    });
-  }
-
-  /**
-   * Encode proxy link synchronously
-   * @param link
-   */
-  public getEncodedProxySync(link: string): string {
-    if (
-        link
-    ) {
-      let _data = this.encodeSync({
-        data: {
-          Action: "Proxy",
-          Refferer: location.href,
-          Protocol: location.protocol,
-          Host: location.host
-        },
-        link
-      }, this.Settings.Password);
-
-      if (_data) {
-        /**
-         * Get subtransports
-         */
-        let transport = this.getTransport(["path", "name", "params"], "base");
-        /**
-         * Get url and data for subtransports
-         */
-        let dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
-
-        return dataUrl.url;
-      } else {
-        return null;
-      }
-    } else {
-      return null;
-    }
-  }
-
-  /**
-   * Encode proxy link asynchronously
-   * @param link
-   */
-  public getEncodedProxy(link: string) {
-    return new Promise((resolve, reject) => {
-      let _link = this.getEncodedProxySync(link);
-      if (_link) {
-        resolve(_link);
-      } else {
-        reject();
-      }
-    });
-  }
-
-  /**
-   * Get random transport range
-   * @param _transports
-   * @param type
-   * @return {Array}
-   */
-  public getTransport(_transports: string[], type: string): string[] {
-    /**
-     * Filter sub transports by settings
-     */
-    let transports = [];
-    for (let method of _transports) {
-      if (
-          type === "base" ||
-          (
-              this.Settings &&
-              this.Settings.Transports &&
-              this.Settings.Transports[type] &&
-              this.Settings.Transports[type].SubTransports &&
-              this.Settings.Transports[type].SubTransports[method]
-          )
-      ) {
-        transports.push(method);
-      }
-    }
-    /**
-     * Choose random sub transports
-     */
-    let transport = [];
-    while (transport.length === 0) {
-      for (let i = 0; i < transports.length; i++) {
-        if (Math.random() > 0.5) {
-          transport.push(transports[i]);
-        }
-      }
-    }
-    return transport;
-  }
-
-  /**
-   * Insert data into url
-   * @param data
-   * @param url
-   * @param transport
-   */
-  public getDataAndUrl(data: any, url: string, transport: string[]): any {
-    /**
-     * Split data a parts
-     */
-    let length = transport.length;
-    data = Transport.stringChunks(data, length, Math.ceil(data.length / length));
-    /**
-     * Implement path sub transport
-     */
-    if (transport.indexOf("path") !== -1) {
-      url = Transport.pathSubTransport(url, data.shift());
-    }
-    /**
-     * Implement path sub transport
-     */
-    if (transport.indexOf("name") !== -1) {
-      url = Transport.nameSubTransport(url, data.shift());
-    }
-    /**
-     * Implement path sub transport
-     */
-    if (transport.indexOf("params") !== -1) {
-      url = Transport.paramsSubTransport(url, data.shift());
-    }
-
-    return {
-      data,
-      url,
-    };
-  }
-
   public defaultSettings: any = {
     ServerType: "http",
     HTTPSKeyPath: "",
     HTTPSCertPath: "",
-    MaxProxySize: 1024 * 1024 * 1024, //1GB
+    MaxProxySize: 1024 * 1024 * 1024,
     ConnectionTimeout: 10000,
     IgnoredQueryParams: {
-      "safe": true
+      "safe": true,
     },
     IgnoredNames: {
-      "safe": true
+      "safe": true,
     },
     IgnoredRequestPaths: {
       "test": true,
@@ -479,7 +291,7 @@ abstract class Transport {
       "abduces": true,
       "suitor": true,
       "yachted": true,
-      "safe": true
+      "safe": true,
     },
     IgnoredRequestHeaders: {
       "accept": true,
@@ -521,7 +333,7 @@ abstract class Transport {
       "x-turbo-id": true,
       "x-wap-profile": true,
       "x-yandex-turbo": true,
-      "safe": true
+      "safe": true,
     },
     OptimizeImages: false,
     Password: "xmas",
@@ -540,28 +352,28 @@ abstract class Transport {
           name: true,
           params: true,
           path: true,
-        }
+        },
       },
       iframe: {
         SubTransports: {
           name: true,
           params: true,
           path: true,
-        }
+        },
       },
       script: {
         SubTransports: {
           name: true,
           params: true,
           path: true,
-        }
+        },
       },
       style: {
         SubTransports: {
           name: true,
           params: true,
           path: true,
-        }
+        },
       },
       xhr: {
         HttpMethods: {
@@ -576,14 +388,203 @@ abstract class Transport {
           name: true,
           params: true,
           path: true,
-        }
+        },
       },
     },
     Urls: [
-      root.location.origin + "/"
+      root.location.origin + "/",
     ],
     WithoutHttpServer: false,
   };
+
+  public constructor(settings: any) {
+    this.Settings = settings;
+
+    this.cryptoModule = "";
+  }
+
+  /**
+   * Encode link synchronously
+   * @param link
+   */
+  public getEncodedLinkSync(link: string): string {
+    if (
+        link
+    ) {
+      const _data = this.encodeSync({
+        data: {
+          Action: "Redirect",
+          Refferer: location.href,
+          Protocol: location.protocol,
+          Host: location.host,
+        },
+        link,
+      }, this.Settings.Password);
+
+      if (_data) {
+        /**
+         * Get subtransports
+         */
+        const transport = this.getTransport(["path", "name", "params"], "base");
+        /**
+         * Get url and data for subtransports
+         */
+        const dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
+
+        return dataUrl.url;
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Encode link asynchronously
+   * @param link
+   */
+  public getEncodedLink(link: string) {
+    return new Promise((resolve, reject) => {
+      const _link = this.getEncodedLinkSync(link);
+      if (_link) {
+        resolve(_link);
+      } else {
+        reject();
+      }
+    });
+  }
+
+  /**
+   * Encode proxy link synchronously
+   * @param link
+   */
+  public getEncodedProxySync(link: string): string {
+    if (
+        link
+    ) {
+      const _data = this.encodeSync({
+        data: {
+          Action: "Proxy",
+          Refferer: location.href,
+          Protocol: location.protocol,
+          Host: location.host,
+        },
+        link,
+      }, this.Settings.Password);
+
+      if (_data) {
+        /**
+         * Get subtransports
+         */
+        const transport = this.getTransport(["path", "name", "params"], "base");
+        /**
+         * Get url and data for subtransports
+         */
+        const dataUrl = this.getDataAndUrl(_data, this.Settings.Urls[Math.floor(Math.random() * this.Settings.Urls.length)], transport);
+
+        return dataUrl.url;
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Encode proxy link asynchronously
+   * @param link
+   */
+  public getEncodedProxy(link: string) {
+    return new Promise((resolve, reject) => {
+      const _link = this.getEncodedProxySync(link);
+      if (_link) {
+        resolve(_link);
+      } else {
+        reject();
+      }
+    });
+  }
+
+  /**
+   * Get random transport range
+   * @param _transports
+   * @param type
+   * @return {Array}
+   */
+  public getTransport(_transports: string[], type: string): string[] {
+    /**
+     * Filter sub transports by settings
+     */
+    const transports = [];
+    for (let j = 0; j < _transports.length; j++) {
+      const method = _transports[j];
+      if (
+          type === "base" ||
+          (
+              this.Settings &&
+              this.Settings.Transports &&
+              this.Settings.Transports[type] &&
+              this.Settings.Transports[type].SubTransports &&
+              this.Settings.Transports[type].SubTransports[method]
+          )
+      ) {
+        transports.push(method);
+      }
+    }
+    /**
+     * Choose random sub transports
+     */
+    const transport = [];
+    while (transport.length === 0) {
+      for (let i = 0; i < transports.length; i++) {
+        if (Math.random() > 0.5) {
+          transport.push(transports[i]);
+        }
+      }
+    }
+    return transport;
+  }
+
+  /**
+   * Insert data into url
+   * @param data
+   * @param url
+   * @param transport
+   */
+  public getDataAndUrl(data: any, url: string, transport: string[]): any {
+    /**
+     * Split data a parts
+     */
+    const length = transport.length;
+    data = Transport.stringChunks(data, length, Math.ceil(data.length / length));
+    /**
+     * Implement path sub transport
+     */
+    if (transport.indexOf("path") !== -1) {
+      url = Transport.pathSubTransport(url, data.shift());
+    }
+    /**
+     * Implement path sub transport
+     */
+    if (transport.indexOf("name") !== -1) {
+      url = Transport.nameSubTransport(url, data.shift());
+    }
+    /**
+     * Implement path sub transport
+     */
+    if (transport.indexOf("params") !== -1) {
+      url = Transport.paramsSubTransport(url, data.shift());
+    }
+
+    return {
+      data,
+      url,
+    };
+  }
+
+  public abstract encodeSync(data: any, password: string);
 }
 
 export default Transport;

@@ -59,7 +59,7 @@ export default class Server extends Transport {
    * @param choices
    */
   public static getChoiceID(choiceType: string, choices: any): string {
-    let keys = Object.keys(choices[choiceType]);
+    const keys = Object.keys(choices[choiceType]);
     return keys[keys.length * Math.random() << 0];
   }
 
@@ -67,7 +67,7 @@ export default class Server extends Transport {
   public proxyShit: any;
   public defaultSettings: any;
 
-  public constructor(settings: any) {
+  public constructor(settings: any = {}) {
     super(settings);
 
     this.Settings = Transport.combineSettings(this.Settings, this.defaultSettings);
@@ -90,7 +90,7 @@ export default class Server extends Transport {
       ) {
         HTTPS.createServer({
           cert: FS.readFileSync(this.Settings.HTTPSCertPath),
-          key: FS.readFileSync(this.Settings.HTTPSKeyPath)
+          key: FS.readFileSync(this.Settings.HTTPSKeyPath),
         }, this.listenr.bind(this)).listen(this.Settings.ServerPort);
       } else {
         HTTP.createServer(this.listenr.bind(this)).listen(this.Settings.ServerPort);
@@ -98,18 +98,18 @@ export default class Server extends Transport {
     }
   }
 
-  public on(event: string, listner: Function) {
+  public on(event: string, listner: any) {
     this.listners[event] = listner;
   }
 
   public listenr(request, response) {
-    let headers = Object.assign({}, baseHeaders);
+    const headers = Object.assign({}, baseHeaders);
 
     setTimeout(
         () => {
           this.responceError("0.0.1", request, response, headers);
         },
-        this.Settings.ConnectionTimeout
+        this.Settings.ConnectionTimeout,
     );
 
     try {
@@ -141,7 +141,7 @@ export default class Server extends Transport {
         this.preprocessor(request).then(
             (result: any) => {
               if (result.indexOf("debug") !== -1) {
-                let debug = {
+                const debug = {
                   headers: request.headers,
                   rawurl: request.url,
                   url: URL.parse(request.url, true),
@@ -155,8 +155,8 @@ export default class Server extends Transport {
               } else {
                 let IP = request.headers["x-real-ip"];
                 if (!IP) {
-                  let regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
-                  let resIP = (regIP).exec(request.connection.remoteAddress);
+                  const regIP = /([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/i;
+                  const resIP = (regIP).exec(request.connection.remoteAddress);
                   if (resIP) {
                     IP = resIP[0];
                   }
@@ -168,7 +168,7 @@ export default class Server extends Transport {
                   IP = "95.165.148.52";
                 }
 
-                let params = {
+                const params = {
                   Headers: request.headers,
                   IP,
                 };
@@ -189,17 +189,17 @@ export default class Server extends Transport {
                           this.responceError("0.0.4", request, response, headers, new Error("Unsupported action"), {
                             result,
                             params,
-                            headers
+                            headers,
                           });
                         }
                       } else {
                         this.responceError("0.0.5", request, response, headers, new Error("Host does not exist"), {
                           result,
                           params,
-                          headers
+                          headers,
                         });
                       }
-                    }
+                    },
                 ).catch(
                     (e) => {
                       if (request.url.indexOf(".map") !== -1) {
@@ -208,17 +208,17 @@ export default class Server extends Transport {
                         this.responceError("0.0.7", request, response, headers, e, {
                           result,
                           params,
-                          headers
+                          headers,
                         });
                       }
-                    }
+                    },
                 );
               }
-            }
+            },
         ).catch(
             (e) => {
               this.responceError("0.0.8", request, response, headers, e);
-            }
+            },
         );
       }
     } catch (e) {
@@ -228,7 +228,7 @@ export default class Server extends Transport {
 
   public Proxy(result, headers, request, response) {
     try {
-      let redirectProxy = () => {
+      const redirectProxy = () => {
         this.proxyShit[result.Data.link] = true;
         if (!response.answered) {
           response.answered = true;
@@ -242,18 +242,18 @@ export default class Server extends Transport {
         if (this.proxyShit[result.Data.link]) {
           redirectProxy();
         } else {
-          let url = URL.parse(result.Data.link);
+          const url = URL.parse(result.Data.link);
 
           url.port = url.port || url.protocol === "https:" ? 443 : 80;
 
           request.headers.host = url.host;
 
-          let options = {
+          const options = {
             headers: request.headers,
             hostname: url.host,
             method: "GET",
             path: url.path,
-            port: url.port
+            port: url.port,
           };
 
           DNS.lookup(
@@ -262,7 +262,7 @@ export default class Server extends Transport {
                 if (err) {
                   redirectProxy();
                 } else {
-                  let req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                  const req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
                     res.on("error", () => {
                       redirectProxy();
                     });
@@ -278,8 +278,8 @@ export default class Server extends Transport {
                         redirectProxy();
                       } else {
                         if (!response.answered) {
-                          let _headers = res.headers;
-                          for (let prop in headers) {
+                          const _headers = res.headers;
+                          for (const prop in headers) {
                             if (headers.hasOwnProperty(prop)) {
                               delete _headers[prop.toLowerCase()];
                               _headers[prop] = headers[prop];
@@ -303,7 +303,7 @@ export default class Server extends Transport {
 
                   req.end();
                 }
-              }
+              },
           );
         }
       } catch (e) {
@@ -311,7 +311,7 @@ export default class Server extends Transport {
       }
     } catch (e) {
       this.responceError("0.1.1", request, response, headers, e, {
-        result
+        result,
       });
     }
   }
@@ -326,7 +326,7 @@ export default class Server extends Transport {
       }
     } catch (e) {
       this.responceError("0.2.1", request, response, headers, e, {
-        result
+        result,
       });
     }
   }
@@ -381,7 +381,7 @@ export default class Server extends Transport {
         ZLIB.gzip(resp, (error, _result) => {
           if (error) {
             this.responceError("0.3.2", request, response, headers, error, {
-              result: _result
+              result: _result,
             });
           } else {
             headers["Content-Encoding"] = "gzip";
@@ -398,7 +398,7 @@ export default class Server extends Transport {
       }
     } catch (e) {
       this.responceError("0.3.4", request, response, headers, e, {
-        result
+        result,
       });
     }
   }
@@ -412,16 +412,16 @@ export default class Server extends Transport {
     }
 
     if (request.headers["x-real-404"]) {
-      let url = URL.parse(request.headers["x-real-404"]);
+      const url = URL.parse(request.headers["x-real-404"]);
 
       request.headers.host = url.host;
 
-      let options = {
+      const options = {
         headers: request.headers,
         hostname: url.host,
         method: "GET",
         path: url.path,
-        port: "80"
+        port: "80",
       };
 
       HTTP.request(options, (res) => {
@@ -510,7 +510,7 @@ export default class Server extends Transport {
                   new Promise(
                       (_resolve) => {
                         _resolve(this.listners[_data.event](_data.data, params));
-                      }
+                      },
                   ).then(
                       (result) => {
                         this.encode(result, this.Settings.Password).then(
@@ -519,9 +519,9 @@ export default class Server extends Transport {
                                 Data: __data,
                                 Params: params,
                               });
-                            }
+                            },
                         ).catch(reject);
-                      }
+                      },
                   ).catch(reject);
                 } else {
                   reject(new Error("Transport undefined or unsupported or listener unexist"));
@@ -533,14 +533,14 @@ export default class Server extends Transport {
                   new Promise(
                       (_resolve) => {
                         _resolve(this.listners["redirect"](_data, params));
-                      }
+                      },
                   ).then(
                       () => {
                         resolve({
                           Data: _data,
                           Params: params,
                         });
-                      }
+                      },
                   ).catch(reject);
                 } else {
                   resolve({
@@ -555,14 +555,14 @@ export default class Server extends Transport {
                   new Promise(
                       (_resolve) => {
                         _resolve(this.listners["proxy"](_data, params));
-                      }
+                      },
                   ).then(
                       () => {
                         resolve({
                           Data: _data,
                           Params: params,
                         });
-                      }
+                      },
                   ).catch(reject);
                 } else {
                   resolve({
@@ -576,22 +576,22 @@ export default class Server extends Transport {
             } else {
               reject(new Error("Invalid data"));
             }
-          }
+          },
       ).catch(reject);
     });
   }
 
   public preprocessor(request) {
     return new Promise((resolve, reject) => {
-      let data = [];
+      const data = [];
       /**
        * Get data from url
        */
-      let params = URL.parse(request.url, true);
+      const params = URL.parse(request.url, true);
       /**
        * Get data from path
        */
-      let path = PATH.parse(params.pathname);
+      const path = PATH.parse(params.pathname);
       if (
           params.pathname.lastIndexOf("/") === params.pathname.length - 1
       ) {
@@ -641,7 +641,7 @@ export default class Server extends Transport {
       /**
        * Get data from body
        */
-      let buffer = [];
+      const buffer = [];
 
       request.on("data", (chunk) => {
         buffer.push(chunk);
@@ -666,7 +666,7 @@ export default class Server extends Transport {
    */
   public decode(data: any, password: string) {
     return new Promise((resolve, reject) => {
-      let _data = this.decodeSync(data, password);
+      const _data = this.decodeSync(data, password);
       if (_data) {
         resolve(_data);
       } else {
@@ -682,7 +682,7 @@ export default class Server extends Transport {
    */
   public encode(data: any, password: string) {
     return new Promise((resolve, reject) => {
-      let _data = this.encodeSync(data, password);
+      const _data = this.encodeSync(data, password);
       if (_data) {
         resolve(_data);
       } else {
@@ -698,7 +698,7 @@ export default class Server extends Transport {
    */
   public decodeSync(data: any, password: string) {
     try {
-      let dec = JSON.parse(decodeURIComponent(global.escape(Buffer.from(data, "base64").toString("utf8"))).split("@", 2)[1]);
+      const dec = JSON.parse(decodeURIComponent(global.escape(Buffer.from(data, "base64").toString("utf8"))).split("@", 2)[1]);
       this.cryptoModule = "base64salt";
       return dec;
     } catch (e) {
@@ -706,7 +706,7 @@ export default class Server extends Transport {
     }
 
     try {
-      let dec = JSON.parse(decodeURIComponent(global.escape(Buffer.from(data, "base64").toString("utf8"))));
+      const dec = JSON.parse(decodeURIComponent(global.escape(Buffer.from(data, "base64").toString("utf8"))));
       this.cryptoModule = "base64+";
       return dec;
     } catch (e) {
@@ -714,7 +714,7 @@ export default class Server extends Transport {
     }
 
     try {
-      let dec = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
+      const dec = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
       this.cryptoModule = "base64";
       return dec;
     } catch (e) {
@@ -722,7 +722,7 @@ export default class Server extends Transport {
     }
 
     try {
-      let decipher = CRYPTO.createDecipher("aes-256-ctr", password);
+      const decipher = CRYPTO.createDecipher("aes-256-ctr", password);
       let dec = decipher.update(data, "hex", "utf8");
       dec += decipher.final("utf8");
       dec = JSON.parse(dec);
@@ -733,7 +733,7 @@ export default class Server extends Transport {
     }
 
     try {
-      let dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
+      const dec = JSON.parse(AES.decrypt(data, password).toString(UTF8)) || false;
       this.cryptoModule = "cryptojs";
       return dec;
     } catch (e) {
@@ -789,7 +789,7 @@ export default class Server extends Transport {
         this.cryptoModule === "webcrypto"
     ) {
       try {
-        let cipher = CRYPTO.createCipher("aes-256-ctr", password);
+        const cipher = CRYPTO.createCipher("aes-256-ctr", password);
         let crypted = cipher.update(JSON.stringify(data), "utf8", "hex");
         crypted += cipher.final("hex");
         return crypted;

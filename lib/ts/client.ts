@@ -37,7 +37,7 @@ export default class Client extends Transport {
       for (let major = 1; major < 3; major++) {
         for (let minor = 0; minor < 10; minor++) {
           for (let patch = 0; patch < 100; patch++) {
-            let version = major + "." + minor + "." + patch;
+            const version = major + "." + minor + "." + patch;
             if (version !== "#PACKAGE_VERSION#") {
               window.localStorage.removeItem(MD5("#PACKAGE_NAME#-" + version).toString());
             }
@@ -92,20 +92,20 @@ export default class Client extends Transport {
     }
 
     return new Promise((resolve, reject) => {
-      let choiceType = Client.getChoiseType(this.rate, this.choices);
-      let choiceID = Client.getChoiceID(choiceType, this.choices);
+      const choiceType = Client.getChoiseType(this.rate, this.choices);
+      const choiceID = Client.getChoiceID(choiceType, this.choices);
       if (choiceID) {
-        let choice = this.choices[choiceType][choiceID];
+        const choice = this.choices[choiceType][choiceID];
 
-        let promise = new Promise((_resolve, _reject) => {
-          let transport = choice.Transport;
+        const promise = new Promise((_resolve, _reject) => {
+          const transport = choice.Transport;
           params.Data.Transport = transport;
           params.Data.Callback = [
             Client.getRandomWord(),
             "-",
             Date.now().toString(36).replace(/[^a-z]+/g, ""),
             "-",
-            Math.round(performance.now() * 1e8).toString(36).replace(/[^a-z]+/g, "")
+            Math.round(performance.now() * 1e8).toString(36).replace(/[^a-z]+/g, ""),
           ].join("");
           params.Data.Action = "Respond";
           params.Data.Url = choice.Url;
@@ -113,7 +113,7 @@ export default class Client extends Transport {
           params.Data.Protocol = location.protocol;
           params.Data.Host = location.host;
 
-          let _data = this.encodeSync({
+          const _data = this.encodeSync({
             data: params.Data,
             event: params.Event,
           }, this.Settings.Password);
@@ -171,7 +171,7 @@ export default class Client extends Transport {
               () => {
                 this.emit(params).then(resolve).catch(reject);
               },
-              this.Settings.ReConnectionTimeout
+              this.Settings.ReConnectionTimeout,
           );
 
           this.Settings.ConnectionTimeout = this.Settings.ConnectionTimeout * 2;
@@ -196,14 +196,14 @@ export default class Client extends Transport {
    * @param subtransports
    */
   public generateSubtransportChoices(choices: any, obj: any, subtransports: any): void {
-    let l = subtransports.length;
+    const l = subtransports.length;
     if (l) {
       for (let x = 0; x < l; x++) {
         if (
             obj.HttpMethod === "POST" ||
             subtransports[x] !== "body"
         ) {
-          let _obj = JSON.parse(JSON.stringify(obj));
+          const _obj = JSON.parse(JSON.stringify(obj));
           _obj.SubTransports.push(subtransports[x]);
           choices.normal[MD5(JSON.stringify(_obj)).toString()] = _obj;
           this.generateSubtransportChoices(choices, _obj, subtransports.slice(x + 1));
@@ -213,15 +213,15 @@ export default class Client extends Transport {
   }
 
   public filterChoises() {
-    let _choices = this.generateChoises();
+    const _choices = this.generateChoises();
 
-    let choices = {
+    const choices = {
       bad: {},
       good: {},
       normal: {},
     };
 
-    for (let choiceID in _choices.normal) {
+    for (const choiceID in _choices.normal) {
       if (_choices.normal.hasOwnProperty(choiceID)) {
         if (this.choices.good[choiceID]) {
           choices.good[choiceID] = _choices.normal[choiceID];
@@ -240,19 +240,26 @@ export default class Client extends Transport {
    * Generate choises
    */
   public generateChoises() {
-    let choices = {
+    const choices = {
       bad: {},
       good: {},
       normal: {},
     };
 
-    for (let Url of this.Settings.Urls) {
-      for (let Transport of Object.keys(this.Settings.Transports)) {
+    for (let i1 = 0; i1 < this.Settings.Urls.length; i1++) {
+      const Url = this.Settings.Urls[i1];
+
+      for (let i2 = 0; i2 < Object.keys(this.Settings.Transports).length; i2++) {
+        const Transport = Object.keys(this.Settings.Transports)[i2];
+
         if (typeof this[Transport] === "function") {
-          let SubTransportsKeys = Object.keys(this.Settings.Transports[Transport].SubTransports);
+          const SubTransportsKeys = Object.keys(this.Settings.Transports[Transport].SubTransports);
           if (this.Settings.Transports[Transport].HttpMethods) {
-            let HttpMethodsKeys = Object.keys(this.Settings.Transports[Transport].HttpMethods);
-            for (let HttpMethod of HttpMethodsKeys) {
+            const HttpMethodsKeys = Object.keys(this.Settings.Transports[Transport].HttpMethods);
+
+            for (let i3 = 0; i3 < HttpMethodsKeys.length; i3++) {
+              const HttpMethod = HttpMethodsKeys[i3];
+
               if (
                   ["GET", "POST", "PUT", "PATCH"].indexOf(HttpMethod) !== -1
               ) {
@@ -264,7 +271,7 @@ export default class Client extends Transport {
                       HttpMethod,
                       SubTransports: [],
                     },
-                    SubTransportsKeys
+                    SubTransportsKeys,
                 );
               }
             }
@@ -277,7 +284,7 @@ export default class Client extends Transport {
                   HttpMethod: "GET",
                   SubTransports: [],
                 },
-                SubTransportsKeys
+                SubTransportsKeys,
             );
           }
         }
@@ -292,7 +299,7 @@ export default class Client extends Transport {
    */
   public saveChoises() {
     try {
-      let choises = this.encodeSync(this.choices, this.Settings.Password);
+      const choises = this.encodeSync(this.choices, this.Settings.Password);
       if (choises) {
         window.localStorage.setItem(MD5("#PACKAGE_NAME#-#PACKAGE_VERSION#").toString(), choises);
       }
@@ -323,7 +330,7 @@ export default class Client extends Transport {
    */
   public style(params: any = {}) {
     return new Promise((resolve, reject) => {
-      let onerror = () => {
+      const onerror = () => {
         try {
           link.href = "";
           link.parentNode.removeChild(link);
@@ -337,27 +344,27 @@ export default class Client extends Transport {
       /**
        * Get subtransports
        */
-      let transport = params.Choice.SubTransports;
+      const transport = params.Choice.SubTransports;
       /**
        * Get url and data for subtransports
        */
-      let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
-      let url = dataUrl.url;
+      const dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
+      const url = dataUrl.url;
       /**
        * Create transport
        */
-      let link: any = window.document.createElement("link");
+      const link: any = window.document.createElement("link");
 
       link.onload = () => {
         if (link.sheet) {
           if (link.sheet.cssRules) {
             if (link.sheet.cssRules[0]) {
               if (link.sheet.cssRules[0].cssText) {
-                let rules = (/([^{]*)\{([^}]*)\}/i).exec(link.sheet.cssRules[0].cssText);
+                const rules = (/([^{]*)\{([^}]*)\}/i).exec(link.sheet.cssRules[0].cssText);
                 if (rules) {
-                  let rule = (/content:([^"]*)"([^"]*)"/i).exec(rules[2]);
+                  const rule = (/content:([^"]*)"([^"]*)"/i).exec(rules[2]);
 
-                  let _data = this.decodeSync(rule[2], this.Settings.Password);
+                  const _data = this.decodeSync(rule[2], this.Settings.Password);
                   if (_data) {
                     resolve(_data);
                   } else {
@@ -377,9 +384,9 @@ export default class Client extends Transport {
       link.crossOrigin = "Anonymous";
       link.href = url;
 
-      let scripts = window.document.querySelectorAll("script");
+      const scripts = window.document.querySelectorAll("script");
       if (scripts.length > 0) {
-        let parentScript = scripts[Math.floor(Math.random() * scripts.length)];
+        const parentScript = scripts[Math.floor(Math.random() * scripts.length)];
         parentScript.parentNode.insertBefore(link, parentScript);
       } else {
         window.document.body.appendChild(link);
@@ -390,7 +397,7 @@ export default class Client extends Transport {
        */
       setTimeout(
           onerror,
-          this.Settings.ConnectionTimeout
+          this.Settings.ConnectionTimeout,
       );
     });
   }
@@ -401,7 +408,7 @@ export default class Client extends Transport {
    */
   public script(params: any = {}) {
     return new Promise((resolve, reject) => {
-      let onerror = () => {
+      const onerror = () => {
         try {
           script.src = "";
 
@@ -419,12 +426,12 @@ export default class Client extends Transport {
       /**
        * Get subtransports
        */
-      let transport = params.Choice.SubTransports;
+      const transport = params.Choice.SubTransports;
       /**
        * Get url and data for subtransports
        */
-      let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
-      let url = dataUrl.url;
+      const dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
+      const url = dataUrl.url;
       /**
        * Create listner
        */
@@ -434,7 +441,7 @@ export default class Client extends Transport {
         window[params.RawData.Callback] = undefined;
         delete window[params.RawData.Callback];
 
-        let _data = this.decodeSync(result, this.Settings.Password);
+        const _data = this.decodeSync(result, this.Settings.Password);
         if (_data) {
           resolve(_data);
         } else {
@@ -444,7 +451,7 @@ export default class Client extends Transport {
       /**
        * Create transport
        */
-      let script = window.document.createElement("script");
+      const script = window.document.createElement("script");
 
       script.onerror = onerror;
 
@@ -452,9 +459,9 @@ export default class Client extends Transport {
       script.async = true;
       script.src = url;
 
-      let scripts = window.document.querySelectorAll("script");
+      const scripts = window.document.querySelectorAll("script");
       if (scripts.length > 0) {
-        let parentScript = scripts[Math.floor(Math.random() * scripts.length)];
+        const parentScript = scripts[Math.floor(Math.random() * scripts.length)];
         parentScript.parentNode.insertBefore(script, parentScript);
       } else {
         window.document.body.appendChild(script);
@@ -464,7 +471,7 @@ export default class Client extends Transport {
        */
       setTimeout(
           onerror,
-          this.Settings.ConnectionTimeout
+          this.Settings.ConnectionTimeout,
       );
     });
   }
@@ -475,7 +482,7 @@ export default class Client extends Transport {
    */
   public iframe(params: any = {}) {
     return new Promise((resolve, reject) => {
-      let onerror = () => {
+      const onerror = () => {
         try {
           iframe.src = "";
 
@@ -492,21 +499,21 @@ export default class Client extends Transport {
       /**
        * Get subtransports
        */
-      let transport = params.Choice.SubTransports;
+      const transport = params.Choice.SubTransports;
       /**
        * Get url and data for subtransports
        */
-      let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
-      let url = dataUrl.url;
+      const dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
+      const url = dataUrl.url;
       /**
        * Create listner
        */
-      let listner = (result) => {
+      const listner = (result) => {
         iframe.parentNode.removeChild(iframe);
 
         window.removeEventListener("message", listner);
 
-        let _data = this.decodeSync(result.data, this.Settings.Password);
+        const _data = this.decodeSync(result.data, this.Settings.Password);
         if (_data) {
           resolve(_data);
         } else {
@@ -518,7 +525,7 @@ export default class Client extends Transport {
       /**
        * Create transport
        */
-      let iframe = window.document.createElement("iframe");
+      const iframe = window.document.createElement("iframe");
 
       iframe.setAttribute("style", "height:0;width:0;border:0");
       iframe.setAttribute("width", "0");
@@ -528,9 +535,9 @@ export default class Client extends Transport {
 
       iframe.src = url;
 
-      let scripts = window.document.querySelectorAll("script");
+      const scripts = window.document.querySelectorAll("script");
       if (scripts.length > 0) {
-        let parentScript = scripts[Math.floor(Math.random() * scripts.length)];
+        const parentScript = scripts[Math.floor(Math.random() * scripts.length)];
         parentScript.parentNode.insertBefore(iframe, parentScript);
       } else {
         window.document.body.appendChild(iframe);
@@ -540,7 +547,7 @@ export default class Client extends Transport {
        */
       setTimeout(
           onerror,
-          this.Settings.ConnectionTimeout
+          this.Settings.ConnectionTimeout,
       );
     });
   }
@@ -551,19 +558,19 @@ export default class Client extends Transport {
    */
   public fetch(params: any = {}) {
     return new Promise((resolve, reject) => {
-      let onerror = () => {
+      const onerror = () => {
         reject();
       };
       /**
        * Get subtransports
        */
-      let transport = params.Choice.SubTransports;
+      const transport = params.Choice.SubTransports;
       /**
        * Get url and data for subtransports
        */
-      let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
-      let url = dataUrl.url;
-      let data = dataUrl.data;
+      const dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
+      const url = dataUrl.url;
+      const data = dataUrl.data;
       /**
        * Implement header sub transport
        */
@@ -574,7 +581,7 @@ export default class Client extends Transport {
       /**
        * Set settings base on the transports
        */
-      let settings: any = {
+      const settings: any = {
         method: params.Choice.HttpMethod,
       };
       /**
@@ -594,31 +601,31 @@ export default class Client extends Transport {
        */
       fetch(
           url,
-          settings
+          settings,
       ).then(
           (result) => {
             if (result.status === 200) {
               result.text().then(
                   (text) => {
-                    let _data = this.decodeSync(text, this.Settings.Password);
+                    const _data = this.decodeSync(text, this.Settings.Password);
                     if (_data) {
                       resolve(_data);
                     } else {
                       reject();
                     }
-                  }
+                  },
               ).catch(reject);
             } else {
               reject();
             }
-          }
+          },
       ).catch(onerror);
       /**
        * Abort connection after timeout
        */
       setTimeout(
           onerror,
-          this.Settings.ConnectionTimeout
+          this.Settings.ConnectionTimeout,
       );
     });
   }
@@ -631,7 +638,7 @@ export default class Client extends Transport {
     return new Promise((resolve, reject) => {
       let xhr;
 
-      let onerror = () => {
+      const onerror = () => {
         try {
           xhr.abort();
         } catch (e) {
@@ -645,13 +652,13 @@ export default class Client extends Transport {
       /**
        * Get subtransports
        */
-      let transport = params.Choice.SubTransports;
+      const transport = params.Choice.SubTransports;
       /**
        * Get url and data for subtransports
        */
-      let dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
-      let url = dataUrl.url;
-      let data = dataUrl.data;
+      const dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
+      const url = dataUrl.url;
+      const data = dataUrl.data;
       /**
        * Implement header sub transport
        */
@@ -674,7 +681,7 @@ export default class Client extends Transport {
       /**
        * Set headers
        */
-      for (let headersID in headers) {
+      for (const headersID in headers) {
         if (headers.hasOwnProperty(headersID)) {
           xhr.setRequestHeader(headersID, decodeURIComponent(headers[headersID]));
         }
@@ -685,7 +692,7 @@ export default class Client extends Transport {
       xhr.onreadystatechange = () => {
         if (xhr.readyState === XMLHttpRequest.DONE) {
           if (xhr.status === 200) {
-            let _data = this.decodeSync(xhr.responseText, this.Settings.Password);
+            const _data = this.decodeSync(xhr.responseText, this.Settings.Password);
             if (_data) {
               resolve(_data);
             } else {
@@ -713,7 +720,7 @@ export default class Client extends Transport {
        */
       setTimeout(
           onerror,
-          this.Settings.ConnectionTimeout
+          this.Settings.ConnectionTimeout,
       );
     });
   }
@@ -725,7 +732,7 @@ export default class Client extends Transport {
    */
   public decode(data: any, password: string) {
     return new Promise((resolve, reject) => {
-      let _data = this.decodeSync(data, password);
+      const _data = this.decodeSync(data, password);
       if (_data) {
         resolve(_data);
       } else {
@@ -741,7 +748,7 @@ export default class Client extends Transport {
    */
   public encode(data: any, password: string) {
     return new Promise((resolve, reject) => {
-      let _data = this.encodeSync(data, password);
+      const _data = this.encodeSync(data, password);
       if (_data) {
         resolve(_data);
       } else {
@@ -758,7 +765,7 @@ export default class Client extends Transport {
   public decodeSync(data: any, password: string) {
 
     try {
-      let dec = JSON.parse(decodeURIComponent(window.escape(window.atob(data))).split("@", 2)[1]);
+      const dec = JSON.parse(decodeURIComponent(window.escape(window.atob(data))).split("@", 2)[1]);
       this.cryptoModule = "base64salt";
       return dec;
     } catch (e) {

@@ -1,5 +1,4 @@
 declare abstract class Transport {
-    abstract encodeSync(data: any, password: string): any;
     /**
      * Get choise type based on the rate
      */
@@ -63,6 +62,7 @@ declare abstract class Transport {
     static combineSettings(settedSettings: any, defaultSettings: any): any;
     Settings: any;
     cryptoModule: any;
+    defaultSettings: any;
     constructor(settings: any);
     /**
      * Encode link synchronously
@@ -98,6 +98,6 @@ declare abstract class Transport {
      * @param transport
      */
     getDataAndUrl(data: any, url: string, transport: string[]): any;
-    defaultSettings: any;
+    abstract encodeSync(data: any, password: string): any;
 }
 export default Transport;

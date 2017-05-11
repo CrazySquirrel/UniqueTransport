@@ -1,25 +1,54 @@
 "use strict";
 
-let webpackConfig = require('./webpack.config.karma.client');
+let webpackConfig = require('./webpack.karma.config');
 webpackConfig.entry = {};
 
-let karmaConfig = require('./karma.base.conf');
-
-karmaConfig.frameworks = ['jasmine', 'jasmine-matchers', 'source-map-support'];
-
-karmaConfig.coverageReporter.dir = "./doc/coverage/client";
-
-karmaConfig.webpack = {
-  module: webpackConfig.module,
-  resolve: webpackConfig.resolve
-};
-
-karmaConfig.files = [
-  "./spec/client.spec.ts"
-];
-
 module.exports = function (config) {
-  karmaConfig.logLevel = config.LOG_INFO;
-
-  config.set(karmaConfig)
+  config.set({
+    basePath: '',
+    frameworks: ['jasmine', 'jasmine-matchers', 'source-map-support'],
+    files: [
+      "./spec/Client.spec.ts"
+    ],
+    exclude: [],
+    preprocessors: {
+      'lib/**/*.ts': ['webpack'],
+      'spec/**/*.ts': ['webpack']
+    },
+    webpack: {
+      module: webpackConfig.module,
+      resolve: webpackConfig.resolve
+    },
+    reporters: ['progress', 'coverage'],
+    coverageReporter: {
+      dir: './doc/coverage',
+      reporters: [
+        {type: 'html', subdir: 'report-html'},
+        {type: 'lcov', subdir: 'report-lcov'},
+        {type: 'cobertura', subdir: '.', file: 'cobertura.txt'},
+        {type: 'lcovonly', subdir: '.', file: 'report-lcovonly.txt'},
+        {type: 'teamcity', subdir: '.', file: 'teamcity.txt'},
+        {type: 'text', subdir: '.', file: 'text.txt'},
+        {type: 'text-summary', subdir: '.', file: 'text-summary.txt'},
+        {type: 'json', subdir: '.', file: 'coverage-final.json'}
+      ]
+    },
+    port: 9876,
+    colors: true,
+    logLevel: config.LOG_INFO,
+    autoWatch: false,
+    singleRun: true,
+    concurrency: Infinity,
+    browserDisconnectTimeout: 60000,
+    browserNoActivityTimeout: 60000,
+    webpackServer: {
+      noInfo: true,
+      stats: {
+        chunks: false
+      }
+    },
+    browsers: [
+      'PhantomJS'
+    ]
+  })
 };

@@ -4,7 +4,7 @@ import ClientClass from "../../lib/ts/client";
 
 const Client = new ClientClass({
   Urls: [
-    "http://localhost:8888/test/"
+    "http://localhost:8888/test/",
   ],
   Password: "xmas",
   ConnectionTimeout: 10000,
@@ -15,9 +15,9 @@ const Client = new ClientClass({
         name: true,
         params: true,
         path: true,
-      }
+      },
     },
-  }
+  },
 });
 
 Client.emit({
@@ -25,49 +25,49 @@ Client.emit({
 }).then(
     (result) => {
       console.log(result);
-    }
+    },
 ).catch(
     (e) => {
 
-    }
+    },
 );
 
 Client.emit({
-  Debug: true
+  Debug: true,
 }).then(
     (result) => {
       console.log(result);
-    }
+    },
 );
 
 Client.getEncodedLink("https://www.rambler.ru/").then(
     (url) => {
       console.log(url);
-    }
+    },
 );
 
 Client.getEncodedProxy("http://avatars.mds.yandex.net/get-direct/42386/HzzAM6tDCyUsG0TrUVko9g/y450").then(
     (url: any) => {
-      let img = window.document.createElement("img");
+      const img = window.document.createElement("img");
       img.src = url;
       window.document.body.appendChild(img);
       console.log(url);
-    }
+    },
 );
 
 Client.getEncodedProxy("https://weather.rambler.ru/static/v2.6.1/dist/rambler-weather.min.css?v2.6.1").then(
     (url: any) => {
-      let link: any = window.document.createElement("link");
+      const link: any = window.document.createElement("link");
       link.type = "text/css";
       link.rel = "stylesheet";
       link.crossOrigin = "Anonymous";
 
       link.onload = () => {
-        let styleSheets: any = window.document.styleSheets;
-        let styleSheetsLength = styleSheets.length;
+        const styleSheets: any = window.document.styleSheets;
+        const styleSheetsLength = styleSheets.length;
         for (let i = 0; i < styleSheetsLength; i++) {
           try {
-            let styleSheet = styleSheets[i];
+            const styleSheet = styleSheets[i];
             if (
                 styleSheet.href === link.href &&
                 styleSheet.cssRules &&
@@ -85,7 +85,7 @@ Client.getEncodedProxy("https://weather.rambler.ru/static/v2.6.1/dist/rambler-we
       link.href = url;
 
       window.document.body.appendChild(link);
-    }
+    },
 );
 
 /**

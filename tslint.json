@@ -8,10 +8,14 @@
     ],
     "no-var-requires": false,
     "variable-name": false,
-    "no-reference": false,
-    "trailing-comma": false,
-    "comment-format": false,
+    "no-unused-variable": false,
+    "no-console": false,
+    "ordered-imports": false,
+    "object-literal-sort-keys": false,
+    "no-empty": false,
+    "prefer-for-of": false,
     "object-literal-key-quotes": false,
+    "comment-format": false,
     "no-string-literal": false
   }
 }

@@ -9,8 +9,8 @@ export default class Server extends Transport {
     listners: any;
     proxyShit: any;
     defaultSettings: any;
-    constructor(settings: any);
-    on(event: string, listner: Function): void;
+    constructor(settings?: any);
+    on(event: string, listner: any): void;
     listenr(request: any, response: any): void;
     Proxy(result: any, headers: any, request: any, response: any): void;
     Redirect(result: any, headers: any, request: any, response: any): void;

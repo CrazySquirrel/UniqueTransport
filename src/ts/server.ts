@@ -21,11 +21,11 @@ const Server = new ServerClass({
     body: true,
   },
   OptimizeImages: false,
-  WithoutHttpServer: false
+  WithoutHttpServer: false,
 });
 
 Server.Settings.Urls = [
-  "/test/"
+  "/test/",
 ];
 
 Server.on("connect", (data, params) => {
@@ -34,7 +34,7 @@ Server.on("connect", (data, params) => {
         () => {
           resolve("OK");
         },
-        100
+        100,
     );
   });
 });
@@ -42,11 +42,11 @@ Server.on("connect", (data, params) => {
 Server.getEncodedLink("https://www.rambler.ru/").then(
     (url) => {
       console.log(url);
-    }
+    },
 );
 
 Server.getEncodedProxy("http://avatars.mds.yandex.net/get-direct/42386/HzzAM6tDCyUsG0TrUVko9g/y450").then(
     (url: any) => {
       console.log(url);
-    }
+    },
 );
