@@ -1,6 +1,6 @@
 "use strict";
 
-let webpackConfig = require('./webpack.karma.config');
+let webpackConfig = require('./webpack.test.client');
 webpackConfig.entry = {};
 
 module.exports = function (config) {
@@ -21,15 +21,8 @@ module.exports = function (config) {
     },
     reporters: ['progress', 'coverage'],
     coverageReporter: {
-      dir: './doc/coverage',
+      dir: './doc/report/client',
       reporters: [
-        {type: 'html', subdir: 'report-html'},
-        {type: 'lcov', subdir: 'report-lcov'},
-        {type: 'cobertura', subdir: '.', file: 'cobertura.txt'},
-        {type: 'lcovonly', subdir: '.', file: 'report-lcovonly.txt'},
-        {type: 'teamcity', subdir: '.', file: 'teamcity.txt'},
-        {type: 'text', subdir: '.', file: 'text.txt'},
-        {type: 'text-summary', subdir: '.', file: 'text-summary.txt'},
         {type: 'json', subdir: '.', file: 'coverage-final.json'}
       ]
     },

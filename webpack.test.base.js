@@ -1,14 +1,8 @@
 "use strict";
 
-const NODE_ENV = process.env.NODE_ENV || "development";
-
-const MODE = NODE_ENV.split(":")[0];
-
 const StringReplacePlugin = require("string-replace-webpack-plugin");
 
 const WebpackNotifierPlugin = require("webpack-notifier");
-
-const CleanWebpackPlugin = require("clean-webpack-plugin");
 
 const path = require("path");
 
@@ -35,33 +29,25 @@ let arrPlugins = [
 /**
  * Add uglifyer for production mode
  */
-if (MODE === "production" || MODE === "testing") {
-  arrPlugins.push(
-      new webpack.optimize.UglifyJsPlugin({
-        minimize: true,
-        sourceMap: false,
-        output: {
-          comments: false
-        },
-        compressor: {
-          warnings: false
-        }
-      })
-  );
-}
+arrPlugins.push(
+    new webpack.optimize.UglifyJsPlugin({
+      minimize: true,
+      sourceMap: false,
+      output: {
+        comments: false
+      },
+      compressor: {
+        warnings: false
+      }
+    })
+);
 /**
  * Add additional plugins
  */
 arrPlugins.push(
     new webpack.DefinePlugin({
-      "process.env.NODE_ENV": JSON.stringify(MODE)
+      "process.env.NODE_ENV": "test"
     })
-);
-
-arrPlugins.push(
-    new CleanWebpackPlugin([
-      "./dist"
-    ])
 );
 
 let replacements = StringReplacePlugin.replace({
@@ -100,19 +86,15 @@ let replacements = StringReplacePlugin.replace({
 
 module.exports = {
   output: {
-    filename: MODE === "production" ? "[name].js" : "[name].js",
-    library: "UserID",
+    filename: "[name].js",
+    library: "UniqueTransport",
     libraryTarget: "umd",
     umdNamedDefine: true
   },
   externals: {
-    "UserID": "UserID"
+    "UniqueTransport": "UniqueTransport"
   },
-  devtool: (
-      MODE === "development" ? "inline-source-map" : (
-          MODE === "testing" ? "inline-source-map" : ""
-      )
-  ),
+  devtool: "inline-source-map",
   plugins: arrPlugins,
   resolve: {
     extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"]

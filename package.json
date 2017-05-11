@@ -37,15 +37,34 @@
     "production:client:stat": "NODE_ENV=production:stat webpack --config=webpack.build.client.js",
     "production:server": "NODE_ENV=production webpack --bail --config=webpack.build.server.js",
     "production:client": "NODE_ENV=production webpack --bail --config=webpack.build.client.js",
-    "test": "npm run test:client && npm run test:server",
-    "test:client": "rm -rf ./doc/report/client/ && rm -rf ./doc/coverage/client/ && NODE_ENV=testing karma start karma.client.conf.js",
-    "test:server": "mocha --opts ./spec/mocha.opts",
+    "test": "npm run test:prepare && npm run test:execute && npm run test:report",
+    "test:prepare": "npm run test:prepare:client && npm run test:prepare:server",
+    "test:prepare:client": "NODE_ENV=test webpack --bail --config=webpack.test.client.js",
+    "test:prepare:server": "NODE_ENV=test webpack --bail --config=webpack.test.server.js",
+    "test:execute": "npm run test:execute:client && npm run test:execute:server",
+    "test:execute:client": "rm -rf ./doc/report/client/ && NODE_ENV=test karma start karma.client.conf.js",
+    "test:execute:server": "rm -rf ./doc/report/server/ && NODE_ENV=test nyc jasmine ./spec/Server.spec.js",
+    "test:report": "npm run test:report:merge && npm run test:report:convert",
+    "test:report:merge": "istanbul-merge --out ./doc/report/coverage-final.json ./doc/report/client/coverage-final.json ./doc/report/server/coverage-final.json",
+    "test:report:convert": "remap-istanbul --input ./doc/report/coverage-final.json --output ./doc/report/html-report --type html --exclude node_modules,spec",
     "docs": "npm run docs:client && npm run docs:server",
     "docs:client": "rm -rf ./doc/js/client/ && typedoc --mode file --target ES6 --module 'commonjs' --out ./doc/js/client/ ./src/ts/client.ts",
     "docs:server": "rm -rf ./doc/js/server/ && typedoc --mode file --target ES6 --module 'commonjs' --out ./doc/js/server/ ./src/ts/server.ts",
     "lint": "codeclimate analyze",
     "release": "standard-version && git push origin master --tags",
     "commit": "git-cz -a"
+  },
+  "nyc": {
+    "exclude": [
+      "**/*.spec.js"
+    ],
+    "require": [
+      "babel-register"
+    ],
+    "reporter": [
+      "json"
+    ],
+    "report-dir": "./doc/report/server"
   },
   "pre-commit": [
     "lint",
@@ -88,6 +107,8 @@
     "eslint": "^3.19.0",
     "extract-text-webpack-plugin": "^2.1.0",
     "html-loader": "^0.4.5",
+    "istanbul": "^1.1.0-alpha.1",
+    "istanbul-merge": "^1.1.1",
     "jasmine": "^2.6.0",
     "jasmine-core": "^2.6.1",
     "jasmine-expect": "^3.7.0",
@@ -99,9 +120,12 @@
     "karma-phantomjs-launcher": "^1.0.4",
     "karma-source-map-support": "^1.2.0",
     "karma-webpack": "^2.0.3",
+    "nyc": "^10.3.2",
+    "remap-istanbul": "^0.9.5",
     "standard-version": "^4.0.0",
     "string-replace-webpack-plugin": "https://github.com/CrazySquirrel/string-replace-webpack-plugin.git",
     "ts-loader": "^2.0.3",
+    "ts-node": "^3.0.4",
     "tslint": "^5.2.0",
     "typedoc": "^0.6.0",
     "typescript": "^2.3.2",
