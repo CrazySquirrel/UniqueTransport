@@ -229,7 +229,10 @@ export default class Server extends Transport {
   public Proxy(result, headers, request, response) {
     try {
       const redirectProxy = () => {
-        this.proxyShit[result.Data.link] = true;
+        if (result.Data.link.indexOf(".css") === -1) {
+          this.proxyShit[result.Data.link] = true;
+        }
+
         if (!response.answered) {
           response.answered = true;
           headers["Location"] = result.Data.link;
@@ -261,10 +264,12 @@ export default class Server extends Transport {
               (err) => {
                 if (err) {
                   redirectProxy();
+                  this.ErrorHandler(err, "0.1.1", options);
                 } else {
                   const req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
-                    res.on("error", () => {
+                    res.on("error", (_err) => {
                       redirectProxy();
+                      this.ErrorHandler(_err, "0.1.2", options);
                     });
 
                     if (res.statusCode === 200) {
@@ -276,6 +281,7 @@ export default class Server extends Transport {
                       ) {
                         req.abort();
                         redirectProxy();
+                        this.ErrorHandler(new Error("Too big file"), "0.1.3", options);
                       } else {
                         if (!response.answered) {
                           const _headers = res.headers;
@@ -293,12 +299,14 @@ export default class Server extends Transport {
                     } else {
                       req.abort();
                       redirectProxy();
+                      this.ErrorHandler(new Error("Non 200 status code"), "0.1.4", options);
                     }
                   });
 
-                  req.on("error", () => {
+                  req.on("error", (_err) => {
                     req.abort();
                     redirectProxy();
+                    this.ErrorHandler(_err, "0.1.5", options);
                   });
 
                   req.end();
@@ -308,9 +316,10 @@ export default class Server extends Transport {
         }
       } catch (e) {
         redirectProxy();
+        this.ErrorHandler(e, "0.1.6", result);
       }
     } catch (e) {
-      this.responceError("0.1.1", request, response, headers, e, {
+      this.responceError("0.1.7", request, response, headers, e, {
         result,
       });
     }
@@ -404,12 +413,7 @@ export default class Server extends Transport {
   }
 
   public responceError(id, request, response, headers, e?, ...data) {
-    if (
-        e &&
-        typeof this.Settings.ErrorHandler === "function"
-    ) {
-      this.Settings.ErrorHandler(e, id, data);
-    }
+    this.ErrorHandler(e, id, data);
 
     if (request.headers["x-real-404"]) {
       const url = URL.parse(request.headers["x-real-404"]);
@@ -905,6 +909,15 @@ export default class Server extends Transport {
       ) {
         return origin.hostname;
       }
+    }
+  }
+
+  public ErrorHandler(e, id, data) {
+    if (
+        e &&
+        typeof this.Settings.ErrorHandler === "function"
+    ) {
+      this.Settings.ErrorHandler(e, id, data);
     }
   }
 }
