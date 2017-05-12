@@ -12,8 +12,6 @@ const WebpackNotifierPlugin = require("webpack-notifier");
 
 const BrowserSyncPlugin = require("browser-sync-webpack-plugin");
 
-const CleanWebpackPlugin = require("clean-webpack-plugin");
-
 const path = require("path");
 
 const webpack = require("webpack");
@@ -92,12 +90,6 @@ arrPlugins.push(
     new webpack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify(MODE)
     })
-);
-
-arrPlugins.push(
-    new CleanWebpackPlugin([
-      "./dist"
-    ])
 );
 
 let replacements = StringReplacePlugin.replace({

@@ -47,4 +47,5 @@ export default class Server extends Transport {
     getHostFromHeaderReferer(request: any, params: any): any;
     getHostFromParamsReferer(request: any, params: any): any;
     getHostFromHeaderHost(request: any, params: any): any;
+    ErrorHandler(e: any, id: any, data: any): void;
 }

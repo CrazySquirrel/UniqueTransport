@@ -299,7 +299,11 @@ export default class Server extends Transport {
                     } else {
                       req.abort();
                       redirectProxy();
-                      this.ErrorHandler(new Error("Non 200 status code"), "0.1.4", options);
+                      this.ErrorHandler(new Error("Non 200 status code"), "0.1.4", {
+                        status: res.statusCode,
+                        headers: res.headers,
+                        options,
+                      });
                     }
                   });
 
