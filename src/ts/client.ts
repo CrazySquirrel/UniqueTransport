@@ -55,7 +55,7 @@ Client.getEncodedProxy("http://avatars.mds.yandex.net/get-direct/42386/HzzAM6tDC
     },
 );
 
-Client.getEncodedProxy("https://weather.rambler.ru/static/v2.6.1/dist/rambler-weather.min.css?v2.6.1").then(
+Client.getEncodedProxy("https://rambler.ru/topline42/latest/bundle.css").then(
     (url: any) => {
       const link: any = window.document.createElement("link");
       link.type = "text/css";

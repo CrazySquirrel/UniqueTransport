@@ -226,7 +226,7 @@ export default class Server extends Transport {
     }
   }
 
-  public Proxy(result, headers, request, response) {
+  public Proxy(result, headers, request, response, depth = 3) {
     try {
       const redirectProxy = () => {
         if (result.Data.link.indexOf(".css") === -1) {
@@ -296,6 +296,13 @@ export default class Server extends Transport {
                           res.pipe(response);
                         }
                       }
+                    } else if (
+                        res.statusCode === 301 &&
+                        res.headers.location &&
+                        depth > 0
+                    ) {
+                      result.Data.link = res.headers.location;
+                      this.Proxy(result, headers, request, response, --depth);
                     } else {
                       req.abort();
                       redirectProxy();
