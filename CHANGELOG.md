@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.0.111"></a>
+## [1.0.111](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.110...v1.0.111) (2017-06-08)
+
+
+### Bug Fixes
+
+* **Encode and Listners:** Encode bug fix and new default download listner ([dd77ba5](https://github.com/CrazySquirrel/UniqueTransport/commit/dd77ba5))
+
+
+
 <a name="1.0.110"></a>
 ## [1.0.110](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.109...v1.0.110) (2017-06-08)
 
