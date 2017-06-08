@@ -18,6 +18,7 @@ export default class Server extends Transport {
     responceError(id: any, request: any, response: any, headers: any, e?: any, ...data: any[]): void;
     processor(data: any, params: any, request: any, headers: any): Promise<{}>;
     preprocessor(request: any): Promise<{}>;
+    download(data: any, headers: any, request: any, depth?: number): Promise<{}>;
     /**
      * Decode data asynchronously
      * @param data

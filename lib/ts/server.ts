@@ -74,7 +74,9 @@ export default class Server extends Transport {
 
     this.proxyShit = {};
 
-    this.listners = {};
+    this.listners = {
+      download: this.download.bind(this),
+    };
 
     this.on("debug", (data, params) => {
       return new Promise((resolve) => {
@@ -524,7 +526,7 @@ export default class Server extends Transport {
                 ) {
                   new Promise(
                       (_resolve) => {
-                        _resolve(this.listners[_data.event](_data.data, params));
+                        _resolve(this.listners[_data.event](_data.data, params, request));
                       },
                   ).then(
                       (result) => {
@@ -674,6 +676,69 @@ export default class Server extends Transport {
     });
   }
 
+  public download(data, headers, request, depth = 3) {
+    return new Promise((resolve, reject) => {
+      const url = URL.parse(data.link);
+
+      url.port = url.port || url.protocol === "https:" ? 443 : 80;
+
+      request.headers.host = url.host;
+      request.headers["accept-encoding"] = "";
+
+      const options = {
+        headers: request.headers,
+        hostname: url.host,
+        method: "GET",
+        path: url.path,
+        port: url.port,
+      };
+
+      DNS.lookup(
+          options.hostname,
+          (err) => {
+            if (err) {
+              reject(err);
+            } else {
+              const req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                res.on("error", (_err) => {
+                  reject(_err);
+                });
+
+                if (res.statusCode === 200) {
+                  const buffer = [];
+
+                  res.on("data", (chunk) => {
+                    buffer.push(chunk);
+                  });
+
+                  res.on("end", () => {
+                    resolve(Buffer.concat(buffer).toString("utf-8"));
+                  });
+                } else if (
+                    res.statusCode === 301 &&
+                    res.headers.location &&
+                    depth > 0
+                ) {
+                  data.link = res.headers.location;
+                  this.download(data, headers, request, --depth).then(resolve).catch(reject);
+                } else {
+                  req.abort();
+                  reject(new Error("Non 200 status code"));
+                }
+              });
+
+              req.on("error", (_err) => {
+                req.abort();
+                reject(_err);
+              });
+
+              req.end();
+            }
+          },
+      );
+    });
+  }
+
   /**
    * Decode data asynchronously
    * @param data
@@ -713,7 +778,7 @@ export default class Server extends Transport {
    */
   public decodeSync(data: any, password: string) {
     try {
-      let dec = decodeURIComponent(window.escape(window.atob(data))).split("@");
+      let dec = decodeURIComponent(global.escape(Buffer.from(data, "base64").toString("utf8"))).split("@");
       dec.shift();
       dec = JSON.parse(dec.join("@"));
       this.cryptoModule = "base64salt";

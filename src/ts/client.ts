@@ -33,6 +33,21 @@ Client.emit({
 );
 
 Client.emit({
+  Data: {
+    link: "http://ssp.rambler.ru/acp/capirs_main.7a051727f11be9f6dbb5ad2d78a576b0.js",
+  },
+  Event: "download",
+}).then(
+    (result) => {
+      console.log(result);
+    },
+).catch(
+    (e) => {
+
+    },
+);
+
+Client.emit({
   Debug: true,
 }).then(
     (result) => {

@@ -43,7 +43,7 @@ export default class Client extends Transport {
     /**
      * Load choises
      */
-    loadChoises(): any;
+    loadChoises(): false | string[];
     /**
      * Style transport
      * @param params
@@ -86,7 +86,7 @@ export default class Client extends Transport {
      * @param data
      * @param password
      */
-    decodeSync(data: any, password: string): any;
+    decodeSync(data: any, password: string): false | string[];
     /**
      * Encode data object synchronously
      * @param data
