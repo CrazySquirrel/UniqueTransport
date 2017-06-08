@@ -765,7 +765,9 @@ export default class Client extends Transport {
   public decodeSync(data: any, password: string) {
 
     try {
-      const dec = JSON.parse(decodeURIComponent(window.escape(window.atob(data))).split("@", 2)[1]);
+      let dec = decodeURIComponent(window.escape(window.atob(data))).split("@");
+      dec.shift();
+      dec = JSON.parse(dec.join("@"));
       this.cryptoModule = "base64salt";
       return dec;
     } catch (e) {
