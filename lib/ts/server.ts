@@ -228,108 +228,120 @@ export default class Server extends Transport {
     }
   }
 
-  public Proxy(result, headers, request, response, depth = 3) {
+  public Proxy(result, headers, request, response, depth = 5) {
     try {
-      const redirectProxy = () => {
-        if (result.Data.link.indexOf(".css") === -1) {
-          this.proxyShit[result.Data.link] = true;
-        }
-
+      if (
+          this.Settings.XAccelRedirect
+      ) {
         if (!response.answered) {
           response.answered = true;
-          headers["Location"] = result.Data.link;
-          response.writeHead(this.Settings.RedirectResponseCode, headers);
+          headers["X-Accel-Redirect"] = this.Settings.XAccelRedirect;
+          headers["X-Get-Url"] = result.Data.link;
+          response.writeHead(this.Settings.SuccessResponseCode, headers);
           response.end();
         }
-      };
+      } else {
+        const redirectProxy = () => {
+          if (result.Data.link.indexOf(".css") === -1) {
+            this.proxyShit[result.Data.link] = true;
+          }
 
-      try {
-        if (this.proxyShit[result.Data.link]) {
-          redirectProxy();
-        } else {
-          const url = URL.parse(result.Data.link);
+          if (!response.answered) {
+            response.answered = true;
+            headers["Location"] = result.Data.link;
+            response.writeHead(this.Settings.RedirectResponseCode, headers);
+            response.end();
+          }
+        };
 
-          url.port = url.port || url.protocol === "https:" ? 443 : 80;
+        try {
+          if (this.proxyShit[result.Data.link]) {
+            redirectProxy();
+          } else {
+            const url = URL.parse(result.Data.link);
 
-          request.headers.host = url.host;
+            url.port = url.port || url.protocol === "https:" ? 443 : 80;
 
-          const options = {
-            headers: request.headers,
-            hostname: url.host,
-            method: "GET",
-            path: url.path,
-            port: url.port,
-          };
+            request.headers.host = url.host;
 
-          DNS.lookup(
-              options.hostname,
-              (err) => {
-                if (err) {
-                  redirectProxy();
-                  this.ErrorHandler(err, "0.1.1", options);
-                } else {
-                  const req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
-                    res.on("error", (_err) => {
-                      redirectProxy();
-                      this.ErrorHandler(_err, "0.1.2", options);
-                    });
+            const options = {
+              headers: request.headers,
+              hostname: url.host,
+              method: "GET",
+              path: url.path,
+              port: url.port,
+            };
 
-                    if (res.statusCode === 200) {
-                      if (
-                          this.Settings.MaxProxySize &&
-                          res.headers["content-length"] &&
-                          parseInt(res.headers["content-length"], 10) > this.Settings.MaxProxySize &&
-                          res.headers["content-type"] !== "text/css"
+            DNS.lookup(
+                options.hostname,
+                (err) => {
+                  if (err) {
+                    redirectProxy();
+                    this.ErrorHandler(err, "0.1.1", options);
+                  } else {
+                    const req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                      res.on("error", (_err) => {
+                        redirectProxy();
+                        this.ErrorHandler(_err, "0.1.2", options);
+                      });
+
+                      if (res.statusCode === 200) {
+                        if (
+                            this.Settings.MaxProxySize &&
+                            res.headers["content-length"] &&
+                            parseInt(res.headers["content-length"], 10) > this.Settings.MaxProxySize &&
+                            res.headers["content-type"] !== "text/css"
+                        ) {
+                          req.abort();
+                          redirectProxy();
+                          this.ErrorHandler(new Error("Too big file"), "0.1.3", options);
+                        } else {
+                          if (!response.answered) {
+                            const _headers = res.headers;
+                            for (const prop in headers) {
+                              if (headers.hasOwnProperty(prop)) {
+                                delete _headers[prop.toLowerCase()];
+                                _headers[prop] = headers[prop];
+                              }
+                            }
+                            response.answered = true;
+                            response.writeHead(this.Settings.SuccessResponseCode, _headers);
+                            res.pipe(response);
+                          }
+                        }
+                      } else if (
+                          res.statusCode === 301 &&
+                          res.headers.location &&
+                          depth > 0
                       ) {
+                        result.Data.link = res.headers.location;
+                        this.Proxy(result, headers, request, response, --depth);
+                      } else {
                         req.abort();
                         redirectProxy();
-                        this.ErrorHandler(new Error("Too big file"), "0.1.3", options);
-                      } else {
-                        if (!response.answered) {
-                          const _headers = res.headers;
-                          for (const prop in headers) {
-                            if (headers.hasOwnProperty(prop)) {
-                              delete _headers[prop.toLowerCase()];
-                              _headers[prop] = headers[prop];
-                            }
-                          }
-                          response.answered = true;
-                          response.writeHead(this.Settings.SuccessResponseCode, _headers);
-                          res.pipe(response);
-                        }
+                        this.ErrorHandler(new Error("Non 200 status code"), "0.1.4", {
+                          status: res.statusCode,
+                          headers: res.headers,
+                          options,
+                        });
                       }
-                    } else if (
-                        res.statusCode === 301 &&
-                        res.headers.location &&
-                        depth > 0
-                    ) {
-                      result.Data.link = res.headers.location;
-                      this.Proxy(result, headers, request, response, --depth);
-                    } else {
+                    });
+
+                    req.on("error", (_err) => {
                       req.abort();
                       redirectProxy();
-                      this.ErrorHandler(new Error("Non 200 status code"), "0.1.4", {
-                        status: res.statusCode,
-                        headers: res.headers,
-                        options,
-                      });
-                    }
-                  });
+                      this.ErrorHandler(_err, "0.1.5", options);
+                    });
 
-                  req.on("error", (_err) => {
-                    req.abort();
-                    redirectProxy();
-                    this.ErrorHandler(_err, "0.1.5", options);
-                  });
-
-                  req.end();
-                }
-              },
-          );
+                    req.end();
+                  }
+                },
+            );
+          }
+        } catch (e) {
+          redirectProxy();
+          this.ErrorHandler(e, "0.1.6", result);
         }
-      } catch (e) {
-        redirectProxy();
-        this.ErrorHandler(e, "0.1.6", result);
       }
     } catch (e) {
       this.responceError("0.1.7", request, response, headers, e, {
