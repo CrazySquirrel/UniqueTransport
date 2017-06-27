@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.0.112"></a>
+## [1.0.112](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.111...v1.0.112) (2017-06-27)
+
+
+### Bug Fixes
+
+* **Proxy:** Additional depth and X-Accel support ([cde83dc](https://github.com/CrazySquirrel/UniqueTransport/commit/cde83dc))
+
+
+
 <a name="1.0.111"></a>
 ## [1.0.111](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.110...v1.0.111) (2017-06-08)
 
