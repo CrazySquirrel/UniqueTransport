@@ -362,19 +362,19 @@ export default class Client extends Transport {
               if (link.sheet.cssRules[0].cssText) {
                 const rules = (/([^{]*)\{([^}]*)\}/i).exec(link.sheet.cssRules[0].cssText);
                 if (rules) {
-                  const rule = (/content:([^"]*)"([^"]*)"/i).exec(rules[2]);
-
-                  const _data = this.decodeSync(rule[2], this.Settings.Password);
-                  if (_data) {
-                    resolve(_data);
-                  } else {
-                    reject();
+                  const rule = (/content:([^"'\s]*)["'\s]*([^"'\s;]*)["'\s;]*/i).exec(rules[2]);
+                  if (rule) {
+                    const _data = this.decodeSync(rule[2], this.Settings.Password);
+                    if (_data) {
+                      return resolve(_data);
+                    }
                   }
                 }
               }
             }
           }
         }
+        return reject();
       };
 
       link.onerror = onerror;
