@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.0.115"></a>
+## [1.0.115](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.114...v1.0.115) (2017-07-06)
+
+
+### Bug Fixes
+
+* **Style advanced:** Style advanced bug fix ([8fbd09d](https://github.com/CrazySquirrel/UniqueTransport/commit/8fbd09d))
+
+
+
 <a name="1.0.114"></a>
 ## [1.0.114](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.113...v1.0.114) (2017-07-06)
 
