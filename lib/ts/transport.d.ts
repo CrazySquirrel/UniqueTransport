@@ -49,6 +49,7 @@ declare abstract class Transport {
      * @return string
      */
     static getRandomWord(): string;
+    static getRandomSelector(): string;
     /**
      * Check if object is empty
      * @param obj

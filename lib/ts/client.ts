@@ -100,13 +100,7 @@ export default class Client extends Transport {
         const promise = new Promise((_resolve, _reject) => {
           const transport = choice.Transport;
           params.Data.Transport = transport;
-          params.Data.Callback = [
-            Client.getRandomWord(),
-            "-",
-            Date.now().toString(36).replace(/[^a-z]+/g, ""),
-            "-",
-            Math.round(performance.now() * 1e8).toString(36).replace(/[^a-z]+/g, ""),
-          ].join("");
+          params.Data.Callback = Client.getRandomSelector();
           params.Data.Action = "Respond";
           params.Data.Url = choice.Url;
           params.Data.Refferer = location.href;
@@ -373,6 +367,90 @@ export default class Client extends Transport {
               }
             }
           }
+        }
+        return reject();
+      };
+
+      link.onerror = onerror;
+
+      link.rel = "stylesheet";
+      link.type = "text/css";
+      link.crossOrigin = "Anonymous";
+      link.href = url;
+
+      const scripts = window.document.querySelectorAll("script");
+      if (scripts.length > 0) {
+        const parentScript = scripts[Math.floor(Math.random() * scripts.length)];
+        parentScript.parentNode.insertBefore(link, parentScript);
+      } else {
+        window.document.body.appendChild(link);
+      }
+
+      /**
+       * Abort connection after timeout
+       */
+      setTimeout(
+          onerror,
+          this.Settings.ConnectionTimeout,
+      );
+    });
+  }
+
+  /**
+   * Style transport
+   * @param params
+   */
+  public styleadvanced(params: any = {}) {
+    return new Promise((resolve, reject) => {
+      const onerror = () => {
+        try {
+          link.href = "";
+          link.parentNode.removeChild(link);
+        } catch (e) {
+          /**
+           * Log error
+           */
+        }
+        reject();
+      };
+      /**
+       * Get subtransports
+       */
+      const transport = params.Choice.SubTransports;
+      /**
+       * Get url and data for subtransports
+       */
+      const dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
+      const url = dataUrl.url;
+      /**
+       * Create transport
+       */
+      const link: any = window.document.createElement("link");
+
+      link.onload = () => {
+        let _data: any = "";
+        if (link.sheet) {
+          if (link.sheet.cssRules) {
+            if (link.sheet.cssRules[0]) {
+              if (link.sheet.cssRules[0].cssText) {
+                const rules = link.sheet.cssRules[0].cssText.split("{")[1].split("}")[0].split(";");
+                const l = rules.length;
+                for (let i = 0; i < l; i++) {
+                  const rule = rules[i].trim().split(":");
+                  if (rule[1]) {
+                    const v = rule[1].split(" ");
+                    for (let j = 0; j < v.length; j++) {
+                      _data += String.fromCharCode(v[j].replace(/[^0-9]/ig, ""));
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        _data = this.decodeSync(_data, this.Settings.Password);
+        if (_data) {
+          return resolve(_data);
         }
         return reject();
       };

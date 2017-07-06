@@ -214,6 +214,16 @@ abstract class Transport {
     return word.substr(0, 4 + Math.floor(Math.random() * word.length * 0.5));
   }
 
+  public static getRandomSelector(): string {
+    return [
+      Transport.getRandomWord(),
+      "-",
+      Date.now().toString(36).replace(/[^a-z]+/g, ""),
+      "-",
+      Math.round((root.performance||Date).now() * 1e8).toString(36).replace(/[^a-z]+/g, ""),
+    ].join("");
+  }
+
   /**
    * Check if object is empty
    * @param obj
@@ -369,6 +379,13 @@ abstract class Transport {
         },
       },
       style: {
+        SubTransports: {
+          name: true,
+          params: true,
+          path: true,
+        },
+      },
+      styleadvanced: {
         SubTransports: {
           name: true,
           params: true,

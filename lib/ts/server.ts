@@ -374,6 +374,56 @@ export default class Server extends Transport {
           resp = `.${result.Params.Callback} {content:"${result.Data}";}`;
           headers["Content-Type"] = "text/css; charset=utf-8";
           break;
+        case "styleadvanced":
+
+          const toD = (s) => s.charCodeAt(0);
+          const toH = (s) => {
+            s = toD(s).toString(16);
+            return s.length === 1 ? "0" + s : s;
+          };
+
+          const calc = (s) => {
+            return s.match(/\{[d-h]\}/g).length / (s.replace(/\{d\}/ig, 999).replace(/\{h\}/ig, "FF")).length;
+          };
+
+          const baseStyles = [
+            "width:{d}px;",
+            "height:{d}px;",
+            "top:{d}px;",
+            "left:{d}px;",
+            "bottom:{d}px;",
+            "right:{d}px;",
+            "padding:{d}px {d}px {d}px {d}px;",
+            "margin:{d}px {d}px {d}px {d}px;",
+            "color:#{h}{h}{h};",
+            "background:#{h}{h}{h};",
+            "border:{d} #{h}{h}{h} solid",
+          ].filter((v) => calc(v) > 0.09).sort((a, b) => calc(b) - calc(a));
+
+          let styles = [];
+
+          result.Data = result.Data.split("");
+
+          const l = result.Data.length;
+
+          for (let i = 0; i < l - 1;) {
+            if (styles.length === 0) {
+              styles = baseStyles.join(",").split(",");
+              resp += `.${result.Params.Callback}_${Server.getRandomWord()}{`;
+            }
+
+            const style = styles.shift();
+            if (i < l - style.match(/\{[d-h]\}/g).length) {
+              resp += style.replace(/\{[d-h]\}/g, (v) => (v === "{d}" ? toD(result.Data[++i]) : toH(result.Data[++i])));
+            }
+
+            if (styles.length === 0) {
+              resp += `}`;
+            }
+          }
+
+          headers["Content-Type"] = "text/css; charset=utf-8";
+          break;
         case "script":
           resp = 'window["' + result.Params.Callback + '"]("' + result.Data + '")';
           headers["Content-Type"] = "text/javascript; charset=utf-8";
@@ -534,7 +584,7 @@ export default class Server extends Transport {
               if (params.Action === "Respond") {
                 if (
                     this.listners[_data.event] &&
-                    ["xhr", "fetch", "iframe", "script", "style"].indexOf(params.Transport) !== -1
+                    this.Settings.Transports[params.Transport]
                 ) {
                   new Promise(
                       (_resolve) => {
