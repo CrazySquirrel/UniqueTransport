@@ -376,7 +376,7 @@ export default class Server extends Transport {
           break;
         case "styleadvanced":
 
-          const toD = (s) => s.charCodeAt(0);
+          const toD = (s) => s.charCodeAt();
           const toH = (s) => {
             s = toD(s).toString(16);
             return s.length === 1 ? "0" + s : s;
@@ -397,8 +397,7 @@ export default class Server extends Transport {
             "margin:{d}px {d}px {d}px {d}px;",
             "color:#{h}{h}{h};",
             "background:#{h}{h}{h};",
-            "border:{d} #{h}{h}{h} solid",
-          ].filter((v) => calc(v) > 0.09).sort((a, b) => calc(b) - calc(a));
+          ].sort((a, b) => calc(b) - calc(a));
 
           let styles = [];
 
@@ -406,15 +405,16 @@ export default class Server extends Transport {
 
           const l = result.Data.length;
 
-          for (let i = 0; i < l - 1;) {
+          for (let i = 0; i < l;) {
             if (styles.length === 0) {
               styles = baseStyles.join(",").split(",");
               resp += `.${result.Params.Callback}_${Server.getRandomWord()}{`;
             }
 
             const style = styles.shift();
-            if (i < l - style.match(/\{[d-h]\}/g).length) {
-              resp += style.replace(/\{[d-h]\}/g, (v) => (v === "{d}" ? toD(result.Data[++i]) : toH(result.Data[++i])));
+
+            if (i + style.match(/\{(d|h)\}/g).length <= l) {
+              resp += style.replace(/\{(d|h)\}/g, (v) => (v === "{d}" ? toD(result.Data[i++]) : toH(result.Data[i++])));
             }
 
             if (styles.length === 0) {

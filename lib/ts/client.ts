@@ -430,17 +430,34 @@ export default class Client extends Transport {
       link.onload = () => {
         let _data: any = "";
         if (link.sheet) {
-          if (link.sheet.cssRules) {
-            if (link.sheet.cssRules[0]) {
-              if (link.sheet.cssRules[0].cssText) {
-                const rules = link.sheet.cssRules[0].cssText.split("{")[1].split("}")[0].split(";");
-                const l = rules.length;
-                for (let i = 0; i < l; i++) {
-                  const rule = rules[i].trim().split(":");
-                  if (rule[1]) {
-                    const v = rule[1].split(" ");
-                    for (let j = 0; j < v.length; j++) {
-                      _data += String.fromCharCode(v[j].replace(/[^0-9]/ig, ""));
+          for (let x = 0; x < link.sheet.cssRules.length; x++) {
+            if (link.sheet.cssRules[x]) {
+              if (link.sheet.cssRules[x].cssText) {
+                const rules = link.sheet.cssRules[x].cssText.split("{")[1].split("}")[0].match(/[a-z]*:[^;]*;/ig);
+                if (rules) {
+                  for (var i = 0; i < rules.length; i++) {
+                    const rule = rules[i].split(":");
+                    rule[1] = rule[1].match(/[0-9]*/ig).filter(v=>v !== "");
+                    if (
+                        (
+                            rule[0] === "padding" ||
+                            rule[0] === "margin"
+                        ) && rule[1].length < 4
+                    ) {
+                      switch (rule[1].length) {
+                        case 1:
+                          rule[1] = [rule[1][0], rule[1][0], rule[1][0], rule[1][0]];
+                          break;
+                        case 2:
+                          rule[1] = [rule[1][0], rule[1][1], rule[1][0], rule[1][1]];
+                          break;
+                        case 3:
+                          rule[1] = [rule[1][0], rule[1][1], rule[1][2], rule[1][1]];
+                          break;
+                      }
+                    }
+                    for (var j = 0; j < rule[1].length; j++) {
+                      _data += String.fromCharCode(rule[1][j]);
                     }
                   }
                 }
