@@ -439,22 +439,34 @@ export default class Client extends Transport {
                     const rule = rules[i].split(":");
                     rule[1] = rule[1].match(/[0-9]*/ig).filter(v=>v !== "");
                     if (
-                        (
-                            rule[0] === "padding" ||
-                            rule[0] === "margin"
-                        ) && rule[1].length < 4
+                        rule[0] === "padding" ||
+                        rule[0] === "margin"
                     ) {
-                      switch (rule[1].length) {
-                        case 1:
-                          rule[1] = [rule[1][0], rule[1][0], rule[1][0], rule[1][0]];
-                          break;
-                        case 2:
-                          rule[1] = [rule[1][0], rule[1][1], rule[1][0], rule[1][1]];
-                          break;
-                        case 3:
-                          rule[1] = [rule[1][0], rule[1][1], rule[1][2], rule[1][1]];
-                          break;
+                      if (rule[1].length < 4) {
+                        switch (rule[1].length) {
+                          case 1:
+                            rule[1] = [rule[1][0], rule[1][0], rule[1][0], rule[1][0]];
+                            break;
+                          case 2:
+                            rule[1] = [rule[1][0], rule[1][1], rule[1][0], rule[1][1]];
+                            break;
+                          case 3:
+                            rule[1] = [rule[1][0], rule[1][1], rule[1][2], rule[1][1]];
+                            break;
+                        }
+                      } else if (rule[1].length > 4) {
+                        rule[1].length = 4;
                       }
+                    } else if (
+                        rule[0] === "color" ||
+                        rule[0] === "background"
+
+                    ) {
+                      if (rule[1].length > 3) {
+                        rule[1].length = 3;
+                      }
+                    } else if (rule[1].length > 1) {
+                      rule[1].length = 1;
                     }
                     for (var j = 0; j < rule[1].length; j++) {
                       _data += String.fromCharCode(rule[1][j]);
