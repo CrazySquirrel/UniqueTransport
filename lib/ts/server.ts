@@ -263,6 +263,7 @@ export default class Server extends Transport {
             url.port = url.port || url.protocol === "https:" ? 443 : 80;
 
             request.headers.host = url.host;
+            request.headers["accept-encoding"] = '';
 
             const options = {
               headers: request.headers,
@@ -297,16 +298,50 @@ export default class Server extends Transport {
                           this.ErrorHandler(new Error("Too big file"), "0.1.3", options);
                         } else {
                           if (!response.answered) {
-                            const _headers = res.headers;
-                            for (const prop in headers) {
-                              if (headers.hasOwnProperty(prop)) {
-                                delete _headers[prop.toLowerCase()];
-                                _headers[prop] = headers[prop];
+                            if (res.headers["content-type"] === "text/css") {
+                              const buffer = [];
+
+                              res.on("data", (chunk) => {
+                                buffer.push(chunk);
+                              });
+
+                              res.on("end", () => {
+                                if (!response.answered) {
+                                  let domain;
+
+                                  if (options.port === 443) {
+                                    domain = `https://${request.headers.host}/`;
+                                  } else {
+                                    domain = `http://${request.headers.host}/`;
+                                  }
+
+                                  const _headers = res.headers;
+                                  for (const prop in headers) {
+                                    if (headers.hasOwnProperty(prop)) {
+                                      delete _headers[prop.toLowerCase()];
+                                      _headers[prop] = headers[prop];
+                                    }
+                                  }
+
+                                  response.answered = true;
+                                  response.writeHead(this.Settings.SuccessResponseCode, _headers);
+
+                                  response.end(this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8")));
+                                }
+                              });
+                            } else {
+                              const _headers = res.headers;
+                              for (const prop in headers) {
+                                if (headers.hasOwnProperty(prop)) {
+                                  delete _headers[prop.toLowerCase()];
+                                  _headers[prop] = headers[prop];
+                                }
                               }
+                              response.answered = true;
+                              response.writeHead(this.Settings.SuccessResponseCode, _headers);
+
+                              res.pipe(response);
                             }
-                            response.answered = true;
-                            response.writeHead(this.Settings.SuccessResponseCode, _headers);
-                            res.pipe(response);
                           }
                         }
                       } else if (
@@ -1059,5 +1094,14 @@ export default class Server extends Transport {
     ) {
       this.Settings.ErrorHandler(e, id, data);
     }
+  }
+
+  private replaceRelativePathInCss(domain, css) {
+    let regexp = /url\((['"]?)(?!(data|http))([^'")]+)(['"]?)\)/igm;
+    (css.match(regexp) || []).map((url) => {
+      url = regexp.exec(url) || regexp.exec(url);
+      css = css.replace(url[0], `url("${URL.resolve(domain, url[3])}")`);
+    });
+    return css;
   }
 }

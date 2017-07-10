@@ -49,4 +49,5 @@ export default class Server extends Transport {
     getHostFromParamsReferer(request: any, params: any): any;
     getHostFromHeaderHost(request: any, params: any): any;
     ErrorHandler(e: any, id: any, data: any): void;
+    private replaceRelativePathInCss(domain, css);
 }
