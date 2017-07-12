@@ -242,7 +242,10 @@ export default class Server extends Transport {
         }
       } else {
         const redirectProxy = () => {
-          if (result.Data.link.indexOf(".css") === -1) {
+          if (
+              result.Data.link.indexOf(".css") === -1 &&
+              result.Data.link.indexOf("yandex") === -1
+          ) {
             this.proxyShit[result.Data.link] = true;
           }
 
@@ -263,7 +266,7 @@ export default class Server extends Transport {
             url.port = url.port || url.protocol === "https:" ? 443 : 80;
 
             request.headers.host = url.host;
-            request.headers["accept-encoding"] = '';
+            request.headers["accept-encoding"] = "";
 
             const options = {
               headers: request.headers,
@@ -291,7 +294,8 @@ export default class Server extends Transport {
                             this.Settings.MaxProxySize &&
                             res.headers["content-length"] &&
                             parseInt(res.headers["content-length"], 10) > this.Settings.MaxProxySize &&
-                            res.headers["content-type"] !== "text/css"
+                            result.Data.link.indexOf(".css") === -1 &&
+                            result.Data.link.indexOf("yandex") === -1
                         ) {
                           req.abort();
                           redirectProxy();
