@@ -327,10 +327,13 @@ export default class Server extends Transport {
                                     }
                                   }
 
+                                  let newCss = this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8"));
+                                  _headers["content-length"] = newCss.length;
+
                                   response.answered = true;
                                   response.writeHead(this.Settings.SuccessResponseCode, _headers);
 
-                                  response.end(this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8")));
+                                  response.end(newCss);
                                 }
                               });
                             } else {
