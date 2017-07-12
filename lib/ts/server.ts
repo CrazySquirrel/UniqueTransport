@@ -231,7 +231,8 @@ export default class Server extends Transport {
   public Proxy(result, headers, request, response, depth = 5) {
     try {
       if (
-          this.Settings.XAccelRedirect
+          this.Settings.XAccelRedirect &&
+          result.Data.link.indexOf(".css") === -1
       ) {
         if (!response.answered) {
           response.answered = true;
@@ -327,7 +328,7 @@ export default class Server extends Transport {
                                     }
                                   }
 
-                                  let newCss = this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8"));
+                                  const newCss = this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8"));
                                   _headers["content-length"] = newCss.length;
 
                                   response.answered = true;
