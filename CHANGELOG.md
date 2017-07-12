@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.0.118"></a>
+## [1.0.118](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.117...v1.0.118) (2017-07-12)
+
+
+### Bug Fixes
+
+* **Proxy:** Yandex images excluded from proxy shit list ([e2ebe25](https://github.com/CrazySquirrel/UniqueTransport/commit/e2ebe25))
+
+
+
 <a name="1.0.117"></a>
 ## [1.0.117](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.116...v1.0.117) (2017-07-10)
 
