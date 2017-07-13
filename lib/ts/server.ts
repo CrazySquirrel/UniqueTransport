@@ -267,7 +267,14 @@ export default class Server extends Transport {
             url.port = url.port || url.protocol === "https:" ? 443 : 80;
 
             request.headers.host = url.host;
-            request.headers["accept-encoding"] = "";
+
+            if (result.Data.link.indexOf(".css") !== -1) {
+              request.headers["accept-encoding"] = "";
+              request.headers["cache-control"] = "no-cache";
+              request.headers["pragma"] = "no-cache";
+              delete request.headers["if-modified-since"];
+              delete request.headers["if-none-match"];
+            }
 
             const options = {
               headers: request.headers,
@@ -329,8 +336,13 @@ export default class Server extends Transport {
                                   }
 
                                   const newCss = this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8"));
+
                                   _headers["content-length"] = newCss.length;
                                   _headers["cache-control"] = "no-cache";
+
+                                  delete _headers["etag"];
+                                  delete _headers["expires"];
+                                  delete _headers["last-modified"];
 
                                   response.answered = true;
                                   response.writeHead(this.Settings.SuccessResponseCode, _headers);
