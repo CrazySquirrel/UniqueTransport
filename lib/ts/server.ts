@@ -268,6 +268,7 @@ export default class Server extends Transport {
 
             request.headers.host = url.host;
             request.headers["accept-encoding"] = "";
+            delete request.headers["etag"];
 
             const options = {
               headers: request.headers,
@@ -330,6 +331,7 @@ export default class Server extends Transport {
 
                                   const newCss = this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8"));
                                   _headers["content-length"] = newCss.length;
+                                  delete _headers["etag"];
 
                                   response.answered = true;
                                   response.writeHead(this.Settings.SuccessResponseCode, _headers);
@@ -353,7 +355,10 @@ export default class Server extends Transport {
                           }
                         }
                       } else if (
-                          res.statusCode === 301 &&
+                          (
+                              res.statusCode === 301 ||
+                              res.statusCode === 302
+                          ) &&
                           res.headers.location &&
                           depth > 0
                       ) {
