@@ -291,7 +291,11 @@ export default class Server extends Transport {
                     redirectProxy();
                     this.ErrorHandler(err, "0.1.1", options);
                   } else {
+                    let proxyConnectionTimeout;
+
                     const req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                      clearTimeout(proxyConnectionTimeout);
+
                       res.on("error", (_err) => {
                         redirectProxy();
                         this.ErrorHandler(_err, "0.1.2", options);
@@ -386,10 +390,19 @@ export default class Server extends Transport {
                       }
                     });
 
+                    proxyConnectionTimeout = setTimeout(
+                        () => {
+                          req.abort();
+                          redirectProxy();
+                          this.ErrorHandler(new Error("Proxy request timeout"), "0.1.5", options);
+                        },
+                        this.Settings.ProxyTimeout,
+                    );
+
                     req.on("error", (_err) => {
                       req.abort();
                       redirectProxy();
-                      this.ErrorHandler(_err, "0.1.5", options);
+                      this.ErrorHandler(_err, "0.1.6", options);
                     });
 
                     req.end();
@@ -399,11 +412,11 @@ export default class Server extends Transport {
           }
         } catch (e) {
           redirectProxy();
-          this.ErrorHandler(e, "0.1.6", result);
+          this.ErrorHandler(e, "0.1.7", result);
         }
       }
     } catch (e) {
-      this.responceError("0.1.7", request, response, headers, e, {
+      this.responceError("0.1.8", request, response, headers, e, {
         result,
       });
     }

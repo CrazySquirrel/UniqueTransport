@@ -8,6 +8,7 @@ const Server = new ServerClass({
   },
   ServerPort: 8888,
   ConnectionTimeout: 10000,
+  ProxyTimeout: 1000,
   Password: "xmas",
   SuccessResponseCode: 200,
   RedirectResponseCode: 302,

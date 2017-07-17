@@ -220,7 +220,7 @@ abstract class Transport {
       "-",
       Date.now().toString(36).replace(/[^a-z]+/g, ""),
       "-",
-      Math.round((root.performance||Date).now() * 1e8).toString(36).replace(/[^a-z]+/g, ""),
+      Math.round((root.performance || Date).now() * 1e8).toString(36).replace(/[^a-z]+/g, ""),
     ].join("");
   }
 
@@ -285,6 +285,7 @@ abstract class Transport {
     HTTPSCertPath: "",
     MaxProxySize: 1024 * 1024 * 1024,
     ConnectionTimeout: 10000,
+    ProxyTimeout: 10000,
     IgnoredQueryParams: {
       "safe": true,
     },

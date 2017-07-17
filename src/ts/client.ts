@@ -136,6 +136,15 @@ Client.getEncodedProxy("https://icdn.lenta.ru/assets/webpack/48bbb3d3168507d955a
     },
 );
 
+Client.getEncodedProxy("https://t.d1.championat.com/s/540x360/news/big/n/h/andrej-eschenko_149875810421401268.jpg").then(
+    (url: any) => {
+      const img = window.document.createElement("img");
+      img.src = url;
+      window.document.body.appendChild(img);
+      console.log(url);
+    },
+);
+
 /**
  * Speed test
  */
