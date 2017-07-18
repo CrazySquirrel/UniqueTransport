@@ -351,13 +351,6 @@ export default class Server extends Transport {
 
                                 res.on("end", () => {
                                   if (!response.answered) {
-                                    let domain;
-
-                                    if (options.port === 443) {
-                                      domain = `https://${request.headers.host}/`;
-                                    } else {
-                                      domain = `http://${request.headers.host}/`;
-                                    }
 
                                     const _headers = res.headers;
                                     for (const prop in headers) {
@@ -367,7 +360,7 @@ export default class Server extends Transport {
                                       }
                                     }
 
-                                    const newCss = this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8"));
+                                    const newCss = this.replaceRelativePathInCss(result.Data.link, Buffer.concat(buffer).toString("utf-8"));
 
                                     _headers["content-length"] = newCss.length;
                                     _headers["cache-control"] = "no-cache";
@@ -1190,11 +1183,11 @@ export default class Server extends Transport {
     }
   }
 
-  private replaceRelativePathInCss(domain, css) {
+  private replaceRelativePathInCss(base, css) {
     let regexp = /url\((['"]?)(?!(data|http))([^'")]+)(['"]?)\)/igm;
     (css.match(regexp) || []).map((url) => {
       url = regexp.exec(url) || regexp.exec(url);
-      css = css.replace(url[0], `url("${URL.resolve(domain, url[3])}")`);
+      css = css.replace(url[0], `url("${URL.resolve(base, url[3])}")`);
     });
     return css;
   }
