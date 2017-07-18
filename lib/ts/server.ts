@@ -19,6 +19,7 @@ const ZLIB = require("zlib");
 
 const CRYPTO = require("webcrypto");
 
+const MD5 = require("crypto-js/md5");
 const AES = require("crypto-js/aes");
 const UTF8 = require("crypto-js/enc-utf8");
 
@@ -259,156 +260,189 @@ export default class Server extends Transport {
         };
 
         try {
-          if (this.proxyShit[result.Data.link]) {
-            redirectProxy();
-          } else {
-            const url = URL.parse(result.Data.link);
+          const CacheID = MD5(result.Data.link).toString();
+          const CachePath = PATH.resolve(this.Settings.ProxyCachePath, CacheID);
 
-            url.port = url.port || url.protocol === "https:" ? 443 : 80;
+          const doProxy = () => {
+            if (this.proxyShit[result.Data.link]) {
+              redirectProxy();
+            } else {
+              const url = URL.parse(result.Data.link);
 
-            request.headers.host = url.host;
+              url.port = url.port || url.protocol === "https:" ? 443 : 80;
 
-            if (result.Data.link.indexOf(".css") !== -1) {
-              request.headers["accept-encoding"] = "";
-              request.headers["cache-control"] = "no-cache";
-              request.headers["pragma"] = "no-cache";
-              delete request.headers["if-modified-since"];
-              delete request.headers["if-none-match"];
-            }
+              request.headers.host = url.host;
 
-            const options = {
-              headers: request.headers,
-              hostname: url.host,
-              method: "GET",
-              path: url.path,
-              port: url.port,
-            };
+              if (result.Data.link.indexOf(".css") !== -1) {
+                request.headers["accept-encoding"] = "";
+                request.headers["cache-control"] = "no-cache";
+                request.headers["pragma"] = "no-cache";
+                delete request.headers["if-modified-since"];
+                delete request.headers["if-none-match"];
+              }
 
-            DNS.lookup(
-                options.hostname,
-                (err) => {
-                  if (err) {
-                    redirectProxy();
-                    this.ErrorHandler(err, "0.1.1", options);
-                  } else {
-                    let proxyConnectionTimeout;
+              const options = {
+                headers: request.headers,
+                hostname: url.host,
+                method: "GET",
+                path: url.path,
+                port: url.port,
+              };
 
-                    const req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
-                      clearTimeout(proxyConnectionTimeout);
+              DNS.lookup(
+                  options.hostname,
+                  (err) => {
+                    if (err) {
+                      redirectProxy();
+                      this.ErrorHandler(err, "0.1.1", options);
+                    } else {
+                      let proxyConnectionTimeout;
 
-                      res.on("error", (_err) => {
-                        redirectProxy();
-                        this.ErrorHandler(_err, "0.1.2", options);
-                      });
+                      const req = (options.port === 443 ? HTTPS : HTTP).request(options, (res) => {
+                        clearTimeout(proxyConnectionTimeout);
 
-                      if (res.statusCode === 200) {
-                        if (
-                            this.Settings.MaxProxySize &&
-                            res.headers["content-length"] &&
-                            parseInt(res.headers["content-length"], 10) > this.Settings.MaxProxySize &&
-                            result.Data.link.indexOf(".css") === -1 &&
-                            result.Data.link.indexOf("yandex") === -1
-                        ) {
-                          req.abort();
+                        res.on("error", (_err) => {
                           redirectProxy();
-                          this.ErrorHandler(new Error("Too big file"), "0.1.3", options);
-                        } else {
-                          if (!response.answered) {
-                            if (res.headers["content-type"] === "text/css") {
-                              const buffer = [];
+                          this.ErrorHandler(_err, "0.1.2", options);
+                        });
 
-                              res.on("data", (chunk) => {
-                                buffer.push(chunk);
-                              });
+                        if (res.statusCode === 200) {
+                          if (
+                              this.Settings.MaxProxySize &&
+                              res.headers["content-length"] &&
+                              parseInt(res.headers["content-length"], 10) > this.Settings.MaxProxySize &&
+                              result.Data.link.indexOf(".css") === -1 &&
+                              result.Data.link.indexOf("yandex") === -1
+                          ) {
+                            req.abort();
+                            redirectProxy();
+                            this.ErrorHandler(new Error("Too big file"), "0.1.3", options);
+                          } else {
+                            if (!response.answered) {
+                              if (res.headers["content-type"] === "text/css") {
+                                const buffer = [];
 
-                              res.on("end", () => {
-                                if (!response.answered) {
-                                  let domain;
+                                res.on("data", (chunk) => {
+                                  buffer.push(chunk);
+                                });
 
-                                  if (options.port === 443) {
-                                    domain = `https://${request.headers.host}/`;
-                                  } else {
-                                    domain = `http://${request.headers.host}/`;
-                                  }
+                                res.on("end", () => {
+                                  if (!response.answered) {
+                                    let domain;
 
-                                  const _headers = res.headers;
-                                  for (const prop in headers) {
-                                    if (headers.hasOwnProperty(prop)) {
-                                      delete _headers[prop.toLowerCase()];
-                                      _headers[prop] = headers[prop];
+                                    if (options.port === 443) {
+                                      domain = `https://${request.headers.host}/`;
+                                    } else {
+                                      domain = `http://${request.headers.host}/`;
                                     }
+
+                                    const _headers = res.headers;
+                                    for (const prop in headers) {
+                                      if (headers.hasOwnProperty(prop)) {
+                                        delete _headers[prop.toLowerCase()];
+                                        _headers[prop] = headers[prop];
+                                      }
+                                    }
+
+                                    const newCss = this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8"));
+
+                                    _headers["content-length"] = newCss.length;
+                                    _headers["cache-control"] = "no-cache";
+
+                                    delete _headers["etag"];
+                                    delete _headers["expires"];
+                                    delete _headers["last-modified"];
+
+                                    response.answered = true;
+                                    response.writeHead(this.Settings.SuccessResponseCode, _headers);
+
+                                    FS.writeFile(CachePath, newCss);
+
+                                    response.end(newCss);
                                   }
-
-                                  const newCss = this.replaceRelativePathInCss(domain, Buffer.concat(buffer).toString("utf-8"));
-
-                                  _headers["content-length"] = newCss.length;
-                                  _headers["cache-control"] = "no-cache";
-
-                                  delete _headers["etag"];
-                                  delete _headers["expires"];
-                                  delete _headers["last-modified"];
-
-                                  response.answered = true;
-                                  response.writeHead(this.Settings.SuccessResponseCode, _headers);
-
-                                  response.end(newCss);
+                                });
+                              } else {
+                                const _headers = res.headers;
+                                for (const prop in headers) {
+                                  if (headers.hasOwnProperty(prop)) {
+                                    delete _headers[prop.toLowerCase()];
+                                    _headers[prop] = headers[prop];
+                                  }
                                 }
-                              });
-                            } else {
-                              const _headers = res.headers;
-                              for (const prop in headers) {
-                                if (headers.hasOwnProperty(prop)) {
-                                  delete _headers[prop.toLowerCase()];
-                                  _headers[prop] = headers[prop];
-                                }
+                                response.answered = true;
+                                response.writeHead(this.Settings.SuccessResponseCode, _headers);
+
+                                res.pipe(FS.createWriteStream(CachePath));
+                                res.pipe(response);
                               }
-                              response.answered = true;
-                              response.writeHead(this.Settings.SuccessResponseCode, _headers);
-
-                              res.pipe(response);
                             }
                           }
-                        }
-                      } else if (
-                          (
-                              res.statusCode === 301 ||
-                              res.statusCode === 302
-                          ) &&
-                          res.headers.location &&
-                          depth > 0
-                      ) {
-                        result.Data.link = res.headers.location;
-                        this.Proxy(result, headers, request, response, --depth);
-                      } else {
-                        req.abort();
-                        redirectProxy();
-                        this.ErrorHandler(new Error("Non 200 status code"), "0.1.4", {
-                          status: res.statusCode,
-                          headers: res.headers,
-                          options,
-                        });
-                      }
-                    });
-
-                    proxyConnectionTimeout = setTimeout(
-                        () => {
+                        } else if (
+                            (
+                                res.statusCode === 301 ||
+                                res.statusCode === 302
+                            ) &&
+                            res.headers.location &&
+                            depth > 0
+                        ) {
+                          result.Data.link = res.headers.location;
+                          this.Proxy(result, headers, request, response, --depth);
+                        } else {
                           req.abort();
                           redirectProxy();
-                          this.ErrorHandler(new Error("Proxy request timeout"), "0.1.5", options);
-                        },
-                        this.Settings.ProxyTimeout,
-                    );
+                          this.ErrorHandler(new Error("Non 200 status code"), "0.1.4", {
+                            status: res.statusCode,
+                            headers: res.headers,
+                            options,
+                          });
+                        }
+                      });
 
-                    req.on("error", (_err) => {
-                      req.abort();
-                      redirectProxy();
-                      this.ErrorHandler(_err, "0.1.6", options);
-                    });
+                      proxyConnectionTimeout = setTimeout(
+                          () => {
+                            req.abort();
+                            redirectProxy();
+                            this.ErrorHandler(new Error("Proxy request timeout"), "0.1.5", options);
+                          },
+                          this.Settings.ProxyTimeout,
+                      );
 
-                    req.end();
+                      req.on("error", (_err) => {
+                        req.abort();
+                        redirectProxy();
+                        this.ErrorHandler(_err, "0.1.6", options);
+                      });
+
+                      req.end();
+                    }
+                  },
+              );
+            }
+          };
+
+          if (
+              this.Settings.ProxyCachePath
+          ) {
+            FS.stat(
+                CachePath,
+                (err, stat) => {
+                  if (err) {
+                    doProxy();
+                  } else {
+                    if (new Date() - this.Settings.ProxyCacheTimeout < stat.birthtime * 1) {
+                      if (!response.answered) {
+                        response.answered = true;
+                        response.writeHead(this.Settings.SuccessResponseCode, headers);
+                        FS.createReadStream(CachePath).pipe(response);
+                      }
+                    } else {
+                      doProxy();
+                    }
                   }
                 },
             );
+          } else {
+            doProxy();
           }
         } catch (e) {
           redirectProxy();

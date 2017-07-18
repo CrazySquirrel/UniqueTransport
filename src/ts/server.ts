@@ -3,6 +3,8 @@
 import ServerClass from "../../lib/ts/server";
 
 const Server = new ServerClass({
+  ProxyCachePath: "/Users/s.yastrebov/Documents/Projects/UniqueTransport/tmp",
+  ProxyCacheTimeout: 60 * 60 * 1000,
   ErrorHandler: (...data) => {
     console.log(data);
   },

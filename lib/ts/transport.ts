@@ -280,6 +280,9 @@ abstract class Transport {
   public cryptoModule: any;
 
   public defaultSettings: any = {
+    XAccelRedirect: "",
+    ProxyCachePath: "",
+    ProxyCacheTimeout: 60 * 60 * 1000,
     ServerType: "http",
     HTTPSKeyPath: "",
     HTTPSCertPath: "",

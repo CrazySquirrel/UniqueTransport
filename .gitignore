@@ -5,6 +5,7 @@ lib/**/*.js
 spec/*.js
 .nyc_output
 node_modules
+tmp
 *.log
 *.DS_Store
 *.map
