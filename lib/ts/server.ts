@@ -243,6 +243,9 @@ export default class Server extends Transport {
           response.end();
         }
       } else {
+        const CacheID = MD5(result.Data.link).toString();
+        const CachePath = PATH.resolve(this.Settings.ProxyCachePath, CacheID);
+
         const redirectProxy = () => {
           if (
               result.Data.link.indexOf(".css") === -1 &&
@@ -251,18 +254,38 @@ export default class Server extends Transport {
             this.proxyShit[result.Data.link] = true;
           }
 
-          if (!response.answered) {
-            response.answered = true;
-            headers["Location"] = result.Data.link;
-            response.writeHead(this.Settings.RedirectResponseCode, headers);
-            response.end();
+          const doRedirect = () => {
+            if (!response.answered) {
+              response.answered = true;
+              headers["Location"] = result.Data.link;
+              response.writeHead(this.Settings.RedirectResponseCode, headers);
+              response.end();
+            }
+          };
+
+          if (
+              this.Settings.ProxyCachePath
+          ) {
+            FS.stat(
+                CachePath,
+                (err) => {
+                  if (err) {
+                    doRedirect();
+                  } else {
+                    if (!response.answered) {
+                      response.answered = true;
+                      response.writeHead(this.Settings.SuccessResponseCode, headers);
+                      FS.createReadStream(CachePath).pipe(response);
+                    }
+                  }
+                },
+            );
+          } else {
+            doRedirect();
           }
         };
 
         try {
-          const CacheID = MD5(result.Data.link).toString();
-          const CachePath = PATH.resolve(this.Settings.ProxyCachePath, CacheID);
-
           const doProxy = () => {
             if (this.proxyShit[result.Data.link]) {
               redirectProxy();
