@@ -243,8 +243,13 @@ export default class Server extends Transport {
           response.end();
         }
       } else {
-        const CacheID = MD5(result.Data.link).toString();
-        const CachePath = PATH.resolve(this.Settings.ProxyCachePath, CacheID);
+        let CacheID;
+        let CachePath;
+
+        if (this.Settings.ProxyCachePath) {
+          CacheID = MD5(result.Data.link).toString();
+          CachePath = PATH.resolve(this.Settings.ProxyCachePath, CacheID);
+        }
 
         const redirectProxy = () => {
           if (
@@ -263,9 +268,7 @@ export default class Server extends Transport {
             }
           };
 
-          if (
-              this.Settings.ProxyCachePath
-          ) {
+          if (this.Settings.ProxyCachePath) {
             FS.stat(
                 CachePath,
                 (err) => {
@@ -372,7 +375,9 @@ export default class Server extends Transport {
                                     response.answered = true;
                                     response.writeHead(this.Settings.SuccessResponseCode, _headers);
 
-                                    FS.writeFile(CachePath, newCss);
+                                    if (this.Settings.ProxyCachePath) {
+                                      FS.writeFile(CachePath, newCss);
+                                    }
 
                                     response.end(newCss);
                                   }
@@ -388,7 +393,10 @@ export default class Server extends Transport {
                                 response.answered = true;
                                 response.writeHead(this.Settings.SuccessResponseCode, _headers);
 
-                                res.pipe(FS.createWriteStream(CachePath));
+                                if (this.Settings.ProxyCachePath) {
+                                  res.pipe(FS.createWriteStream(CachePath));
+                                }
+
                                 res.pipe(response);
                               }
                             }
@@ -436,9 +444,7 @@ export default class Server extends Transport {
             }
           };
 
-          if (
-              this.Settings.ProxyCachePath
-          ) {
+          if (this.Settings.ProxyCachePath) {
             FS.stat(
                 CachePath,
                 (err, stat) => {
