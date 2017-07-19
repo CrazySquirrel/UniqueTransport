@@ -291,6 +291,11 @@ abstract class Transport {
     ProxyTimeout: 10000,
     IgnoredQueryParams: {
       "safe": true,
+      "utm_medium": true,
+      "utm_source": true,
+      "utm_campaign": true,
+      "utm_term": true,
+      "utm_content": true,
     },
     IgnoredNames: {
       "safe": true,
@@ -348,6 +353,8 @@ abstract class Transport {
       "x-wap-profile": true,
       "x-yandex-turbo": true,
       "safe": true,
+      "range": true,
+      "if-range": true,
     },
     OptimizeImages: false,
     Password: "xmas",
