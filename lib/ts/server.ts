@@ -244,11 +244,13 @@ export default class Server extends Transport {
         }
       } else {
         let CacheID;
-        let CachePath;
+        let CachePathBody;
+        let CachePathHeaders;
 
         if (this.Settings.ProxyCachePath) {
           CacheID = MD5(result.Data.link).toString();
-          CachePath = PATH.resolve(this.Settings.ProxyCachePath, CacheID);
+          CachePathBody = PATH.resolve(this.Settings.ProxyCachePath, CacheID + ".body");
+          CachePathHeaders = PATH.resolve(this.Settings.ProxyCachePath, CacheID + ".headers");
         }
 
         const redirectProxy = () => {
@@ -270,7 +272,7 @@ export default class Server extends Transport {
 
           if (this.Settings.ProxyCachePath) {
             FS.stat(
-                CachePath,
+                CachePathBody,
                 (err) => {
                   if (err) {
                     doRedirect();
@@ -278,7 +280,19 @@ export default class Server extends Transport {
                     if (!response.answered) {
                       response.answered = true;
                       response.writeHead(this.Settings.SuccessResponseCode, headers);
-                      FS.createReadStream(CachePath).pipe(response);
+
+                      FS.readFile(CachePathHeaders, "utf-8", (e, _headers) => {
+                        try {
+                          if (e) {
+                            doRedirect();
+                          } else {
+                            response.writeHead(this.Settings.SuccessResponseCode, JSON.parse(_headers));
+                            FS.createReadStream(CachePathBody).pipe(response);
+                          }
+                        } catch (_e) {
+                          doRedirect();
+                        }
+                      });
                     }
                   }
                 },
@@ -376,7 +390,8 @@ export default class Server extends Transport {
                                     response.writeHead(this.Settings.SuccessResponseCode, _headers);
 
                                     if (this.Settings.ProxyCachePath) {
-                                      FS.writeFile(CachePath, newCss);
+                                      FS.writeFile(CachePathBody, newCss);
+                                      FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
                                     }
 
                                     response.end(newCss);
@@ -394,7 +409,8 @@ export default class Server extends Transport {
                                 response.writeHead(this.Settings.SuccessResponseCode, _headers);
 
                                 if (this.Settings.ProxyCachePath) {
-                                  res.pipe(FS.createWriteStream(CachePath));
+                                  res.pipe(FS.createWriteStream(CachePathBody));
+                                  FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
                                 }
 
                                 res.pipe(response);
@@ -446,7 +462,7 @@ export default class Server extends Transport {
 
           if (this.Settings.ProxyCachePath) {
             FS.stat(
-                CachePath,
+                CachePathBody,
                 (err, stat) => {
                   if (err) {
                     doProxy();
@@ -454,8 +470,20 @@ export default class Server extends Transport {
                     if (new Date() - this.Settings.ProxyCacheTimeout < stat.birthtime * 1) {
                       if (!response.answered) {
                         response.answered = true;
-                        response.writeHead(this.Settings.SuccessResponseCode, headers);
-                        FS.createReadStream(CachePath).pipe(response);
+                        FS.readFile(CachePathHeaders, "utf-8", (e, _headers) => {
+                          try {
+                            if (e) {
+                              redirectProxy();
+                              this.ErrorHandler(e, "0.1.7", result);
+                            } else {
+                              response.writeHead(this.Settings.SuccessResponseCode, JSON.parse(_headers));
+                              FS.createReadStream(CachePathBody).pipe(response);
+                            }
+                          } catch (_e) {
+                            redirectProxy();
+                            this.ErrorHandler(_e, "0.1.7", result);
+                          }
+                        });
                       }
                     } else {
                       doProxy();
@@ -468,11 +496,11 @@ export default class Server extends Transport {
           }
         } catch (e) {
           redirectProxy();
-          this.ErrorHandler(e, "0.1.7", result);
+          this.ErrorHandler(e, "0.1.8", result);
         }
       }
     } catch (e) {
-      this.responceError("0.1.8", request, response, headers, e, {
+      this.responceError("0.1.9", request, response, headers, e, {
         result,
       });
     }
