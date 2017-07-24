@@ -385,15 +385,13 @@ export default class Server extends Transport {
                                     delete _headers["etag"];
                                     delete _headers["expires"];
                                     delete _headers["last-modified"];
+                                    delete _headers["content-length"];
 
                                     response.answered = true;
                                     response.writeHead(this.Settings.SuccessResponseCode, _headers);
 
                                     if (this.Settings.ProxyCachePath) {
                                       FS.writeFile(CachePathBody, newCss);
-
-                                      delete _headers["content-length"];
-
                                       FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
                                     }
 
@@ -408,14 +406,14 @@ export default class Server extends Transport {
                                     _headers[prop] = headers[prop];
                                   }
                                 }
+
+                                delete _headers["content-length"];
+
                                 response.answered = true;
                                 response.writeHead(this.Settings.SuccessResponseCode, _headers);
 
                                 if (this.Settings.ProxyCachePath) {
                                   res.pipe(FS.createWriteStream(CachePathBody));
-
-                                  delete _headers["content-length"];
-
                                   FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
                                 }
 
