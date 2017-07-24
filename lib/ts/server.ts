@@ -391,6 +391,9 @@ export default class Server extends Transport {
 
                                     if (this.Settings.ProxyCachePath) {
                                       FS.writeFile(CachePathBody, newCss);
+
+                                      delete _headers["content-length"];
+
                                       FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
                                     }
 
@@ -410,6 +413,9 @@ export default class Server extends Transport {
 
                                 if (this.Settings.ProxyCachePath) {
                                   res.pipe(FS.createWriteStream(CachePathBody));
+
+                                  delete _headers["content-length"];
+
                                   FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
                                 }
 
