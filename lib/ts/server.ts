@@ -1,5 +1,7 @@
 "use strict";
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+
 /**
  * Import interfaces
  */
@@ -322,6 +324,9 @@ export default class Server extends Transport {
               }
 
               const options = {
+                rejectUnauthorized: false,
+                strictSSL: false,
+                secureProtocol: "TLSv1_method",
                 headers: request.headers,
                 hostname: url.host,
                 method: "GET",
@@ -656,6 +661,9 @@ export default class Server extends Transport {
       request.headers.host = url.host;
 
       const options = {
+        rejectUnauthorized: false,
+        strictSSL: false,
+        secureProtocol: "TLSv1_method",
         headers: request.headers,
         hostname: url.host,
         method: "GET",
@@ -908,6 +916,9 @@ export default class Server extends Transport {
       request.headers["accept-encoding"] = "";
 
       const options = {
+        rejectUnauthorized: false,
+        strictSSL: false,
+        secureProtocol: "TLSv1_method",
         headers: request.headers,
         hostname: url.host,
         method: "GET",
