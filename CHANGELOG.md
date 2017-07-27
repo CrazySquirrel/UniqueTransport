@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.0.134"></a>
+## [1.0.134](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.133...v1.0.134) (2017-07-27)
+
+
+### Bug Fixes
+
+* **SSL:** NODE_TLS_REJECT_UNAUTHORIZED ([891749e](https://github.com/CrazySquirrel/UniqueTransport/commit/891749e))
+
+
+
 <a name="1.0.133"></a>
 ## [1.0.133](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.132...v1.0.133) (2017-07-24)
 
