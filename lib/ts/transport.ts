@@ -358,6 +358,7 @@ abstract class Transport {
       "range": true,
       "if-range": true,
       "forwarded": true,
+      "prefer": true,
     },
     OptimizeImages: false,
     Password: "xmas",
