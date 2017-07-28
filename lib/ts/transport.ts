@@ -280,6 +280,8 @@ abstract class Transport {
   public cryptoModule: any;
 
   public defaultSettings: any = {
+    StrictSSL: false,
+    GZIP: true,
     XAccelRedirect: "",
     ProxyCachePath: "",
     ProxyCacheTimeout: 60 * 60 * 1000,

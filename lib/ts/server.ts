@@ -1,7 +1,4 @@
 "use strict";
-
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
-
 /**
  * Import interfaces
  */
@@ -70,6 +67,8 @@ export default class Server extends Transport {
   public proxyShit: any;
   public defaultSettings: any;
 
+  private AcceptEncoding: string;
+
   public constructor(settings: any = {}) {
     super(settings);
 
@@ -108,6 +107,8 @@ export default class Server extends Transport {
   }
 
   public listenr(request, response) {
+    this.AcceptEncoding = request.headers["accept-encoding"] || "";
+
     const headers = Object.assign({}, baseHeaders);
 
     setTimeout(
@@ -323,16 +324,19 @@ export default class Server extends Transport {
                 delete request.headers["if-none-match"];
               }
 
-              const options = {
-                rejectUnauthorized: false,
-                strictSSL: false,
-                secureProtocol: "TLSv1_method",
+              const options: any = {
                 headers: request.headers,
                 hostname: url.host,
                 method: "GET",
                 path: url.path,
                 port: url.port,
               };
+
+              if (!this.Settings.StrictSSL) {
+                options.rejectUnauthorized = false;
+                options.strictSSL = false;
+                options.secureProtocol = "TLSv1_method";
+              }
 
               DNS.lookup(
                   options.hostname,
@@ -373,6 +377,7 @@ export default class Server extends Transport {
 
                                 res.on("end", () => {
                                   if (!response.answered) {
+                                    response.answered = true;
 
                                     const _headers = res.headers;
                                     for (const prop in headers) {
@@ -392,15 +397,27 @@ export default class Server extends Transport {
                                     delete _headers["last-modified"];
                                     delete _headers["content-length"];
 
-                                    response.answered = true;
-                                    response.writeHead(this.Settings.SuccessResponseCode, _headers);
+                                    this.prepareRespond(newCss, _headers).then((_result: any) => {
+                                      if (!response.answered) {
+                                        if (this.Settings.ProxyCachePath) {
+                                          FS.writeFile(CachePathBody, _result.data);
+                                          FS.writeFile(CachePathHeaders, JSON.stringify(_result.headers));
+                                        }
 
-                                    if (this.Settings.ProxyCachePath) {
-                                      FS.writeFile(CachePathBody, newCss);
-                                      FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
-                                    }
+                                        response.writeHead(this.Settings.SuccessResponseCode, _result.headers);
+                                        response.end(_result.data);
+                                      }
+                                    }).catch(() => {
+                                      if (!response.answered) {
+                                        if (this.Settings.ProxyCachePath) {
+                                          FS.writeFile(CachePathBody, newCss);
+                                          FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
+                                        }
 
-                                    response.end(newCss);
+                                        response.writeHead(this.Settings.SuccessResponseCode, _headers);
+                                        response.end(newCss);
+                                      }
+                                    });
                                   }
                                 });
                               } else {
@@ -476,7 +493,7 @@ export default class Server extends Transport {
                   if (err) {
                     doProxy();
                   } else {
-                    if (new Date() - this.Settings.ProxyCacheTimeout < stat.birthtime * 1) {
+                    if ((new Date()) - this.Settings.ProxyCacheTimeout < stat.birthtime * 1) {
                       if (!response.answered) {
                         response.answered = true;
                         FS.readFile(CachePathHeaders, "utf-8", (e, _headers) => {
@@ -627,19 +644,18 @@ export default class Server extends Transport {
           this.responceError("0.3.1", request, response, headers, new Error("Unsupported transport"));
       }
       if (resp) {
-        ZLIB.gzip(resp, (error, _result) => {
-          if (error) {
-            this.responceError("0.3.2", request, response, headers, error, {
-              result: _result,
-            });
-          } else {
-            headers["Content-Encoding"] = "gzip";
-            headers["Content-Length"] = _result.length;
-            if (!response.answered) {
-              response.answered = true;
-              response.writeHead(this.Settings.SuccessResponseCode, headers);
-              response.end(_result);
-            }
+
+        this.prepareRespond(resp, headers).then((_result: any) => {
+          if (!response.answered) {
+            response.answered = true;
+            response.writeHead(this.Settings.SuccessResponseCode, _result.headers);
+            response.end(_result.data);
+          }
+        }).catch(() => {
+          if (!response.answered) {
+            response.answered = true;
+            response.writeHead(this.Settings.SuccessResponseCode, headers);
+            response.end(resp);
           }
         });
       } else {
@@ -660,16 +676,19 @@ export default class Server extends Transport {
 
       request.headers.host = url.host;
 
-      const options = {
-        rejectUnauthorized: false,
-        strictSSL: false,
-        secureProtocol: "TLSv1_method",
+      const options: any = {
         headers: request.headers,
         hostname: url.host,
         method: "GET",
         path: url.path,
         port: "80",
       };
+
+      if (!this.Settings.StrictSSL) {
+        options.rejectUnauthorized = false;
+        options.strictSSL = false;
+        options.secureProtocol = "TLSv1_method";
+      }
 
       HTTP.request(options, (res) => {
         if (!response.answered) {
@@ -915,16 +934,19 @@ export default class Server extends Transport {
       request.headers.host = url.host;
       request.headers["accept-encoding"] = "";
 
-      const options = {
-        rejectUnauthorized: false,
-        strictSSL: false,
-        secureProtocol: "TLSv1_method",
+      const options: any = {
         headers: request.headers,
         hostname: url.host,
         method: "GET",
         path: url.path,
         port: url.port,
       };
+
+      if (!this.Settings.StrictSSL) {
+        options.rejectUnauthorized = false;
+        options.strictSSL = false;
+        options.secureProtocol = "TLSv1_method";
+      }
 
       DNS.lookup(
           options.hostname,
@@ -1239,5 +1261,33 @@ export default class Server extends Transport {
       css = css.replace(url[0], `url("${URL.resolve(base, url[3])}")`);
     });
     return css;
+  }
+
+  private prepareRespond(data, headers) {
+    return new Promise((resolve) => {
+      if (this.Settings.GZIP) {
+        if (this.AcceptEncoding.indexOf("gzip") !== -1) {
+          ZLIB.gzip(data, (error, result) => {
+            if (!error) {
+              data = result;
+              headers["Content-Encoding"] = "gzip";
+            }
+            resolve({data, headers});
+          });
+        } else if (this.AcceptEncoding.indexOf("deflate") !== -1) {
+          ZLIB.deflate(data, (error, result) => {
+            if (!error) {
+              data = result;
+              headers["Content-Encoding"] = "deflate";
+            }
+            resolve({data, headers});
+          });
+        } else {
+          resolve({data, headers});
+        }
+      } else {
+        resolve({data, headers});
+      }
+    });
   }
 }

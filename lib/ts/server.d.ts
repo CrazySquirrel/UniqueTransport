@@ -9,6 +9,7 @@ export default class Server extends Transport {
     listners: any;
     proxyShit: any;
     defaultSettings: any;
+    private AcceptEncoding;
     constructor(settings?: any);
     on(event: string, listner: any): void;
     listenr(request: any, response: any): void;
@@ -50,4 +51,5 @@ export default class Server extends Transport {
     getHostFromHeaderHost(request: any, params: any): any;
     ErrorHandler(e: any, id: any, data: any): void;
     private replaceRelativePathInCss(base, css);
+    private prepareRespond(data, headers);
 }

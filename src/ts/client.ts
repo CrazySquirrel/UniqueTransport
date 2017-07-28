@@ -103,39 +103,6 @@ Client.getEncodedProxy("https://rambler.ru/topline42/latest/bundle.css").then(
     },
 );
 
-Client.getEncodedProxy("https://st.d16.championat.com/2013/_style.css").then(
-    (url: any) => {
-      const link: any = window.document.createElement("link");
-      link.type = "text/css";
-      link.rel = "stylesheet";
-      link.crossOrigin = "Anonymous";
-
-      link.onload = () => {
-        const styleSheets: any = window.document.styleSheets;
-        const styleSheetsLength = styleSheets.length;
-        for (let i = 0; i < styleSheetsLength; i++) {
-          try {
-            const styleSheet = styleSheets[i];
-            if (
-                styleSheet.href === link.href &&
-                styleSheet.cssRules &&
-                styleSheet.cssRules.length > 0
-            ) {
-              console.log(styleSheet);
-              window.document.body.removeChild(link);
-            }
-          } catch (e) {
-
-          }
-        }
-      };
-
-      link.href = url;
-
-      window.document.body.appendChild(link);
-    },
-);
-
 Client.getEncodedProxy("https://icdn.lenta.ru/assets/webpack/48bbb3d3168507d955a0.desktop.css").then(
     (url: any) => {
       const link: any = window.document.createElement("link");
