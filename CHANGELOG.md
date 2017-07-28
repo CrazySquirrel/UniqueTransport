@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.0.135"></a>
+## [1.0.135](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.134...v1.0.135) (2017-07-28)
+
+
+### Bug Fixes
+
+* **Proxy:** GZIP and StrictSSL bug fix ([49fae6c](https://github.com/CrazySquirrel/UniqueTransport/commit/49fae6c))
+
+
+
 <a name="1.0.134"></a>
 ## [1.0.134](https://github.com/CrazySquirrel/UniqueTransport/compare/v1.0.133...v1.0.134) (2017-07-27)
 
