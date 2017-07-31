@@ -398,25 +398,21 @@ export default class Server extends Transport {
                                     delete _headers["content-length"];
 
                                     this.prepareRespond(newCss, _headers).then((_result: any) => {
-                                      if (!response.answered) {
-                                        if (this.Settings.ProxyCachePath) {
-                                          FS.writeFile(CachePathBody, _result.data);
-                                          FS.writeFile(CachePathHeaders, JSON.stringify(_result.headers));
-                                        }
-
-                                        response.writeHead(this.Settings.SuccessResponseCode, _result.headers);
-                                        response.end(_result.data);
+                                      if (this.Settings.ProxyCachePath) {
+                                        FS.writeFile(CachePathBody, _result.data);
+                                        FS.writeFile(CachePathHeaders, JSON.stringify(_result.headers));
                                       }
+
+                                      response.writeHead(this.Settings.SuccessResponseCode, _result.headers);
+                                      response.end(_result.data);
                                     }).catch(() => {
-                                      if (!response.answered) {
-                                        if (this.Settings.ProxyCachePath) {
-                                          FS.writeFile(CachePathBody, newCss);
-                                          FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
-                                        }
-
-                                        response.writeHead(this.Settings.SuccessResponseCode, _headers);
-                                        response.end(newCss);
+                                      if (this.Settings.ProxyCachePath) {
+                                        FS.writeFile(CachePathBody, newCss);
+                                        FS.writeFile(CachePathHeaders, JSON.stringify(_headers));
                                       }
+
+                                      response.writeHead(this.Settings.SuccessResponseCode, _headers);
+                                      response.end(newCss);
                                     });
                                   }
                                 });
