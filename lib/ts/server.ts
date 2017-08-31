@@ -368,7 +368,7 @@ export default class Server extends Transport {
                             this.ErrorHandler(new Error("Too big file"), "0.1.3", options);
                           } else {
                             if (!response.answered) {
-                              if (res.headers["content-type"] === "text/css") {
+                              if (res.headers["content-type"].indexOf("text/css") !== -1) {
                                 const buffer = [];
 
                                 res.on("data", (chunk) => {
