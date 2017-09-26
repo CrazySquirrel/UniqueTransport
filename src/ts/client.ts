@@ -10,7 +10,7 @@ const Client = new ClientClass({
   ConnectionTimeout: 10000,
   ReConnectionTimeout: 500,
   Transports: {
-    styleadvanced: {
+    styleextend: {
       SubTransports: {
         name: true,
         params: true,

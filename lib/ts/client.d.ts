@@ -53,6 +53,11 @@ export default class Client extends Transport {
      * Style transport
      * @param params
      */
+    styleextend(params?: any): Promise<{}>;
+    /**
+     * Style transport
+     * @param params
+     */
     styleadvanced(params?: any): Promise<{}>;
     /**
      * Script transport

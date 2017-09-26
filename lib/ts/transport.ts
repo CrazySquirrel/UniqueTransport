@@ -4,6 +4,7 @@
  * Import interfaces
  */
 import IWindow from "../../interfaces/IWindow";
+
 /**
  * Declare window interface
  */
@@ -161,8 +162,8 @@ abstract class Transport {
      * Implement params sub transport
      */
     return url + "?" + Object.keys(params).map((key) => {
-          return key + "=" + params[key];
-        }).join("&");
+      return key + "=" + params[key];
+    }).join("&");
   }
 
   /**
@@ -394,6 +395,16 @@ abstract class Transport {
         },
       },
       style: {
+        SubTransports: {
+          name: true,
+          params: true,
+          path: true,
+        },
+      },
+      styleextend: {
+        Params: {
+          PartLength: 100,
+        },
         SubTransports: {
           name: true,
           params: true,

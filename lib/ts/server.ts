@@ -3,6 +3,7 @@
  * Import interfaces
  */
 import IWindow from "../../interfaces/IWindow";
+
 /**
  * Declare window interface
  */
@@ -552,6 +553,29 @@ export default class Server extends Transport {
           resp = `.${result.Params.Callback} {content:"${result.Data}";}`;
           headers["Content-Type"] = "text/css; charset=utf-8";
           break;
+        case "styleextend":
+          const baseStylesExtend = [
+            "width:{d}px;",
+            "height:{d}px;",
+            "top:{d}px;",
+            "left:{d}px;",
+            "bottom:{d}px;",
+            "right:{d}px;",
+          ];
+
+          const length = this.Settings.Transports.styleextend.Params.PartLength;
+
+          Transport.stringChunks(result.Data, Math.ceil(result.Data.length / length), length).forEach((data) => {
+            resp += ` .${result.Params.Callback}__${data} {`;
+            baseStylesExtend.forEach((v: any) => {
+              if (Math.random() > 0.5) {
+                resp += v.replace("{d}", Math.round(Math.random() * length).toString());
+              }
+            }, "");
+            resp += `}`;
+          });
+          headers["Content-Type"] = "text/css; charset=utf-8";
+          break;
         case "styleadvanced":
 
           const toD = (s) => s.charCodeAt();
@@ -564,7 +588,7 @@ export default class Server extends Transport {
             return s.match(/\{[d-h]\}/g).length / (s.replace(/\{d\}/ig, 999).replace(/\{h\}/ig, "FF")).length;
           };
 
-          const baseStyles = [
+          const baseStylesAdvanced = [
             "width:{d}px;",
             "height:{d}px;",
             "top:{d}px;",
@@ -585,7 +609,7 @@ export default class Server extends Transport {
 
           for (let i = 0; i < l;) {
             if (styles.length === 0) {
-              styles = baseStyles.join(",").split(",");
+              styles = baseStylesAdvanced.join(",").split(",");
               resp += `.${result.Params.Callback}_${Server.getRandomWord()}{`;
             }
 

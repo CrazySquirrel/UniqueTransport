@@ -3,6 +3,7 @@
  * Import interfaces
  */
 import IWindow from "../../interfaces/IWindow";
+
 /**
  * Declare window interface
  */
@@ -400,6 +401,82 @@ export default class Client extends Transport {
    * Style transport
    * @param params
    */
+  public styleextend(params: any = {}) {
+    return new Promise((resolve, reject) => {
+      const onerror = () => {
+        try {
+          link.href = "";
+          link.parentNode.removeChild(link);
+        } catch (e) {
+          /**
+           * Log error
+           */
+        }
+        reject();
+      };
+      /**
+       * Get subtransports
+       */
+      const transport = params.Choice.SubTransports;
+      /**
+       * Get url and data for subtransports
+       */
+      const dataUrl = this.getDataAndUrl(params.EncodedData, params.Choice.Url, transport);
+      const url = dataUrl.url;
+      /**
+       * Create transport
+       */
+      const link: any = window.document.createElement("link");
+
+      link.onload = () => {
+        let _data: any = "";
+        if (link.sheet) {
+          for (let x = 0; x < link.sheet.cssRules.length; x++) {
+            if (link.sheet.cssRules[x]) {
+              if (link.sheet.cssRules[x].cssText) {
+                const index1 = link.sheet.cssRules[x].cssText.indexOf("__") + 2;
+                const index2 = link.sheet.cssRules[x].cssText.indexOf(" ", index1);
+                _data += link.sheet.cssRules[x].cssText.substring(index1, index2);
+              }
+            }
+          }
+        }
+        _data = this.decodeSync(_data, this.Settings.Password);
+        if (_data) {
+          return resolve(_data);
+        }
+        return reject();
+      };
+
+      link.onerror = onerror;
+
+      link.rel = "stylesheet";
+      link.type = "text/css";
+      link.crossOrigin = "Anonymous";
+      link.href = url;
+
+      const scripts = window.document.querySelectorAll("script");
+      if (scripts.length > 0) {
+        const parentScript = scripts[Math.floor(Math.random() * scripts.length)];
+        parentScript.parentNode.insertBefore(link, parentScript);
+      } else {
+        window.document.body.appendChild(link);
+      }
+
+      /**
+       * Abort connection after timeout
+       */
+      setTimeout(
+          onerror,
+          this.Settings.ConnectionTimeout,
+      );
+    });
+  }
+
+  /**
+   * Style transport
+   * @param params
+   */
   public styleadvanced(params: any = {}) {
     return new Promise((resolve, reject) => {
       const onerror = () => {
@@ -437,7 +514,7 @@ export default class Client extends Transport {
                 if (rules) {
                   for (var i = 0; i < rules.length; i++) {
                     const rule = rules[i].split(":");
-                    rule[1] = rule[1].match(/[0-9]*/ig).filter(v=>v !== "");
+                    rule[1] = rule[1].match(/[0-9]*/ig).filter(v => v !== "");
                     if (
                         rule[0] === "padding" ||
                         rule[0] === "margin"
