@@ -26,7 +26,7 @@ window.Promise = window.Promise || require("promise-polyfill");
 
 const MD5 = require("crypto-js/md5");
 
-import Transport from "./transport.ts";
+import Transport from "./transport";
 
 export default class Client extends Transport {
 
@@ -350,27 +350,32 @@ export default class Client extends Transport {
        */
       const link: any = window.document.createElement("link");
 
-      link.onload = () => {
-        if (link.sheet) {
-          if (link.sheet.cssRules) {
-            if (link.sheet.cssRules[0]) {
-              if (link.sheet.cssRules[0].cssText) {
-                const rules = (/([^{]*)\{([^}]*)\}/i).exec(link.sheet.cssRules[0].cssText);
-                if (rules) {
-                  const rule = (/content:([^"'\s]*)["'\s]*([^"'\s;]*)["'\s;]*/i).exec(rules[2]);
-                  if (rule) {
-                    const _data = this.decodeSync(rule[2], this.Settings.Password);
-                    if (_data) {
-                      return resolve(_data);
-                    }
-                  }
+      let interval;
+
+      const onload = () => {
+        if (
+            link.sheet &&
+            link.sheet.cssRules.length > 0
+        ) {
+          clearInterval(interval);
+
+          if (link.sheet.cssRules[0].cssText) {
+            const rules = (/([^{]*)\{([^}]*)\}/i).exec(link.sheet.cssRules[0].cssText);
+            if (rules) {
+              const rule = (/content:([^"'\s]*)["'\s]*([^"'\s;]*)["'\s;]*/i).exec(rules[2]);
+              if (rule) {
+                const _data = this.decodeSync(rule[2], this.Settings.Password);
+                if (_data) {
+                  return resolve(_data);
                 }
               }
             }
           }
+          return reject();
         }
-        return reject();
       };
+
+      interval = setInterval(onload, 100);
 
       link.onerror = onerror;
 
@@ -428,20 +433,28 @@ export default class Client extends Transport {
        */
       const link: any = window.document.createElement("link");
 
-      link.onload = () => {
-        const l2 = Math.floor(params.RawData.Callback.length / 2);
+      let interval;
 
-        const translation = Transport.stringChunks(params.RawData.Callback, Math.ceil(params.RawData.Callback.length / l2), l2).reduce((s, v, i) => {
-          if (i === 0) {
-            s[v] = "=";
-          } else if (i === 1) {
-            s[v] = "+";
-          }
-          return s;
-        }, {});
+      const onload = () => {
+        if (
+            link.sheet &&
+            link.sheet.cssRules.length > 0
+        ) {
+          clearInterval(interval);
 
-        let _data: any = "";
-        if (link.sheet) {
+          const l2 = Math.floor(params.RawData.Callback.length / 2);
+
+          const translation = Transport.stringChunks(params.RawData.Callback, Math.ceil(params.RawData.Callback.length / l2), l2).reduce((s, v, i) => {
+            if (i === 0) {
+              s[v] = "=";
+            } else if (i === 1) {
+              s[v] = "+";
+            }
+            return s;
+          }, {});
+
+          let _data: any = "";
+
           for (let x = 0; x < link.sheet.cssRules.length; x++) {
             if (link.sheet.cssRules[x]) {
               if (link.sheet.cssRules[x].selectorText) {
@@ -449,13 +462,18 @@ export default class Client extends Transport {
               }
             }
           }
+
+          _data = this.decodeSync(_data, this.Settings.Password);
+
+          if (_data) {
+            return resolve(_data);
+          }
+
+          return reject();
         }
-        _data = this.decodeSync(_data, this.Settings.Password);
-        if (_data) {
-          return resolve(_data);
-        }
-        return reject();
       };
+
+      interval = setInterval(onload, 100);
 
       link.onerror = onerror;
 
@@ -513,17 +531,25 @@ export default class Client extends Transport {
        */
       const link: any = window.document.createElement("link");
 
-      link.onload = () => {
-        let _data: any = "";
-        if (link.sheet) {
+      let interval;
+
+      const onload = () => {
+        if (
+            link.sheet &&
+            link.sheet.cssRules.length > 0
+        ) {
+          clearInterval(interval);
+
+          let _data: any = "";
+
           for (let x = 0; x < link.sheet.cssRules.length; x++) {
             if (link.sheet.cssRules[x]) {
               if (link.sheet.cssRules[x].cssText) {
                 const rules = link.sheet.cssRules[x].cssText.split("{")[1].split("}")[0].match(/[a-z]*:[^;]*;/ig);
                 if (rules) {
-                  for (var i = 0; i < rules.length; i++) {
+                  for (let i = 0; i < rules.length; i++) {
                     const rule = rules[i].split(":");
-                    rule[1] = rule[1].match(/[0-9]*/ig).filter(v => v !== "");
+                    rule[1] = rule[1].match(/[0-9]*/ig).filter((v) => v !== "");
                     if (
                         rule[0] === "padding" ||
                         rule[0] === "margin"
@@ -554,7 +580,7 @@ export default class Client extends Transport {
                     } else if (rule[1].length > 1) {
                       rule[1].length = 1;
                     }
-                    for (var j = 0; j < rule[1].length; j++) {
+                    for (let j = 0; j < rule[1].length; j++) {
                       _data += String.fromCharCode(rule[1][j]);
                     }
                   }
@@ -562,13 +588,15 @@ export default class Client extends Transport {
               }
             }
           }
+          _data = this.decodeSync(_data, this.Settings.Password);
+          if (_data) {
+            return resolve(_data);
+          }
+          return reject();
         }
-        _data = this.decodeSync(_data, this.Settings.Password);
-        if (_data) {
-          return resolve(_data);
-        }
-        return reject();
       };
+
+      interval = setInterval(onload, 100);
 
       link.onerror = onerror;
 

@@ -50,7 +50,7 @@ const baseHeaders = {
   "Access-Control-Allow-Credentials": true,
 };
 
-import Transport from "./transport.ts";
+import Transport from "./transport";
 
 export default class Server extends Transport {
 

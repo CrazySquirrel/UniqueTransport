@@ -1,4 +1,4 @@
-import Transport from "./transport.ts";
+import Transport from "./transport";
 export default class Client extends Transport {
     /**
      * Clean old choises

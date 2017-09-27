@@ -1,4 +1,4 @@
-import Transport from "./transport.ts";
+import Transport from "./transport";
 export default class Server extends Transport {
     /**
      * Get choice ID
