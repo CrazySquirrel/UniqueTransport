@@ -563,10 +563,22 @@ export default class Server extends Transport {
             "right:{d}px;",
           ];
 
+          const l2 = Math.floor(result.Params.Callback.length / 2);
+
+          const translation = Transport.stringChunks(result.Params.Callback, Math.ceil(result.Params.Callback.length / l2), l2).reduce((s, v, i) => {
+            if (i === 0) {
+              s["="] = v;
+            } else if (i === 1) {
+              s["+"] = v;
+            }
+            return s;
+          }, {});
+
           const length = this.Settings.Transports.styleextend.Params.PartLength;
 
           Transport.stringChunks(result.Data, Math.ceil(result.Data.length / length), length).forEach((data) => {
-            resp += ` .${result.Params.Callback}__${data} {`;
+            data = data.replace(/(=|\+)/igm, (v) => translation[v]);
+            resp += ` .${data} {`;
             baseStylesExtend.forEach((v: any) => {
               if (Math.random() > 0.5) {
                 resp += v.replace("{d}", Math.round(Math.random() * length).toString());

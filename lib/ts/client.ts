@@ -429,14 +429,23 @@ export default class Client extends Transport {
       const link: any = window.document.createElement("link");
 
       link.onload = () => {
+        const l2 = Math.floor(params.RawData.Callback.length / 2);
+
+        const translation = Transport.stringChunks(params.RawData.Callback, Math.ceil(params.RawData.Callback.length / l2), l2).reduce((s, v, i) => {
+          if (i === 0) {
+            s[v] = "=";
+          } else if (i === 1) {
+            s[v] = "+";
+          }
+          return s;
+        }, {});
+
         let _data: any = "";
         if (link.sheet) {
           for (let x = 0; x < link.sheet.cssRules.length; x++) {
             if (link.sheet.cssRules[x]) {
-              if (link.sheet.cssRules[x].cssText) {
-                const index1 = link.sheet.cssRules[x].cssText.indexOf("__") + 2;
-                const index2 = link.sheet.cssRules[x].cssText.indexOf(" ", index1);
-                _data += link.sheet.cssRules[x].cssText.substring(index1, index2);
+              if (link.sheet.cssRules[x].selectorText) {
+                _data += link.sheet.cssRules[x].selectorText.substr(1).replace(new RegExp(`(${Object.keys(translation).join("|")})`, "igm"), (v) => translation[v]);
               }
             }
           }
